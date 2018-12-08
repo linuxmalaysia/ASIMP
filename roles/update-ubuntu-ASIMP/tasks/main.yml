@@ -1,0 +1,24 @@
+---
+# tasks file for update-ubuntu-ASIMP
+- name: Update repositories cache
+  apt:
+    update_cache: yes
+    
+- name: Upgrade all packages to the latest version
+  apt:
+    name: "*"
+    state: latest 
+    force_apt_get: yes
+
+- name: Update all packages to the latest version
+  apt:
+    upgrade: dist 
+    force_apt_get: yes
+
+- name: Remove useless packages from the cache
+  apt:
+    autoclean: yes 
+
+- name: Remove dependencies that are no longer required
+  apt:
+    autoremove: yes
