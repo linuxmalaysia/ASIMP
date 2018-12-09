@@ -3,22 +3,48 @@
 - name: Update repositories cache
   apt:
     update_cache: yes
+  when:
+    ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu'
+  tags: apt
     
 - name: Upgrade all packages to the latest version
   apt:
     name: "*"
     state: latest 
     force_apt_get: yes
+  when:
+    (ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu') and
+    (upgrade_ubuntu_check is defined and upgrade_ubuntu_check)
+  tags: apt
 
-- name: Update all packages to the latest version
+- name: Dist Update all packages to the latest version
   apt:
     upgrade: dist 
     force_apt_get: yes
+  when:
+    (ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu') and
+    (dist_upgrade_ubuntu_check is defined and dist_upgrade_ubuntu_check)
+  tags: apt
+
+- name: Safe Update all packages to the latest version
+  apt:
+    upgrade: safe 
+    force_apt_get: yes
+  when:
+    (ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu') and
+    (safe_upgrade_ubuntu_check is defined and safe_upgrade_ubuntu_check)
+  tags: apt
 
 - name: Remove useless packages from the cache
   apt:
     autoclean: yes 
+  when:
+    ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu'
+  tags: apt
 
 - name: Remove dependencies that are no longer required
   apt:
     autoremove: yes
+  when:
+    ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu'
+  tags: apt
