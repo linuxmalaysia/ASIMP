@@ -3,3 +3,4 @@
 upgrade_ubuntu_check: no
 dist_upgrade_ubuntu_check: no
 safe_upgrade_ubuntu_check: yes
+debsums_ubuntu_check: yes

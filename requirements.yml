@@ -1,0 +1,2 @@
+Install influxdata.chrony role from the Ansible Galaxy
+- src: influxdata.chrony

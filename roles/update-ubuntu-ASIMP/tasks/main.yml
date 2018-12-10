@@ -35,6 +35,14 @@
     (safe_upgrade_ubuntu_check is defined and safe_upgrade_ubuntu_check)
   tags: apt
 
+- name: Install the package "debsums" for installed packages verification
+  apt:
+    name: debsums
+  when:
+    (ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu') and
+    (debsums_ubuntu_check is defined and debsums_ubuntu_check)
+  tags: debsums
+
 - name: Remove useless packages from the cache
   apt:
     autoclean: yes 
@@ -48,3 +56,12 @@
   when:
     ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu'
   tags: apt
+
+### debsums check 09122018 debsums-check.yml
+
+- name: debsums | Run debsums check
+  include: debsums-check.yml
+  when:
+    (ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu') and
+    (debsums_ubuntu_check is defined and debsums_ubuntu_check)
+  tags: debsums

@@ -1,6 +1,12 @@
 ---
-- hosts: localhost
+# talk to all hosts just so we can learn about them
+- hosts: all
+  tasks:
+    - group_by:
+        key: os_{{ ansible_distribution }}
+
+- hosts: os_Ubuntu
   gather_facts: true
   roles:
-    - {role: update-ubuntu-ASIMP}
     - {role: lynis-ansible, lynis_use_packages: yes, lynis_audit_system_linux: yes}
+    - {role: update-ubuntu-ASIMP, upgrade_ubuntu_check: yes, dist_upgrade_ubuntu_check: yes}
