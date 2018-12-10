@@ -35,6 +35,12 @@
     (safe_upgrade_ubuntu_check is defined and safe_upgrade_ubuntu_check)
   tags: apt
 
+- name: Download apt-transport-https for apt using https
+  apt: name=apt-transport-https force=yes update_cache=yes
+  when:
+    ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu'
+  tags: apt
+
 - name: Install the package "debsums" for installed packages verification
   apt:
     name: debsums

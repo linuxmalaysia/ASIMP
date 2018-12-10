@@ -8,5 +8,5 @@
 - hosts: os_Ubuntu
   gather_facts: true
   roles:
-    - {role: lynis-ansible, lynis_use_packages: yes, lynis_audit_system_linux: yes}
     - {role: update-ubuntu-ASIMP, upgrade_ubuntu_check: yes, dist_upgrade_ubuntu_check: yes}
+    - {role: lynis-ansible, lynis_use_packages: yes, lynis_audit_system_linux: yes}
