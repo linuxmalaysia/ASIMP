@@ -40,6 +40,7 @@
   when:
     ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu'
   tags: apt
+  ignore_errors: yes
 
 - name: Install the package "debsums" for installed packages verification
   apt:
@@ -48,6 +49,7 @@
     (ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu') and
     (debsums_ubuntu_check is defined and debsums_ubuntu_check)
   tags: debsums
+  ignore_errors: yes
 
 - name: Remove useless packages from the cache
   apt:
