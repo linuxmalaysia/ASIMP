@@ -6,7 +6,17 @@
   when:
     ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu'
   tags: apt
-    
+  async: 361
+  poll: 0
+  register: updaterepo_sleeper
+
+- name: 'Update repositories cache - check on async task'
+  async_status:
+    jid: "{{ updaterepo_sleeper.ansible_job_id }}"
+  register: updaterepo_job_result
+  until: updaterepo_job_result.finished
+  retries: 360
+
 - name: Upgrade all packages to the latest version
   apt:
     name: "*"
@@ -16,6 +26,16 @@
     (ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu') and
     (upgrade_ubuntu_check is defined and upgrade_ubuntu_check)
   tags: apt
+  async: 361
+  poll: 0
+  register: updateapt_sleeper
+
+- name: 'Upgrade all packages - check on async task'
+  async_status:
+    jid: "{{ updateapt_sleeper.ansible_job_id }}"
+  register: updateapt_job_result
+  until: updateapt_job_result.finished
+  retries: 360
 
 - name: Dist Update all packages to the latest version
   apt:
@@ -25,6 +45,16 @@
     (ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu') and
     (dist_upgrade_ubuntu_check is defined and dist_upgrade_ubuntu_check)
   tags: apt
+  async: 361
+  poll: 0
+  register: updateapt2_sleeper
+
+- name: 'Dist Update all packages - check on async task'
+  async_status:
+    jid: "{{ updateapt2_sleeper.ansible_job_id }}"
+  register: updateapt2_job_result
+  until: updateapt2_job_result.finished
+  retries: 360
 
 - name: Safe Update all packages to the latest version
   apt:
@@ -34,6 +64,17 @@
     (ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu') and
     (safe_upgrade_ubuntu_check is defined and safe_upgrade_ubuntu_check)
   tags: apt
+  async: 361
+  poll: 0
+  register: updateapt3_sleeper
+
+- name: 'Safe Update all packages - check on async task'
+  async_status:
+    jid: "{{ updateapt3_sleeper.ansible_job_id }}"
+  register: updateapt3_job_result
+  until: updateapt3_job_result.finished
+  retries: 360
+
 
 - name: Download apt-transport-https for apt using https
   apt: name=apt-transport-https force=yes update_cache=yes
@@ -73,3 +114,14 @@
     (ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu') and
     (debsums_ubuntu_check is defined and debsums_ubuntu_check)
   tags: debsums
+  ignore_errors: yes
+  #  async: 361
+  #  poll: 0
+  #  register: debsums_sleeper
+  #
+  #- name: 'Run debsums check - check on async task'
+  #  async_status:
+  #    jid: "{{ debsums_sleeper.ansible_job_id }}"
+  #  register: debsums_job_result
+  #  until: debsums_job_result.finished
+  #  retries: 360

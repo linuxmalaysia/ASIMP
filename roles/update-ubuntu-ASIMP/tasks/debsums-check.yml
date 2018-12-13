@@ -6,3 +6,13 @@
     (debsums_ubuntu_check is defined and debsums_ubuntu_check)
   tags: debsums
   ignore_errors: yes
+  async: 361
+  poll: 0
+  register: debsums_sleeper
+
+- name: 'Run debsums check - check on async task'
+  async_status:
+    jid: "{{ debsums_sleeper.ansible_job_id }}"
+  register: debsums_job_result
+  until: debsums_job_result.finished
+  retries: 360
