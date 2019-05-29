@@ -7,6 +7,16 @@
 
 - hosts: os_Ubuntu
   gather_facts: true
+  become: yes
+  vars:
+    security_enable_firewalld: no
+    security_rhel7_initialize_aide: yes
+    security_contrib_enabled: yes
+    security_ntp_servers:
+      - ntp1.sirim.my
+      - ntp2.sirim.my
+      - ntp3.sirim.my
   roles:
     - {role: update-ubuntu-ASIMP, upgrade_ubuntu_check: true, dist_upgrade_ubuntu_check: true}
+    - ansible-hardening
     - {role: lynis-ansible, lynis_use_packages: true, lynis_audit_system_linux: true}

@@ -3,3 +3,6 @@
 
 # Install SSH Hardening
 - src: dev-sec.ssh-hardening
+
+# from GitHub OpenStack Ansible Hardening
+- src: git+https://github.com/openstack/ansible-hardening
