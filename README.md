@@ -7,9 +7,11 @@ This is still work in progress
 
 ansible-galaxy install -r requirements.yml
 
+ansible-playbook -b -K play.yml
+
 Roles
 
 - Ubuntu update
 - Lynis audit report
 
-30052019 0611
+21062019 0618
