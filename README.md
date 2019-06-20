@@ -5,9 +5,11 @@ ASIMP (Ansible System Integrity Management Platform)
 
 This is still work in progress
 
+ansible-galaxy install -r requirements.yml
+
 Roles
 
 - Ubuntu update
 - Lynis audit report
 
-09122018 1301
+30052019 0611
