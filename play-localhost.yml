@@ -1,6 +1,7 @@
 ---
 # talk to all hosts just so we can learn about them
 - hosts: localhost
+  connection: local
   tasks:
     - group_by:
         key: os_{{ ansible_distribution }}
@@ -8,6 +9,7 @@
       delegate_to: localhost
 
 - hosts: os_Ubuntu
+  connection: local
   gather_facts: true
   become: yes
   vars:
