@@ -4,6 +4,8 @@
   tasks:
     - group_by:
         key: os_{{ ansible_distribution }}
+    - name: to excute for localhost
+      delegate_to: localhost
 
 - hosts: os_Ubuntu
   gather_facts: true
