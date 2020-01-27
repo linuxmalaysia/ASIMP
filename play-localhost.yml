@@ -11,7 +11,7 @@
 - hosts: os_Ubuntu
   connection: local
   gather_facts: true
-  become: yes
+  ###become: yes
   vars:
     security_enable_firewalld: no
     security_rhel7_initialize_aide: yes
