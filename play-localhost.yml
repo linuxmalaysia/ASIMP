@@ -1,21 +1,19 @@
 ---
 # talk to all hosts just so we can learn about them
-- hosts: localhost
+- hosts: 127.0.0.1
   connection: local
   tasks:
     - group_by:
         key: os_{{ ansible_distribution }}
-    - name: to excute for localhost
-      delegate_to: localhost
 
 - hosts: os_Ubuntu
   connection: local
   gather_facts: true
-  ###become: yes
   vars:
     security_enable_firewalld: no
     security_rhel7_initialize_aide: yes
     security_contrib_enabled: yes
+    security_rhel7_audit_failure_flag: 1
     security_ntp_servers:
       - ntp1.sirim.my
       - ntp2.sirim.my
