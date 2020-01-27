@@ -19,5 +19,5 @@
       - ntp2.sirim.my
   roles:
     - {role: update-ubuntu-ASIMP, upgrade_ubuntu_check: true, dist_upgrade_ubuntu_check: true}
-    - ansible-hardening
+#    - ansible-hardening
     - {role: lynis-ansible, lynis_use_packages: true, lynis_audit_system_linux: true}
