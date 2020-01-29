@@ -18,5 +18,11 @@ Roles
 - Ubuntu update
 - Lynis audit report
 
+Check this https://github.com/ansible-community/ara
+
+Docker for testing ASIMP
+
+https://hub.docker.com/repository/docker/linuxmalaysia/docker-centos-latest-harden/general
+
 27012020 2020
 21062019 0618
