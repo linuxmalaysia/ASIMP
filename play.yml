@@ -19,3 +19,17 @@
     - {role: update-ubuntu-ASIMP, upgrade_ubuntu_check: true, dist_upgrade_ubuntu_check: true}
     - ansible-hardening
     - {role: lynis-ansible, lynis_use_packages: true, lynis_audit_system_linux: true}
+
+- hosts: os_CentOS
+  connection: local
+  gather_facts: true
+  vars:
+    security_enable_firewalld: no
+    security_rhel7_initialize_aide: yes
+    security_contrib_enabled: yes
+    security_rhel7_audit_failure_flag: 1
+    security_ntp_servers:
+      - ntp1.sirim.my
+      - ntp2.sirim.my
+  roles:
+    - ansible-hardening
