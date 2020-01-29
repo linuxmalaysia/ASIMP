@@ -38,5 +38,6 @@
       - ntp2.sirim.my
   roles:
     - dev-sec.ssh-hardening
+#    - { role: influxdata.chrony }
 #    - ansible-hardening
     - {role: linuxmalaysia.lynis_ansible, lynis_use_packages: true, lynis_audit_system_linux: true}
