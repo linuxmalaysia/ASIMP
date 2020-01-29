@@ -39,4 +39,4 @@
   roles:
     - dev-sec.ssh-hardening
 #    - ansible-hardening
-    - {role: lynis-ansible, lynis_use_packages: true, lynis_audit_system_linux: true}
+    - {role: linuxmalaysia.lynis_ansible, lynis_use_packages: true, lynis_audit_system_linux: true}
