@@ -24,5 +24,11 @@ Docker for testing ASIMP
 
 https://hub.docker.com/repository/docker/linuxmalaysia/docker-centos-latest-harden/general
 
+Testing for centos8
+
+cd roles
+
+git clone https://github.com/RedHatOfficial/ansible-role-rhel8-ospp.git
+
 27012020 2020
 21062019 0618
