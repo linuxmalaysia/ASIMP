@@ -3,6 +3,7 @@
   hosts: localhost
   connection: local
   gather_facts: true
+  become: true
   vars:
     security_enable_firewalld: false
     security_rhel7_initialize_aide: true
@@ -25,6 +26,10 @@
         upgrade_ubuntu_check: true
         dist_upgrade_ubuntu_check: true
       when: ansible_distribution == 'Ubuntu' or ansible_os_family == 'Debian'
+
+    - name: Apply OpenStack System Hardening
+      ansible.builtin.include_role:
+        name: ansible-hardening
 
     - name: Apply SSH Hardening
       ansible.builtin.include_role:

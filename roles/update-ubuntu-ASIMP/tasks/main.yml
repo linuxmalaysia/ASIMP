@@ -15,6 +15,7 @@
   register: updaterepo_job_result
   until: updaterepo_job_result.finished
   retries: 360
+  when: ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu'
 
 - name: Upgrade all packages to the latest version
   ansible.builtin.apt:
@@ -36,6 +37,10 @@
   register: updateapt_job_result
   until: updateapt_job_result.finished
   retries: 360
+  when:
+    - (ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu')
+    - upgrade_ubuntu_check is defined
+    - upgrade_ubuntu_check
 
 - name: Dist Upgrade all packages to the latest version
   ansible.builtin.apt:
@@ -56,6 +61,10 @@
   register: updateapt2_job_result
   until: updateapt2_job_result.finished
   retries: 360
+  when:
+    - (ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu')
+    - dist_upgrade_ubuntu_check is defined
+    - dist_upgrade_ubuntu_check
 
 - name: Safe Upgrade all packages to the latest version
   ansible.builtin.apt:
@@ -76,6 +85,10 @@
   register: updateapt3_job_result
   until: updateapt3_job_result.finished
   retries: 360
+  when:
+    - (ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu')
+    - safe_upgrade_ubuntu_check is defined
+    - safe_upgrade_ubuntu_check
 
 - name: Download apt-transport-https for apt using https
   ansible.builtin.apt:

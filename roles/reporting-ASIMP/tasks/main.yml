@@ -11,7 +11,7 @@
     name:
       - openscap-scanner
       - ssg-debian
-      - ssg-ubuntu
+      - ssg-debderived
     state: present
     update_cache: yes
   when: is_ubuntu
@@ -78,15 +78,15 @@
 - name: OpenSCAP | Set datastream and profile facts
   ansible.builtin.set_fact:
     openscap_datastream: >-
-      {% if is_ubuntu %}
+      {%- if is_ubuntu -%}
       /usr/share/xml/scap/ssg/content/ssg-ubuntu{{ ansible_distribution_version | replace('.', '') }}-ds.xml
-      {% elif ansible_distribution | lower == 'rocky' %}
+      {%- elif ansible_distribution | lower == 'rocky' -%}
       /usr/share/xml/scap/ssg/content/ssg-rocky{{ ansible_distribution_major_version }}-ds.xml
-      {% elif ansible_distribution | lower == 'centos' %}
+      {%- elif ansible_distribution | lower == 'centos' -%}
       /usr/share/xml/scap/ssg/content/ssg-centos{{ ansible_distribution_major_version }}-ds.xml
-      {% else %}
+      {%- else -%}
       /usr/share/xml/scap/ssg/content/ssg-rhel{{ ansible_distribution_major_version }}-ds.xml
-      {% endif %}
+      {%- endif -%}
     openscap_profile: "xccdf_org.ssgproject.content_profile_cis_level2_server"
 
 - name: OpenSCAP | Check if resolved datastream file exists
@@ -184,6 +184,7 @@
       ansible.builtin.shell: python3 /usr/local/bin/parse_openscap_score.py /var/log/openscap-after-results.xml
       register: parsed_openscap_after
       changed_when: false
+      failed_when: false
 
     - name: Run Lynis AFTER hardening audit
       ansible.builtin.shell: lynis audit system --quick
@@ -195,6 +196,13 @@
       ansible.builtin.shell: grep -E "^hardening_index=" /var/log/lynis-report.dat | cut -d'=' -f2
       register: parsed_lynis_after
       changed_when: false
+      failed_when: false
+
+    - name: Evaluate audit completion status
+      ansible.builtin.set_fact:
+        openscap_success: "{{ oscap_after_run.rc is defined and parsed_openscap_after.rc == 0 }}"
+        lynis_success: "{{ lynis_after_run.rc is defined and parsed_lynis_after.rc == 0 }}"
+        audits_completed: "{{ oscap_after_run.rc is defined and parsed_openscap_after.rc == 0 and lynis_after_run.rc is defined and parsed_lynis_after.rc == 0 }}"
 
     - name: Display Host-Base Security Hardening Before & After Report
       ansible.builtin.debug:
@@ -211,4 +219,23 @@
           - "  - OpenSCAP Before Report: /var/log/openscap-before-report.html"
           - "  - OpenSCAP After Report:  /var/log/openscap-after-report.html"
           - "========================================================================"
+      when: audits_completed
+
+    - name: Display audit failure or incomplete status
+      ansible.builtin.debug:
+        msg:
+          - "========================================================================"
+          - "           ASIMP SECURITY HARDENING REPORT - INCOMPLETE                 "
+          - "========================================================================"
+          - "One or more audits failed to complete successfully:"
+          - "  - OpenSCAP status: {{ 'FAILED' if not openscap_success else 'OK' }} (rc={{ oscap_after_run.rc | default('N/A') }}, parse_rc={{ parsed_openscap_after.rc | default('N/A') }})"
+          - "  - Lynis status: {{ 'FAILED' if not lynis_success else 'OK' }} (rc={{ lynis_after_run.rc | default('N/A') }}, parse_rc={{ parsed_lynis_after.rc | default('N/A') }})"
+          - "========================================================================"
+          - "Available partial data:"
+          - "  - Lynis Before: {{ baseline.lynis_before | default('N/A') }}"
+          - "  - Lynis After: {{ parsed_lynis_after.stdout | default('N/A') | trim }}"
+          - "  - OpenSCAP Before: {{ baseline.openscap_before | default('N/A') }}%"
+          - "  - OpenSCAP After: {{ parsed_openscap_after.stdout | default('N/A') | trim }}%"
+          - "========================================================================"
+      when: not audits_completed
   when: reporting_phase == 'after'
