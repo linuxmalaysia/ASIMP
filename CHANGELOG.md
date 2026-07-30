@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed host detection logic to correctly identify RHEL, Rocky Linux, and Debian variants and apply matching configuration files and datastreams dynamically.
-- Gracefully handled environments where OpenSCAP packages or datastreams are missing by falling back to any available baseline/profile profiles.
+- Gracefully handled environments where OpenSCAP packages or datastreams are missing (scans are considered unsupported if no OS-version-compatible datastream is available).
 
 ---
 

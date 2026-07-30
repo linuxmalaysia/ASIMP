@@ -8,10 +8,10 @@ This guide covers common issues, warning states, and standard troubleshooting st
 
 ### Problem: Dynamic DataStream Not Found
 * **Symptom**: On specialized, custom, or newer Linux distributions, OpenSCAP might fail to find the exact version-matched XML DataStream (e.g. `ssg-ubuntu2404-ds.xml` on a beta release).
-* **ASIMP Mitigation**: The `reporting-ASIMP` role implements an automated fallback mechanism:
+* **ASIMP Mitigation**: The `reporting-ASIMP` role dynamically resolves OS-version-specific datastreams:
   1. It performs an `ansible.builtin.find` search in the standard directory `/usr/share/xml/scap/ssg/content/`.
-  2. If the dynamic version-matched datastream is missing, it selects the **first available** `.xml` datastream found in the directory.
-  3. If no datastreams are present, it falls back to a generic profile `xccdf_org.ssgproject.content_profile_cis`.
+  2. It constructs the appropriate datastream path based on detected OS distribution and version.
+  3. If no OS-version-compatible datastream is found, the scan is considered unsupported for that platform (the role should not proceed with an arbitrary or incompatible datastream file).
 
 ### Verification Steps:
 Check if the SCAP files exist on your machine:
@@ -44,6 +44,6 @@ ansible-playbook -b -K play.yml
 ```
 For localhost operations:
 ```bash
-ansible-playbook --connection=local play-localhost.yml
+ansible-playbook --connection=local -b -K play-localhost.yml
 ```
-(Make sure your current user has sudo capabilities.)
+(The playbook requires privilege escalation. Make sure your current user has sudo capabilities.)
