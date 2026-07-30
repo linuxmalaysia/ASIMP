@@ -94,7 +94,7 @@ To audit and harden the machine you are currently logged into:
 source /tmp/venv/bin/activate
 
 # Execute the local playbook (requires sudo/become)
-ansible-playbook --connection=local play-localhost.yml
+ansible-playbook --connection=local -b -K play-localhost.yml
 ```
 
 ### Option B: Remote Inventory Hardening
@@ -102,7 +102,7 @@ To secure and audit remote systems:
 
 ```bash
 # Run against all hosts in your inventory (specify -i your_inventory_file)
-ansible-playbook -b -K play.yml
+ansible-playbook -i your_inventory_file -b -K play.yml
 ```
 
 ---

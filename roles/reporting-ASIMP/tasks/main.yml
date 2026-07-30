@@ -94,18 +94,14 @@
     path: "{{ openscap_datastream }}"
   register: ds_file_stat
 
-- name: OpenSCAP | Fallback to any available datastream file if default is not found
+- name: OpenSCAP | Mark scan as supported if OS-version-compatible datastream exists
   ansible.builtin.set_fact:
-    openscap_datastream: "{{ ssg_files.files[0].path }}"
-  when:
-    - not ds_file_stat.stat.exists
-    - ssg_files.files is defined
-    - ssg_files.files | length > 0
+    openscap_scan_supported: "{{ ds_file_stat.stat.exists }}"
 
-- name: OpenSCAP | Fallback profile if CIS Level 2 is not available
-  ansible.builtin.set_fact:
-    openscap_profile: "xccdf_org.ssgproject.content_profile_cis"
-  when: ssg_files.files is not defined or ssg_files.files | length == 0
+- name: OpenSCAP | Display warning if no compatible datastream found
+  ansible.builtin.debug:
+    msg: "WARNING: No OS-version-compatible OpenSCAP datastream found for this platform. OpenSCAP scanning will be skipped."
+  when: not openscap_scan_supported
 
 - name: Ensure lynis is installed
   ansible.builtin.package:
@@ -128,11 +124,13 @@
       register: oscap_before_run
       failed_when: false
       changed_when: true
+      when: openscap_scan_supported | default(true)
 
     - name: Parse OpenSCAP BEFORE compliance score
       ansible.builtin.shell: python3 /usr/local/bin/parse_openscap_score.py /var/log/openscap-before-results.xml
       register: parsed_openscap_before
       changed_when: false
+      when: openscap_scan_supported | default(true)
 
     - name: Run Lynis BEFORE hardening audit
       ansible.builtin.shell: lynis audit system --quick
@@ -179,12 +177,14 @@
       register: oscap_after_run
       failed_when: false
       changed_when: true
+      when: openscap_scan_supported | default(true)
 
     - name: Parse OpenSCAP AFTER compliance score
       ansible.builtin.shell: python3 /usr/local/bin/parse_openscap_score.py /var/log/openscap-after-results.xml
       register: parsed_openscap_after
       changed_when: false
       failed_when: false
+      when: openscap_scan_supported | default(true)
 
     - name: Run Lynis AFTER hardening audit
       ansible.builtin.shell: lynis audit system --quick

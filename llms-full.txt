@@ -74,6 +74,6 @@ ASIMP processes tasks in three distinct sequential phases:
 
 ## 🛠️ Fault Tolerance and Fallbacks
 
-1. **SCAP DataStream Resolution**: If dynamic detection fails to find the versioned datastream for the running OS, the reporting role conducts an directory-wide find query. If any valid `.xml` files are found under `/usr/share/xml/scap/ssg/content/`, the first matches are used. Otherwise, it gracefully falls back to the generic `xccdf_org.ssgproject.content_profile_cis` profile.
+1. **SCAP DataStream Resolution**: The reporting role dynamically constructs OS-version-specific datastream paths based on detected distribution and version. Only OS-version-compatible datastreams are selected. If no compatible datastream is found for the running OS, the scan is considered unsupported for that platform.
 2. **Missing Auditing Tools**: If OpenSCAP or Lynis execution fails, or the target platform fails to build reports, the playbook proceeds gracefully rather than raising hard-stops, displaying an "Incomplete Report" notice in the console highlighting missing logs.
 3. **Execution Timeouts**: Heavy scans are designed asynchronously using custom Ansible sleep/poll timers (`async: 361`, `poll: 0` followed by `async_status` monitoring) to bypass standard command timeouts.
