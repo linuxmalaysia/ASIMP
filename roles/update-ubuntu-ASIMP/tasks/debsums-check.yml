@@ -1,17 +1,18 @@
 ---
 - name: Run debsums check
-  shell: debsums -c 1> /var/log/debsums.output 2> /var/log/debsums.err
+  ansible.builtin.shell: debsums -c 1> /var/log/debsums.output 2> /var/log/debsums.err
   when:
-    (ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu') and
-    (debsums_ubuntu_check is defined and debsums_ubuntu_check)
+    - (ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu')
+    - debsums_ubuntu_check is defined
+    - debsums_ubuntu_check
   tags: debsums
-  ignore_errors: yes
+  ignore_errors: true
   async: 361
   poll: 0
   register: debsums_sleeper
 
-- name: 'Run debsums check - check on async task'
-  async_status:
+- name: Run debsums check - check on async task
+  ansible.builtin.async_status:
     jid: "{{ debsums_sleeper.ansible_job_id }}"
   register: debsums_job_result
   until: debsums_job_result.finished

@@ -1,1 +1,15 @@
 #### ASIMP
+venv/
+.venv/
+*.pyc
+__pycache__/
+*.log
+*.retry
+.ansible/
+roles/common_roles/
+
+# Ignore all roles in roles/ except our custom roles and submodules
+roles/*
+!roles/reporting-ASIMP/
+!roles/update-ubuntu-ASIMP/
+!roles/lynis-ansible/
