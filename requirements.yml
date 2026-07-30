@@ -1,11 +1,15 @@
 # Install influxdata.chrony role from the Ansible Galaxy
 - src: influxdata.chrony
+  version: "1.3.0"
 
 # Install SSH Hardening
 - src: dev-sec.ssh-hardening
+  version: "9.7.0"
 
 # Install SSH Hardening
 - src: linuxmalaysia.lynis_ansible
+  version: "master"
 
 # from GitHub OpenStack Ansible Hardening
 - src: git+https://github.com/openstack/ansible-hardening
+  version: "master"

@@ -1,2 +1,241 @@
 ---
 # tasks file for reporting-ASIMP
+
+- name: OS Detection and Configuration Setup
+  ansible.builtin.set_fact:
+    is_ubuntu: "{{ ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu' }}"
+    is_rhel: "{{ ansible_os_family == 'CentOS' or ansible_os_family == 'RedHat' or ansible_os_family == 'Rocky' }}"
+
+- name: OpenSCAP | Install Packages (Ubuntu)
+  ansible.builtin.apt:
+    name:
+      - openscap-scanner
+      - ssg-debian
+      - ssg-debderived
+    state: present
+    update_cache: yes
+  when: is_ubuntu
+  ignore_errors: yes
+
+- name: OpenSCAP | Install Packages (RHEL/CentOS/Rocky)
+  ansible.builtin.dnf:
+    name:
+      - openscap-scanner
+      - scap-security-guide
+    state: present
+  when: is_rhel
+  ignore_errors: yes
+
+- name: Create OpenSCAP score parser helper script
+  ansible.builtin.copy:
+    dest: /usr/local/bin/parse_openscap_score.py
+    mode: '0755'
+    content: |
+      #!/usr/bin/env python3
+      import sys
+      import xml.etree.ElementTree as ET
+
+      def get_score(xml_path):
+          try:
+              tree = ET.parse(xml_path)
+              root = tree.getroot()
+              ns = {
+                  'xccdf12': 'http://checklists.nist.gov/xccdf/1.2',
+                  'xccdf11': 'http://checklists.nist.gov/xccdf/1.1'
+              }
+              score_elem = root.find('.//xccdf12:score', ns)
+              if score_elem is not None:
+                  return float(score_elem.text)
+              score_elem = root.find('.//xccdf11:score', ns)
+              if score_elem is not None:
+                  return float(score_elem.text)
+
+              results_12 = [elem.text for elem in root.findall('.//xccdf12:result', ns)]
+              results_11 = [elem.text for elem in root.findall('.//xccdf11:result', ns)]
+              results = results_12 if results_12 else results_11
+              if results:
+                  passed = results.count('pass')
+                  failed = results.count('fail')
+                  total = passed + failed
+                  return (passed / total * 100) if total > 0 else 0.0
+          except Exception as e:
+              sys.stderr.write(f"Error: {e}\n")
+          return 0.0
+
+      if __name__ == '__main__':
+          if len(sys.argv) < 2:
+              print("0.0")
+              sys.exit(1)
+          print(round(get_score(sys.argv[1]), 2))
+
+- name: OpenSCAP | Find SCAP Security Guide datastreams
+  ansible.builtin.find:
+    paths: /usr/share/xml/scap/ssg/content/
+    patterns: "*ds.xml"
+  register: ssg_files
+  ignore_errors: yes
+
+- name: OpenSCAP | Set datastream and profile facts
+  ansible.builtin.set_fact:
+    openscap_datastream: >-
+      {%- if is_ubuntu -%}
+      /usr/share/xml/scap/ssg/content/ssg-ubuntu{{ ansible_distribution_version | replace('.', '') }}-ds.xml
+      {%- elif ansible_distribution | lower == 'rocky' -%}
+      /usr/share/xml/scap/ssg/content/ssg-rocky{{ ansible_distribution_major_version }}-ds.xml
+      {%- elif ansible_distribution | lower == 'centos' -%}
+      /usr/share/xml/scap/ssg/content/ssg-centos{{ ansible_distribution_major_version }}-ds.xml
+      {%- else -%}
+      /usr/share/xml/scap/ssg/content/ssg-rhel{{ ansible_distribution_major_version }}-ds.xml
+      {%- endif -%}
+    openscap_profile: "xccdf_org.ssgproject.content_profile_cis_level2_server"
+
+- name: OpenSCAP | Check if resolved datastream file exists
+  ansible.builtin.stat:
+    path: "{{ openscap_datastream }}"
+  register: ds_file_stat
+
+- name: OpenSCAP | Fallback to any available datastream file if default is not found
+  ansible.builtin.set_fact:
+    openscap_datastream: "{{ ssg_files.files[0].path }}"
+  when:
+    - not ds_file_stat.stat.exists
+    - ssg_files.files is defined
+    - ssg_files.files | length > 0
+
+- name: OpenSCAP | Fallback profile if CIS Level 2 is not available
+  ansible.builtin.set_fact:
+    openscap_profile: "xccdf_org.ssgproject.content_profile_cis"
+  when: ssg_files.files is not defined or ssg_files.files | length == 0
+
+- name: Ensure lynis is installed
+  ansible.builtin.package:
+    name: lynis
+    state: present
+  ignore_errors: yes
+
+# ==============================================================================
+# BEFORE HARDENING PHASE
+# ==============================================================================
+- name: Run BEFORE hardening evaluation
+  block:
+    - name: Run OpenSCAP BEFORE hardening scan
+      ansible.builtin.shell: >
+        oscap xccdf eval
+        --profile {{ openscap_profile }}
+        --results /var/log/openscap-before-results.xml
+        --report /var/log/openscap-before-report.html
+        {{ openscap_datastream }}
+      register: oscap_before_run
+      failed_when: false
+      changed_when: true
+
+    - name: Parse OpenSCAP BEFORE compliance score
+      ansible.builtin.shell: python3 /usr/local/bin/parse_openscap_score.py /var/log/openscap-before-results.xml
+      register: parsed_openscap_before
+      changed_when: false
+
+    - name: Run Lynis BEFORE hardening audit
+      ansible.builtin.shell: lynis audit system --quick
+      register: lynis_before_run
+      failed_when: false
+      changed_when: true
+
+    - name: Parse Lynis BEFORE hardening index
+      ansible.builtin.shell: grep -E "^hardening_index=" /var/log/lynis-report.dat | cut -d'=' -f2
+      register: parsed_lynis_before
+      changed_when: false
+
+    - name: Save baseline scores to file
+      ansible.builtin.copy:
+        dest: /var/log/asimp-baseline-scores.json
+        content: >
+          {
+            "openscap_before": "{{ parsed_openscap_before.stdout | default('0.0') | trim }}",
+            "lynis_before": "{{ parsed_lynis_before.stdout | default('0') | trim }}"
+          }
+  when: reporting_phase == 'before'
+
+# ==============================================================================
+# AFTER HARDENING PHASE
+# ==============================================================================
+- name: Run AFTER hardening evaluation
+  block:
+    - name: Read baseline scores from file
+      ansible.builtin.slurp:
+        src: /var/log/asimp-baseline-scores.json
+      register: baseline_scores_raw
+
+    - name: Parse baseline scores
+      ansible.builtin.set_fact:
+        baseline: "{{ baseline_scores_raw.content | b64decode | from_json }}"
+
+    - name: Run OpenSCAP AFTER hardening scan
+      ansible.builtin.shell: >
+        oscap xccdf eval
+        --profile {{ openscap_profile }}
+        --results /var/log/openscap-after-results.xml
+        --report /var/log/openscap-after-report.html
+        {{ openscap_datastream }}
+      register: oscap_after_run
+      failed_when: false
+      changed_when: true
+
+    - name: Parse OpenSCAP AFTER compliance score
+      ansible.builtin.shell: python3 /usr/local/bin/parse_openscap_score.py /var/log/openscap-after-results.xml
+      register: parsed_openscap_after
+      changed_when: false
+      failed_when: false
+
+    - name: Run Lynis AFTER hardening audit
+      ansible.builtin.shell: lynis audit system --quick
+      register: lynis_after_run
+      failed_when: false
+      changed_when: true
+
+    - name: Parse Lynis AFTER hardening index
+      ansible.builtin.shell: grep -E "^hardening_index=" /var/log/lynis-report.dat | cut -d'=' -f2
+      register: parsed_lynis_after
+      changed_when: false
+      failed_when: false
+
+    - name: Evaluate audit completion status
+      ansible.builtin.set_fact:
+        openscap_success: "{{ oscap_after_run.rc is defined and parsed_openscap_after.rc == 0 }}"
+        lynis_success: "{{ lynis_after_run.rc is defined and parsed_lynis_after.rc == 0 }}"
+        audits_completed: "{{ oscap_after_run.rc is defined and parsed_openscap_after.rc == 0 and lynis_after_run.rc is defined and parsed_lynis_after.rc == 0 }}"
+
+    - name: Display Host-Base Security Hardening Before & After Report
+      ansible.builtin.debug:
+        msg:
+          - "========================================================================"
+          - "                 ASIMP SECURITY HARDENING REPORT                        "
+          - "========================================================================"
+          - "Tool       | Baseline (Min) | Before Hardening | After Hardening | Target"
+          - "------------------------------------------------------------------------"
+          - "Lynis HI   | 75             | {{ baseline.lynis_before }}               | {{ parsed_lynis_after.stdout | trim }}               | 85+"
+          - "OpenSCAP % | 75.0%          | {{ baseline.openscap_before }}%            | {{ parsed_openscap_after.stdout | trim }}%            | 90%+"
+          - "========================================================================"
+          - "Reports generated successfully:"
+          - "  - OpenSCAP Before Report: /var/log/openscap-before-report.html"
+          - "  - OpenSCAP After Report:  /var/log/openscap-after-report.html"
+          - "========================================================================"
+      when: audits_completed
+
+    - name: Display audit failure or incomplete status
+      ansible.builtin.debug:
+        msg:
+          - "========================================================================"
+          - "           ASIMP SECURITY HARDENING REPORT - INCOMPLETE                 "
+          - "========================================================================"
+          - "One or more audits failed to complete successfully:"
+          - "  - OpenSCAP status: {{ 'FAILED' if not openscap_success else 'OK' }} (rc={{ oscap_after_run.rc | default('N/A') }}, parse_rc={{ parsed_openscap_after.rc | default('N/A') }})"
+          - "  - Lynis status: {{ 'FAILED' if not lynis_success else 'OK' }} (rc={{ lynis_after_run.rc | default('N/A') }}, parse_rc={{ parsed_lynis_after.rc | default('N/A') }})"
+          - "========================================================================"
+          - "Available partial data:"
+          - "  - Lynis Before: {{ baseline.lynis_before | default('N/A') }}"
+          - "  - Lynis After: {{ parsed_lynis_after.stdout | default('N/A') | trim }}"
+          - "  - OpenSCAP Before: {{ baseline.openscap_before | default('N/A') }}%"
+          - "  - OpenSCAP After: {{ parsed_openscap_after.stdout | default('N/A') | trim }}%"
+          - "========================================================================"
+      when: not audits_completed
+  when: reporting_phase == 'after'

@@ -1,43 +1,49 @@
 ---
-# https://docs.ansible.com/ansible/latest/user_guide/playbooks_conditionals.html#ansible-facts-distribution
-# talk to all hosts just so we can learn about them
-- hosts: 127.0.0.1
+- name: Run localhost ASIMP Security Hardening and Audits
+  hosts: localhost
   connection: local
+  gather_facts: true
+  become: true
+  vars:
+    security_enable_firewalld: false
+    security_rhel7_initialize_aide: true
+    security_contrib_enabled: true
+    security_rhel7_audit_failure_flag: 1
+    security_ntp_servers:
+      - ntp1.sirim.my
+      - ntp2.sirim.my
   tasks:
-    - group_by:
-        key: os_{{ ansible_distribution }}
+    - name: Run BEFORE Hardening Audits (OpenSCAP & Lynis)
+      ansible.builtin.include_role:
+        name: reporting-ASIMP
+      vars:
+        reporting_phase: before
 
-- hosts: os_Ubuntu
-  connection: local
-  gather_facts: true
-  vars:
-    security_enable_firewalld: no
-    security_rhel7_initialize_aide: yes
-    security_contrib_enabled: yes
-    security_rhel7_audit_failure_flag: 1
-    security_ntp_servers:
-      - ntp1.sirim.my
-      - ntp2.sirim.my
-  roles:
-    - {role: update-ubuntu-ASIMP, upgrade_ubuntu_check: true, dist_upgrade_ubuntu_check: true}
-    - dev-sec.ssh-hardening
-#    - ansible-hardening
-    - {role: lynis-ansible, lynis_use_packages: true, lynis_audit_system_linux: true}
+    - name: Apply Ubuntu Update Hardening
+      ansible.builtin.include_role:
+        name: update-ubuntu-ASIMP
+      vars:
+        upgrade_ubuntu_check: true
+        dist_upgrade_ubuntu_check: true
+      when: ansible_distribution == 'Ubuntu' or ansible_os_family == 'Debian'
 
-- hosts: os_CentOS
-  connection: local
-  become: yes
-  gather_facts: true
-  vars:
-    security_enable_firewalld: no
-    security_rhel7_initialize_aide: yes
-    security_contrib_enabled: yes
-    security_rhel7_audit_failure_flag: 1
-    security_ntp_servers:
-      - ntp1.sirim.my
-      - ntp2.sirim.my
-  roles:
-    - dev-sec.ssh-hardening
-#    - { role: influxdata.chrony }
-#    - ansible-hardening
-    - {role: linuxmalaysia.lynis_ansible, lynis_use_packages: true, lynis_audit_system_linux: true}
+    - name: Apply OpenStack System Hardening
+      ansible.builtin.include_role:
+        name: ansible-hardening
+
+    - name: Apply SSH Hardening
+      ansible.builtin.include_role:
+        name: dev-sec.ssh-hardening
+
+    - name: Apply Lynis Hardening Configuration
+      ansible.builtin.include_role:
+        name: lynis-ansible
+      vars:
+        lynis_use_packages: true
+        lynis_audit_system_linux: true
+
+    - name: Run AFTER Hardening Audits (OpenSCAP & Lynis)
+      ansible.builtin.include_role:
+        name: reporting-ASIMP
+      vars:
+        reporting_phase: after
