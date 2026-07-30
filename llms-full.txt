@@ -1,0 +1,79 @@
+# ASIMP (Ansible System Integrity Management Platform) - Full Documentation Compilation
+
+This document contains a comprehensive consolidation of all architectural, operational, configuration, and troubleshooting information for ASIMP. It is optimized for ingest by LLMs, semantic parsers, and AI developers.
+
+---
+
+## 🧭 Project Overview & Purpose
+
+ASIMP (Ansible System Integrity Management Platform) is a secure, host-based platform that automates security hardening, OS configuration compliance, and continuous auditing.
+
+ASIMP implements a strict **"Measure, Harden, Re-Measure"** methodology. Rather than running blind configuration management, it measures compliance against trusted security benchmarks (CIS Level 2 via OpenSCAP and configuration metrics via Lynis) immediately before and after changes are applied, outputting an instant comparison report.
+
+---
+
+## 🏗️ Architecture & Operational Pipeline
+
+ASIMP processes tasks in three distinct sequential phases:
+
+### Phase 1: Baseline Auditing
+1. Detects operating system characteristics.
+2. Automatically resolves correct Security Content Automation Protocol (SCAP) XML DataStream definitions.
+3. Performs a pre-hardening audit using OpenSCAP and Lynis.
+4. Extends metrics parsing using a custom Python XML parser script `/usr/local/bin/parse_openscap_score.py` to extract percentage compliance.
+5. Saves baseline results to a localized file: `/var/log/asimp-baseline-scores.json`.
+
+### Phase 2: System Hardening
+1. Safe upgrades are applied to operating system repositories.
+2. On Debian/Ubuntu systems, `debsums` is installed, and a package-level MD5 integrity scan is launched in an asynchronous, non-blocking process.
+3. System integrity policies are applied using OpenStack Ansible Hardening standards.
+4. Fine-grained SSH configuration rules are enforced via Dev-Sec SSH configurations.
+5. Lynis audit configurations are applied to correct known vulnerabilities.
+
+### Phase 3: Post-Hardening Audit and Comparative Scoring
+1. Executes second-pass scans for OpenSCAP and Lynis.
+2. Extracts and deserializes pre-hardening baseline metrics from `/var/log/asimp-baseline-scores.json`.
+3. Runs the post-hardening results through `/usr/local/bin/parse_openscap_score.py`.
+4. Outputs a comparative console table showing:
+   - Baseline minimum score thresholds.
+   - Pre-hardening scores.
+   - Post-hardening scores.
+   - Target goal margins (85+ for Lynis, 90%+ for OpenSCAP).
+5. Generates comprehensive HTML reports under `/var/log/openscap-before-report.html` and `/var/log/openscap-after-report.html`.
+
+---
+
+## 📂 Repository Layout and Core Roles
+
+- `play.yml`: Main playbook for remote target inventories.
+- `play-localhost.yml`: Main playbook designed for self-contained localhost hardening.
+- `requirements.yml`: Declaration of external Ansible Galaxy roles.
+- `requirements.txt`: Python development dependencies.
+- `ansible.cfg`: Settings for roles paths, SSH pipelining, and host checking.
+- `roles/reporting-ASIMP`: Houses baseline generation, parsing scripts, and dual-engine reporting.
+- `roles/update-ubuntu-ASIMP`: Packages upgrades, cleaning, and asynchronous `debsums` file scans.
+- `roles/lynis-ansible`: Orchestrates local Lynis parameters.
+
+---
+
+## ⚙️ Configuration Parameters and Customization
+
+### Global System Variables
+- `security_enable_firewalld` (default: `false`): Enables or disables firewalld daemon.
+- `security_rhel7_initialize_aide` (default: `true`): Installs and initializes Advanced Intrusion Detection Environment (AIDE) databases.
+- `security_contrib_enabled` (default: `true`): Controls community component execution.
+- `security_ntp_servers` (default: sirim.my NTP addresses): Standardizes time synchronization servers.
+
+### Debian/Ubuntu Security and Package Variables
+- `upgrade_ubuntu_check` (default: `no`): Executes full package upgrades on Debian/Ubuntu systems.
+- `dist_upgrade_ubuntu_check` (default: `no`): Executes dist upgrades.
+- `safe_upgrade_ubuntu_check` (default: `yes`): Applies safe upgrades to dependencies.
+- `debsums_ubuntu_check` (default: `yes`): Runs background hashing of all installed package files.
+
+---
+
+## 🛠️ Fault Tolerance and Fallbacks
+
+1. **SCAP DataStream Resolution**: If dynamic detection fails to find the versioned datastream for the running OS, the reporting role conducts an directory-wide find query. If any valid `.xml` files are found under `/usr/share/xml/scap/ssg/content/`, the first matches are used. Otherwise, it gracefully falls back to the generic `xccdf_org.ssgproject.content_profile_cis` profile.
+2. **Missing Auditing Tools**: If OpenSCAP or Lynis execution fails, or the target platform fails to build reports, the playbook proceeds gracefully rather than raising hard-stops, displaying an "Incomplete Report" notice in the console highlighting missing logs.
+3. **Execution Timeouts**: Heavy scans are designed asynchronously using custom Ansible sleep/poll timers (`async: 361`, `poll: 0` followed by `async_status` monitoring) to bypass standard command timeouts.

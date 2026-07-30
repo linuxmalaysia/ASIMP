@@ -1,0 +1,32 @@
+# ASIMP (Ansible System Integrity Management Platform)
+
+ASIMP is a host-based, automated security hardening, compliance, and auditing platform powered by Ansible. It implements a dual-engine (OpenSCAP CIS Level 2 and Lynis) "Measure, Harden, Re-Measure" pipeline.
+
+## Metadata
+- **Language**: Python (Ansible), Shell
+- **Keywords**: security, hardening, auditing, openscap, lynis, compliance, CIS, debsums, ansible
+- **Primary OS Targets**: Ubuntu, Debian, RedHat (RHEL), CentOS, Rocky Linux
+
+## Key Information
+
+### 🧭 Dual-Engine Audit Pipeline
+ASIMP performs dynamic auditing before and after configurations are modified. It uses:
+- **OpenSCAP**: Automatically discovers and runs scans using the `xccdf_org.ssgproject.content_profile_cis_level2_server` (CIS Level 2) profile.
+- **Lynis**: Performs localized configuration audits and tracks hardening progress using the `hardening_index` metric.
+
+### 📦 Key Roles
+- `reporting-ASIMP`: Manages the dual-engine baseline creation, comparative analysis, and generates html reports under `/var/log/openscap-*.html`.
+- `update-ubuntu-ASIMP`: Standardizes OS updates and runs asynchronous filesystem checks with `debsums`.
+- `lynis-ansible`: Configures Lynis scan directives.
+
+## Playbooks
+- `play.yml`: Execution across remote multi-node inventory hosts.
+- `play-localhost.yml`: Self-hardening of the localhost node.
+
+## Navigation & Links
+- [History & Design Philosophy](HISTORY.md)
+- [Changelog](CHANGELOG.md)
+- [Architecture & Workflow Docs](docs/architecture.md)
+- [Configuration & Variables](docs/configuration.md)
+- [Troubleshooting & Fallbacks](docs/troubleshooting.md)
+- [Complete Information Compilation](llms-full.txt)
