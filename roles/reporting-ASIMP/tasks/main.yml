@@ -200,9 +200,9 @@
 
     - name: Evaluate audit completion status
       ansible.builtin.set_fact:
-        openscap_success: "{{ oscap_after_run.rc is defined and parsed_openscap_after.rc == 0 }}"
+        openscap_success: "{{ (not openscap_scan_supported) or (oscap_after_run.rc is defined and parsed_openscap_after.rc == 0) }}"
         lynis_success: "{{ lynis_after_run.rc is defined and parsed_lynis_after.rc == 0 }}"
-        audits_completed: "{{ oscap_after_run.rc is defined and parsed_openscap_after.rc == 0 and lynis_after_run.rc is defined and parsed_lynis_after.rc == 0 }}"
+        audits_completed: "{{ openscap_success and lynis_success }}"
 
     - name: Display Host-Base Security Hardening Before & After Report
       ansible.builtin.debug:
@@ -213,11 +213,12 @@
           - "Tool       | Baseline (Min) | Before Hardening | After Hardening | Target"
           - "------------------------------------------------------------------------"
           - "Lynis HI   | 75             | {{ baseline.lynis_before }}               | {{ parsed_lynis_after.stdout | trim }}               | 85+"
-          - "OpenSCAP % | 75.0%          | {{ baseline.openscap_before }}%            | {{ parsed_openscap_after.stdout | trim }}%            | 90%+"
+          - "OpenSCAP % | 75.0%          | {{ baseline.openscap_before if openscap_scan_supported else 'N/A' }}            | {{ parsed_openscap_after.stdout | default('N/A') | trim }}            | 90%+"
           - "========================================================================"
           - "Reports generated successfully:"
-          - "  - OpenSCAP Before Report: /var/log/openscap-before-report.html"
-          - "  - OpenSCAP After Report:  /var/log/openscap-after-report.html"
+          - "{% if openscap_scan_supported %}  - OpenSCAP Before Report: /var/log/openscap-before-report.html{% endif %}"
+          - "{% if openscap_scan_supported %}  - OpenSCAP After Report:  /var/log/openscap-after-report.html{% endif %}"
+          - "{% if not openscap_scan_supported %}  - OpenSCAP: Not supported on this platform (no compatible datastream){% endif %}"
           - "========================================================================"
       when: audits_completed
 
@@ -228,14 +229,14 @@
           - "           ASIMP SECURITY HARDENING REPORT - INCOMPLETE                 "
           - "========================================================================"
           - "One or more audits failed to complete successfully:"
-          - "  - OpenSCAP status: {{ 'FAILED' if not openscap_success else 'OK' }} (rc={{ oscap_after_run.rc | default('N/A') }}, parse_rc={{ parsed_openscap_after.rc | default('N/A') }})"
+          - "  - OpenSCAP status: {{ 'N/A (unsupported)' if not openscap_scan_supported else ('FAILED' if not openscap_success else 'OK') }} (rc={{ oscap_after_run.rc | default('N/A') }}, parse_rc={{ parsed_openscap_after.rc | default('N/A') }})"
           - "  - Lynis status: {{ 'FAILED' if not lynis_success else 'OK' }} (rc={{ lynis_after_run.rc | default('N/A') }}, parse_rc={{ parsed_lynis_after.rc | default('N/A') }})"
           - "========================================================================"
           - "Available partial data:"
           - "  - Lynis Before: {{ baseline.lynis_before | default('N/A') }}"
           - "  - Lynis After: {{ parsed_lynis_after.stdout | default('N/A') | trim }}"
-          - "  - OpenSCAP Before: {{ baseline.openscap_before | default('N/A') }}%"
-          - "  - OpenSCAP After: {{ parsed_openscap_after.stdout | default('N/A') | trim }}%"
+          - "  - OpenSCAP Before: {{ baseline.openscap_before | default('N/A') if openscap_scan_supported else 'N/A' }}"
+          - "  - OpenSCAP After: {{ parsed_openscap_after.stdout | default('N/A') | trim if openscap_scan_supported else 'N/A' }}"
           - "========================================================================"
       when: not audits_completed
   when: reporting_phase == 'after'
