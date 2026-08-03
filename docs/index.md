@@ -1,0 +1,59 @@
+---
+layout: default
+title: "About ASIMP & Documentation"
+---
+
+# About ASIMP (Ansible System Integrity Management Platform)
+
+Welcome to the official documentation and info portal for **ASIMP**.
+
+**ASIMP** is an automated, host-based security hardening, compliance auditing, and integrity monitoring framework. Powered entirely by Ansible, ASIMP is designed to secure modern enterprise Linux environments against standard security baselines.
+
+The platform implements a strict **"Measure, Harden, Re-Measure"** paradigm, offering instant visibility into system compliance posture before and after security configurations are applied.
+
+---
+
+## 🚀 Key Security Pillars
+
+1. **Dual-Engine Security Auditing**:
+   - **OpenSCAP**: Scans systems against the CIS (Center for Internet Security) Level 2 Security Profile.
+   - **Lynis**: Performs a thorough check of system settings, kernel parameters, file permissions, and vulnerable endpoints.
+
+2. **Standardized OS Hardening**:
+   - Integrates secure default baselines using OpenStack's `ansible-hardening` recommendations.
+   - Applies robust, production-grade SSH security using Dev-Sec's SSH-hardening suite.
+
+3. **Integrity Validation with `debsums`**:
+   - Verifies system files and packages against secure, original cryptographic hashes to detect modifications, corruption, or tampering.
+
+4. **Self-Observing Comparative Scorecard**:
+   - Automatically computes exact "before" vs. "after" audit scores and saves details locally, outputting a clear visual comparison directly to the console or log files.
+
+---
+
+## 📁 Technical Documentation Index
+
+Explore the different sections of our system design, setup guides, and troubleshooting:
+
+- **[Architecture & Design](architecture.html)**: Learn about the internal components, dual auditing flow, three-phase security pipeline, and our package integrity monitoring engines.
+- **[Configuration & Variables](configuration.html)**: Discover customizable variables for our roles (`reporting-ASIMP`, `update-ubuntu-ASIMP`, `lynis-ansible`) and sample inventories.
+- **[Troubleshooting & Fallbacks](troubleshooting.html)**: Read detailed instructions on addressing DataStream resolution errors, connection elevation failures, and timeout behaviors.
+
+---
+
+## 💻 Fast Setup & Playbook Execution
+
+Get started with ASIMP inside a Python virtual environment:
+
+```bash
+# Setup Virtual Environment
+python3 -m venv /tmp/venv
+source /tmp/venv/bin/activate
+pip install -r requirements.txt
+
+# Install Ansible Galaxy Dependencies
+ansible-galaxy install -r requirements.yml
+
+# Execute Local Host Hardening
+ansible-playbook --connection=local -b -K play-localhost.yml
+```

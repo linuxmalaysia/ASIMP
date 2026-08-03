@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Configuration & Variables"
+---
+
 # Configuration & Variables
 
 ASIMP is highly customizable. Many aspects of the system-level hardening, audits, and operating system packages can be configured through Ansible variables.

@@ -1,0 +1,15 @@
+title: "ASIMP Documentation"
+description: "ASIMP (Ansible System Integrity Management Platform) is an automated security baseline, hardening, and compliance verification platform."
+show_downloads: false
+google_analytics:
+
+# Navigation settings
+navbar:
+  - title: "Home"
+    url: "/"
+  - title: "Architecture & Design"
+    url: "/architecture.html"
+  - title: "Configuration & Variables"
+    url: "/configuration.html"
+  - title: "Troubleshooting"
+    url: "/troubleshooting.html"
