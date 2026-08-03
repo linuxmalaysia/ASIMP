@@ -1,0 +1,21 @@
+# Cline / Roo-Cline Operational Guidelines
+
+These rules instruct Cline/Roo-Cline agents during workspace operations.
+
+## 🧭 Operational Constraints
+
+1. **Do Not Modify Generated Artifacts**:
+   - Do not edit `/var/log/*` or generated report files directly.
+   - Always modify the source Ansible task files under `roles/` or playbooks `play.yml`/`play-localhost.yml`.
+
+2. **Always Run Syntax Verification**:
+   - Before attempting to commit or declare a task complete, verify playbook and roles syntax using:
+     ```bash
+     ansible-playbook --syntax-check play-localhost.yml
+     ```
+
+3. **Check Ansible Style & Linting**:
+   - Lint changes using `ansible-lint play-localhost.yml`. Correct any style violations before proceeding.
+
+4. **Preserve Idempotency**:
+   - Ensure every state change task can be re-run safely without causing side-effects. Always define `changed_when` for command/shell tasks.
