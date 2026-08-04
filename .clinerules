@@ -1,6 +1,10 @@
 # Cline / Roo-Cline Operational Guidelines
 
-These rules instruct Cline/Roo-Cline agents during workspace operations.
+These rules instruct Cline/Roo-Cline agents during workspace operations in ASIMP.
+
+For comprehensive architectural design and testing instructions, please refer directly to [AGENTS.md](AGENTS.md).
+
+---
 
 ## 🧭 Operational Constraints
 
@@ -19,3 +23,6 @@ These rules instruct Cline/Roo-Cline agents during workspace operations.
 
 4. **Preserve Idempotency**:
    - Ensure every state change task can be re-run safely without causing side-effects. Always define `changed_when` for command/shell tasks.
+
+5. **Use Fully Qualified Collection Names (FQCN)**:
+   - Always prefix all Ansible built-in and community modules with their namespace/collection names (e.g. `ansible.builtin.apt` instead of `apt`, `ansible.builtin.copy` instead of `copy`).
