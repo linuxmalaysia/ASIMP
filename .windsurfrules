@@ -1,18 +1,14 @@
-# Cursor AI Rules for ASIMP
+# Windsurf AI Rules for ASIMP
 
-These rules guide Cursor AI for code generation, modifications, and testing in this repository.
+These rules guide the Windsurf AI agent when reading, generating, or modifying code in this repository.
 
 For comprehensive architectural design and testing instructions, please refer directly to [AGENTS.md](AGENTS.md).
 
 ---
 
-## 🧱 Repository Structure Reference
-
-- Playbooks: `play.yml` (multi-host/remote), `play-localhost.yml` (localhost)
-- Roles:
-  - `reporting-ASIMP`: Dual-engine audits, scoring, baseline comparisons.
-  - `update-ubuntu-ASIMP`: OS/package updates and filesystem checks.
-  - `lynis-ansible`: Localized Lynis configuration audits.
+## 🧭 Project Architecture Constraint
+- **No Local Artifact Modification**: Under no circumstances should `/var/log/*` or generated reports be edited directly.
+- **Source Files Only**: Always modify the source Ansible task files under `roles/` or playbooks `play.yml`/`play-localhost.yml`.
 
 ---
 
@@ -34,16 +30,14 @@ For comprehensive architectural design and testing instructions, please refer di
      ```
 
 3. **Graceful Failures & Fallbacks**:
-   - Systems may lack specific utilities or datastreams. Use `ignore_errors: yes` or `failed_when: false` combined with checks (e.g. `stat`) to handle missing dependencies without causing the playbook execution to crash.
+   - Systems may lack specific utilities or datastreams. Use `ignore_errors: yes` or `failed_when: false` combined with checks (e.g., `stat`) to handle missing dependencies without causing the playbook execution to crash.
 
 ---
 
 ## 🧪 Verification & Testing Commands
 
-Before suggesting any playbook/role updates, ensure the syntax is valid:
+Before suggesting or completing any playbook/role updates, ensure the syntax is valid:
 ```bash
 ansible-playbook --syntax-check play-localhost.yml
 ansible-lint play-localhost.yml
 ```
-
-Do not modify local system logs under `/var/log` or build artifacts directly.

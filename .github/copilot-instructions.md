@@ -7,6 +7,8 @@ applyTo: '**/*.yml, **/*.yaml, **/*.py, **/*.sh'
 
 Welcome! Follow these instructions when generating or updating code in the **ASIMP (Ansible System Integrity Management Platform)** codebase.
 
+For comprehensive architectural design, pitfalls, and testing guidelines, please refer directly to [AGENTS.md](AGENTS.md).
+
 ---
 
 ## 🧭 Project Architecture Overview
@@ -23,6 +25,7 @@ ASIMP implements a **Measure, Harden, Re-Measure** sequence across three main ro
 - **FQCN (Fully Qualified Collection Names)**: Always prefix Ansible built-in and community modules with their namespace/collection names.
 - **Strict Idempotency**: Provide explicit `changed_when` rules for shell/command executions so that repeated runs do not erroneously report changes.
 - **Fail-Safe Robustness**: Because scanning and auditing depend heavily on local binaries (e.g. `oscap`, `lynis`, `debsums`) which may be absent in some environments, use dynamic feature/existence checking or ignore errors appropriately to enable graceful degradation instead of playbook crashes.
+- **No Direct Log/Artifact Modification**: Do not modify system log files under `/var/log` or generated report files directly. Always edit the source playbooks or role files.
 
 ---
 
