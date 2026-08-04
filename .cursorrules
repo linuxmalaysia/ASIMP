@@ -1,0 +1,41 @@
+# Cursor AI Rules for ASIMP
+
+These rules guide Cursor AI for code generation, modifications, and testing in this repository.
+
+## 🧱 Repository Structure Reference
+
+- Playbooks: `play.yml` (multi-host/remote), `play-localhost.yml` (localhost)
+- Roles:
+  - `reporting-ASIMP`: Dual-engine audits, scoring, baseline comparisons.
+  - `update-ubuntu-ASIMP`: OS/package updates and filesystem checks.
+  - `lynis-ansible`: Localized Lynis configuration audits.
+
+## 🛠️ Ansible Coding Standards
+
+1. **Fully Qualified Collection Names (FQCN)**:
+   Always use FQCN for all Ansible tasks.
+   * GOOD: `ansible.builtin.apt`, `ansible.builtin.shell`, `ansible.builtin.command`, `ansible.builtin.copy`
+   * BAD: `apt`, `shell`, `command`, `copy`
+
+2. **Strict Idempotency**:
+   - Provide `changed_when` or `failed_when` for command/shell tasks to prevent false-positive reporting.
+   - Example:
+     ```yaml
+     - name: Parse score
+       ansible.builtin.shell: python3 /usr/local/bin/parse_openscap_score.py /var/log/openscap-results.xml
+       register: score_output
+       changed_when: false
+     ```
+
+3. **Graceful Failures & Fallbacks**:
+   - Systems may lack specific utilities or datastreams. Use `ignore_errors: yes` or `failed_when: false` combined with checks (e.g. `stat`) to handle missing dependencies without causing the playbook execution to crash.
+
+## 🧪 Verification & Testing Commands
+
+Before suggesting any playbook/role updates, ensure the syntax is valid:
+```bash
+ansible-playbook --syntax-check play-localhost.yml
+ansible-lint play-localhost.yml
+```
+
+Do not modify local system logs under `/var/log` or build artifacts directly.
