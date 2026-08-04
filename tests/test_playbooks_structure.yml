@@ -1,0 +1,132 @@
+---
+# Structural regression tests for the "Patch lynis-ansible tasks to use
+# include_tasks on-the-fly" task that was added to both play.yml and
+# play-localhost.yml.
+#
+# These tests parse the real playbook files from the repository and assert
+# that the new task is present, wired up with the exact module arguments,
+# candidate paths, and safety flags described in the PR, and that it runs
+# before the lynis-ansible role is applied (otherwise the patch would have
+# no effect).
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_playbooks_structure.yml
+- name: Verify lynis-ansible patch task is correctly wired in play.yml and play-localhost.yml
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    patch_task_name: "Patch lynis-ansible tasks to use include_tasks on-the-fly"
+    expected_regexp: '^(\s*)include:'
+    expected_replace: '\1ansible.builtin.include_tasks:'
+    expected_path_arg: "{% raw %}{{ item }}{% endraw %}"
+    expected_patch_targets:
+      - "roles/lynis-ansible/tasks/main.yml"
+      - "roles/linuxmalaysia.lynis_ansible/tasks/main.yml"
+      - "{% raw %}{{ lookup('env', 'HOME') }}{% endraw %}/.ansible/roles/linuxmalaysia.lynis_ansible/tasks/main.yml"
+      - "/usr/share/ansible/roles/linuxmalaysia.lynis_ansible/tasks/main.yml"
+      - "/etc/ansible/roles/linuxmalaysia.lynis_ansible/tasks/main.yml"
+
+  tasks:
+    - name: Load play.yml plays
+      ansible.builtin.set_fact:
+        play_yml_plays: "{{ lookup('file', repo_root + '/play.yml') | from_yaml }}"
+
+    - name: Load play-localhost.yml plays
+      ansible.builtin.set_fact:
+        play_localhost_plays: "{{ lookup('file', repo_root + '/play-localhost.yml') | from_yaml }}"
+
+    - name: Extract the hardening play from play.yml
+      ansible.builtin.set_fact:
+        play_yml_hardening_play: "{{ play_yml_plays | selectattr('name', 'equalto', 'Run ASIMP Security Hardening and Audits') | first }}"
+
+    - name: Extract the hardening play from play-localhost.yml
+      ansible.builtin.set_fact:
+        play_localhost_hardening_play: "{{ play_localhost_plays | selectattr('name', 'equalto', 'Run localhost ASIMP Security Hardening and Audits') | first }}"
+
+    - name: Extract task name lists for ordering checks
+      ansible.builtin.set_fact:
+        play_yml_task_names: "{{ play_yml_hardening_play.tasks | map(attribute='name') | list }}"
+        play_localhost_task_names: "{{ play_localhost_hardening_play.tasks | map(attribute='name') | list }}"
+
+    - name: Assert the patch task exists in both playbooks
+      ansible.builtin.assert:
+        that:
+          - patch_task_name in play_yml_task_names
+          - patch_task_name in play_localhost_task_names
+        fail_msg: "The '{{ patch_task_name }}' task must exist in both play.yml and play-localhost.yml"
+
+    - name: Extract the patch task from play.yml
+      ansible.builtin.set_fact:
+        play_yml_patch_task: "{{ play_yml_hardening_play.tasks | selectattr('name', 'equalto', patch_task_name) | first }}"
+
+    - name: Extract the patch task from play-localhost.yml
+      ansible.builtin.set_fact:
+        play_localhost_patch_task: "{{ play_localhost_hardening_play.tasks | selectattr('name', 'equalto', patch_task_name) | first }}"
+
+    - name: Assert both patch tasks use the ansible.builtin.replace module
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.replace' in play_yml_patch_task"
+          - "'ansible.builtin.replace' in play_localhost_patch_task"
+        fail_msg: "The patch task must use the ansible.builtin.replace module"
+
+    - name: Assert both patch tasks template the path argument from the loop item
+      ansible.builtin.assert:
+        that:
+          - play_yml_patch_task['ansible.builtin.replace'].path == expected_path_arg
+          - play_localhost_patch_task['ansible.builtin.replace'].path == expected_path_arg
+        fail_msg: "The patch task's path argument must be templated from the loop item"
+
+    - name: Assert both patch tasks use the exact expected regexp and replace values
+      ansible.builtin.assert:
+        that:
+          - play_yml_patch_task['ansible.builtin.replace'].regexp == expected_regexp
+          - play_yml_patch_task['ansible.builtin.replace'].replace == expected_replace
+          - play_localhost_patch_task['ansible.builtin.replace'].regexp == expected_regexp
+          - play_localhost_patch_task['ansible.builtin.replace'].replace == expected_replace
+        fail_msg: "The patch task must rewrite indentation-preserving legacy 'include:' directives to 'ansible.builtin.include_tasks:'"
+
+    - name: Assert both patch tasks loop over the exact five expected candidate paths, in order
+      ansible.builtin.assert:
+        that:
+          - play_yml_patch_task.loop == expected_patch_targets
+          - play_localhost_patch_task.loop == expected_patch_targets
+        fail_msg: "The patch task loop list must cover the local role path, Galaxy role path, per-user, system-wide, and /etc/ansible install locations for lynis-ansible/linuxmalaysia.lynis_ansible"
+
+    - name: Assert both patch tasks are safely delegated, run once, and never fail the play
+      ansible.builtin.assert:
+        that:
+          - play_yml_patch_task.delegate_to == 'localhost'
+          - play_yml_patch_task.run_once == true
+          - play_yml_patch_task.failed_when == false
+          - play_localhost_patch_task.delegate_to == 'localhost'
+          - play_localhost_patch_task.run_once == true
+          - play_localhost_patch_task.failed_when == false
+        fail_msg: "The patch task must set delegate_to: localhost, run_once: true and failed_when: false so it tolerates missing lynis-ansible installs and only runs once per play"
+
+    - name: Assert both patch tasks are tagged 'always' so they are not skipped by tag filtering
+      ansible.builtin.assert:
+        that:
+          - play_yml_patch_task.tags == 'always'
+          - play_localhost_patch_task.tags == 'always'
+        fail_msg: "The patch task must be tagged 'always' so it still runs when users select specific tags"
+
+    - name: Assert the patch task runs before the Lynis role is applied in play.yml
+      ansible.builtin.assert:
+        that:
+          - play_yml_task_names.index(patch_task_name) < play_yml_task_names.index('Apply Lynis Hardening Configuration')
+        fail_msg: "The lynis-ansible patch task must run before the Lynis role is included in play.yml, otherwise the patch has no effect"
+
+    - name: Assert the patch task runs before the Lynis role is applied in play-localhost.yml
+      ansible.builtin.assert:
+        that:
+          - play_localhost_task_names.index(patch_task_name) < play_localhost_task_names.index('Apply Lynis Hardening Configuration')
+        fail_msg: "The lynis-ansible patch task must run before the Lynis role is included in play-localhost.yml, otherwise the patch has no effect"
+
+    - name: Assert play.yml and play-localhost.yml define an identical patch task
+      ansible.builtin.assert:
+        that:
+          - play_yml_patch_task == play_localhost_patch_task
+        fail_msg: "play.yml and play-localhost.yml should define the exact same patch task so both entry points behave consistently"
