@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Troubleshooting & Fallback Behaviors"
+---
+
 # Troubleshooting & Fallback Behaviors
 
 This guide covers common issues, warning states, and standard troubleshooting strategies when using the ASIMP security framework.

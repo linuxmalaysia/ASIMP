@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page.title | default: site.title }}</title>
+  <meta name="description" content="{{ page.description | default: site.description }}">
+
+  <script>
+    // Initialize theme early to prevent flash
+    (function() {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark' || (savedTheme !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('theme-dark');
+      } else {
+        document.documentElement.classList.add('theme-light');
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="{{ '/assets/css/global.css' | relative_url }}">
+</head>
+<body>
+  <div id="container">
+
+    <!-- GRID AREA: HEADER -->
+    <div id="top">
+      <table class="header-table" style="width: 100%; border-collapse: collapse; border: none; margin: 0;">
+        <tr style="border: none; background: none;">
+          <td style="text-align: left; padding: 15px 20px; border: none; background: none;">
+            <div style="font-family: 'SF Mono', monospace; font-weight: 900; font-size: 24px; color: var(--lab-text);">
+              ASIMP <span style="color: var(--lab-highlight)">::</span> Security Platform
+            </div>
+            <div style="font-size: 11px; opacity: 0.8; letter-spacing: 1px; font-family: 'SF Mono', monospace; color: var(--lab-muted);">
+              ANSIBLE SYSTEM INTEGRITY MANAGEMENT PLATFORM // baselines & hardening
+            </div>
+          </td>
+          <td style="text-align: right; vertical-align: middle; padding: 15px 20px; border: none; background: none;">
+            <div class="theme-switcher-container" style="display: inline-flex; align-items: center; gap: 8px; font-family: 'SF Mono', monospace; font-size: 11px;">
+              <span style="opacity: 0.7; font-weight: bold; text-transform: uppercase; color: var(--lab-text);">MODE:</span>
+              <div class="theme-btn-group" style="display: inline-flex; border: 1px solid var(--lab-border); border-radius: 6px; overflow: hidden; background: var(--lab-bg);">
+                <button id="theme-btn-light" style="background: none; border: none; color: var(--lab-text); padding: 5px 10px; cursor: pointer; font-family: inherit; font-size: inherit; font-weight: bold; transition: background 0.2s;">☀️ LIGHT</button>
+                <button id="theme-btn-dark" style="background: none; border: none; color: var(--lab-text); padding: 5px 10px; cursor: pointer; font-family: inherit; font-size: inherit; font-weight: bold; border-left: 1px solid var(--lab-border); transition: background 0.2s;">🌙 DARK</button>
+                <button id="theme-btn-auto" style="background: none; border: none; color: var(--lab-text); padding: 5px 10px; cursor: pointer; font-family: inherit; font-size: inherit; font-weight: bold; border-left: 1px solid var(--lab-border); transition: background 0.2s;">💻 AUTO</button>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- GRID AREA: LEFT NAV -->
+    <div id="left">
+      <div class="buttonscontainer">
+        <h3>Documentation</h3>
+        <div class="buttons">
+          <a href="{{ '/' | relative_url }}">Home</a>
+          {% assign sorted_pages = site.pages | sort: "path" %}
+          {% for p in sorted_pages %}
+            {% if p.path != "index.md" and p.path contains ".md" and p.path != "README.md" %}
+              {% assign page_title = p.title | default: p.name | replace: ".md", "" | capitalize | replace: "_", " " | replace: "-", " " %}
+              <a href="{{ p.url | relative_url }}">{{ page_title }}</a>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+
+      <br>
+      <h3>About ASIMP</h3>
+      <p style="font-size: 0.85em; color: var(--lab-muted); line-height: 1.4; margin: 0;">
+        ASIMP is an automated framework built with Ansible to assess host compliance, configure OS parameters, secure SSH, and verify integrity.
+      </p>
+    </div>
+
+    <!-- GRID AREA: RIGHT NAV -->
+    <div id="right">
+      <h3>Framework Engines</h3>
+      <div style="font-size: 0.8em; line-height: 1.5; color: var(--lab-muted);">
+        <strong style="color: var(--lab-text);">• Ansible:</strong> Playbooks and Roles orchestration<br>
+        <strong style="color: var(--lab-text);">• OpenSCAP:</strong> Security profile checks (CIS Level 2)<br>
+        <strong style="color: var(--lab-text);">• Lynis:</strong> Deep system configuration scanner<br>
+        <strong style="color: var(--lab-text);">• debsums:</strong> MD5-based package integrity verification
+      </div>
+    </div>
+
+    <!-- GRID AREA: MAIN CONTENT -->
+    <div id="content">
+      <main class="content-body">
+
+        <!-- Custom Hero / Header for each documentation page -->
+        <header class="hero-section" style="margin-bottom: 25px;">
+          <h1 style="border-bottom: 4px solid var(--lab-purple); padding-bottom: 10px; margin-bottom: 10px;">
+            {{ page.title | default: site.title }}
+          </h1>
+          <div class="runtime-status" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 15px;">
+            <span class="badge" style="background: #e67e22; color: #fff; padding: 4px 8px; border-radius: 4px; font-family: var(--f-mono); font-size: 11px; font-weight: bold;">Ansible >= 9.0.0</span>
+            <span class="badge" style="background: #2ecc71; color: #fff; padding: 4px 8px; border-radius: 4px; font-family: var(--f-mono); font-size: 11px; font-weight: bold;">OpenSCAP: CIS L2</span>
+            <span class="badge" style="background: #3498db; color: #fff; padding: 4px 8px; border-radius: 4px; font-family: var(--f-mono); font-size: 11px; font-weight: bold;">Lynis: Enabled</span>
+            <span class="badge" style="background: #9b59b6; color: #fff; padding: 4px 8px; border-radius: 4px; font-family: var(--f-mono); font-size: 11px; font-weight: bold;">debsums: Enabled</span>
+          </div>
+        </header>
+
+        <article class="lab-home">
+          {{ content }}
+        </article>
+      </main>
+    </div>
+
+    <!-- GRID AREA: FOOTER -->
+    <div id="footer">
+      <div class="lab-footer-wrap" style="padding: 15px 0; border-top: 1px solid var(--lab-border);">
+        ASIMP Security Platform Documentation &copy; 2026<br>
+        Statically Compiled at Build-time | Zero-runtime database-free
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Theme toggle logic
+    document.addEventListener('DOMContentLoaded', () => {
+      const btnLight = document.getElementById('theme-btn-light');
+      const btnDark = document.getElementById('theme-btn-dark');
+      const btnAuto = document.getElementById('theme-btn-auto');
+
+      const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+      function updateActiveButton(theme) {
+        [btnLight, btnDark, btnAuto].forEach(btn => {
+          if (btn) btn.style.background = 'none';
+        });
+        if (theme === 'light' && btnLight) {
+          btnLight.style.background = 'var(--lab-border)';
+        } else if (theme === 'dark' && btnDark) {
+          btnDark.style.background = 'var(--lab-border)';
+        } else if (theme === 'auto' && btnAuto) {
+          btnAuto.style.background = 'var(--lab-border)';
+        }
+      }
+
+      function handleSystemThemeChange(e) {
+        if (!localStorage.getItem('theme')) {
+          if (e.matches) {
+            document.documentElement.classList.add('theme-dark');
+            document.documentElement.classList.remove('theme-light');
+          } else {
+            document.documentElement.classList.add('theme-light');
+            document.documentElement.classList.remove('theme-dark');
+          }
+        }
+      }
+
+      function setTheme(theme) {
+        if (theme === 'dark') {
+          document.documentElement.classList.add('theme-dark');
+          document.documentElement.classList.remove('theme-light');
+          localStorage.setItem('theme', 'dark');
+        } else if (theme === 'light') {
+          document.documentElement.classList.add('theme-light');
+          document.documentElement.classList.remove('theme-dark');
+          localStorage.setItem('theme', 'light');
+        } else {
+          localStorage.removeItem('theme');
+          if (darkQuery.matches) {
+            document.documentElement.classList.add('theme-dark');
+            document.documentElement.classList.remove('theme-light');
+          } else {
+            document.documentElement.classList.add('theme-light');
+            document.documentElement.classList.remove('theme-dark');
+          }
+        }
+        updateActiveButton(theme);
+      }
+
+      btnLight?.addEventListener('click', () => setTheme('light'));
+      btnDark?.addEventListener('click', () => setTheme('dark'));
+      btnAuto?.addEventListener('click', () => setTheme('auto'));
+
+      // Retain matchMedia object and register a change listener for auto mode
+      if (darkQuery.addEventListener) {
+        darkQuery.addEventListener('change', handleSystemThemeChange);
+      } else if (darkQuery.addListener) {
+        darkQuery.addListener(handleSystemThemeChange);
+      }
+
+      const savedTheme = localStorage.getItem('theme') || 'auto';
+      setTheme(savedTheme);
+    });
+  </script>
+</body>
+</html>

@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Architecture & Design"
+---
+
 # Architecture & Design
 
 ASIMP (Ansible System Integrity Management Platform) is designed around a three-phase security pipeline. Unlike standard configuration management playbooks which focus purely on applying states, ASIMP emphasizes continuous observability and self-reporting.
