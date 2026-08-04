@@ -135,8 +135,8 @@
     - name: Assert both indentation levels were converted while preserving indentation
       ansible.builtin.assert:
         that:
-          - "'  ansible.builtin.include_tasks: subtasks.yml' in indented_content"
-          - "'    ansible.builtin.include_tasks: nested.yml' in indented_content"
+          - "indented_content is search('(?m)^ {2}ansible\\.builtin\\.include_tasks: subtasks\\.yml$')"
+          - "indented_content is search('(?m)^ {6}ansible\\.builtin\\.include_tasks: nested\\.yml$')"
           - "not (indented_content is search('(?m)^\\s*include:'))"
         fail_msg: "Indented include: directives were not correctly rewritten, or indentation was not preserved"
 

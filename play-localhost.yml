@@ -13,6 +13,22 @@
       - ntp1.sirim.my
       - ntp2.sirim.my
   tasks:
+    - name: Patch lynis-ansible tasks to use include_tasks on-the-fly
+      ansible.builtin.replace:
+        path: "{{ item }}"
+        regexp: '^(\s*)include:'
+        replace: '\1ansible.builtin.include_tasks:'
+      loop:
+        - "roles/lynis-ansible/tasks/main.yml"
+        - "roles/linuxmalaysia.lynis_ansible/tasks/main.yml"
+        - "{{ lookup('env', 'HOME') }}/.ansible/roles/linuxmalaysia.lynis_ansible/tasks/main.yml"
+        - "/usr/share/ansible/roles/linuxmalaysia.lynis_ansible/tasks/main.yml"
+        - "/etc/ansible/roles/linuxmalaysia.lynis_ansible/tasks/main.yml"
+      delegate_to: localhost
+      run_once: true
+      failed_when: false
+      tags: always
+
     - name: Run BEFORE Hardening Audits (OpenSCAP & Lynis)
       ansible.builtin.include_role:
         name: reporting-ASIMP
