@@ -1,0 +1,194 @@
+---
+# Functional/regression tests for the "Patch lynis-ansible tasks to use
+# include_tasks on-the-fly" task added to play.yml and play-localhost.yml.
+#
+# The production task uses ansible.builtin.replace with a fixed regexp to
+# rewrite legacy `include:` directives (deprecated in Ansible) to
+# `ansible.builtin.include_tasks:` inside the lynis-ansible role files,
+# across several candidate paths, tolerating missing files.
+#
+# This test exercises the exact same module/regexp/replace against a set of
+# fixture files so the transformation logic can be verified without
+# depending on the real lynis-ansible role (a git submodule) or on
+# privileged, real filesystem locations such as /etc/ansible or
+# /usr/share/ansible.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_lynis_ansible_patch.yml
+- name: "Test on-the-fly patching of legacy include: directives"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    # Mirrors the regexp/replace used in play.yml / play-localhost.yml
+    patch_regexp: '^(\s*)include:'
+    patch_replace: '\1ansible.builtin.include_tasks:'
+    test_tmp_dir: "{{ lookup('env', 'HOME') | default('/tmp', true) }}/.asimp-lynis-patch-test"
+    fixture_zero_indent: "{{ test_tmp_dir }}/main_zero_indent.yml"
+    fixture_indented: "{{ test_tmp_dir }}/main_indented.yml"
+    fixture_already_patched: "{{ test_tmp_dir }}/main_already_patched.yml"
+    fixture_include_role: "{{ test_tmp_dir }}/main_include_role.yml"
+    fixture_missing: "{{ test_tmp_dir }}/does_not_exist.yml"
+
+  tasks:
+    - name: Remove any leftover test directory from a previous run
+      ansible.builtin.file:
+        path: "{{ test_tmp_dir }}"
+        state: absent
+
+    - name: Create a fresh test directory
+      ansible.builtin.file:
+        path: "{{ test_tmp_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Write fixture with a zero-indent legacy include directive
+      ansible.builtin.copy:
+        dest: "{{ fixture_zero_indent }}"
+        content: "include: subtasks.yml\n"
+        mode: "0644"
+
+    - name: Write fixture with legacy includes at multiple indentation depths
+      ansible.builtin.copy:
+        dest: "{{ fixture_indented }}"
+        content: |
+          ---
+          - name: legacy include at two-space indent
+            include: subtasks.yml
+            when: some_condition
+
+          - name: nested block with six-space indent include
+            block:
+              - name: inner
+                include: nested.yml
+                when: other_condition
+        mode: "0644"
+
+    - name: Write fixture that already uses the modern include_tasks syntax
+      ansible.builtin.copy:
+        dest: "{{ fixture_already_patched }}"
+        content: |
+          ---
+          - name: already modern
+            ansible.builtin.include_tasks: subtasks.yml
+        mode: "0644"
+
+    - name: Write fixture using include_role, which must never be rewritten
+      ansible.builtin.copy:
+        dest: "{{ fixture_include_role }}"
+        content: |
+          ---
+          - name: role usage should remain untouched
+            include_role:
+              name: some_role
+        mode: "0644"
+
+    - name: Build the list of patch targets (mirrors the production loop, plus one missing path)
+      ansible.builtin.set_fact:
+        patch_targets:
+          - "{{ fixture_zero_indent }}"
+          - "{{ fixture_indented }}"
+          - "{{ fixture_already_patched }}"
+          - "{{ fixture_include_role }}"
+          - "{{ fixture_missing }}"
+
+    - name: Apply the same on-the-fly patch task under test (first pass)
+      ansible.builtin.replace:
+        path: "{{ item }}"
+        regexp: "{{ patch_regexp }}"
+        replace: "{{ patch_replace }}"
+      loop: "{{ patch_targets }}"
+      delegate_to: localhost
+      run_once: true
+      failed_when: false
+      register: patch_result_pass1
+
+    - name: Assert the task did not fail even though one target path is missing
+      ansible.builtin.assert:
+        that:
+          - patch_result_pass1 is not failed
+          - patch_result_pass1.results[4].failed | default(false) == false
+        fail_msg: "The patch task should tolerate a missing file via failed_when: false, as it does in play.yml/play-localhost.yml"
+        success_msg: "Missing target file was handled gracefully"
+
+    - name: Assert the zero-indent fixture reports changed=true on first pass
+      ansible.builtin.assert:
+        that:
+          - patch_result_pass1.results[0].changed == true
+        fail_msg: "Expected the replace task to report a change for the zero-indent legacy include: line"
+
+    - name: Read back the patched zero-indent fixture
+      ansible.builtin.set_fact:
+        zero_indent_content: "{{ lookup('file', fixture_zero_indent) }}"
+
+    - name: "Assert the zero-indent include: directive was converted with no indentation added"
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.include_tasks: subtasks.yml' in zero_indent_content"
+          - "not (zero_indent_content is search('(?m)^include:'))"
+        fail_msg: "Zero-indent include: line was not correctly rewritten to ansible.builtin.include_tasks:"
+
+    - name: Read back the patched multi-indent fixture
+      ansible.builtin.set_fact:
+        indented_content: "{{ lookup('file', fixture_indented) }}"
+
+    - name: Assert both indentation levels were converted while preserving indentation
+      ansible.builtin.assert:
+        that:
+          - "'  ansible.builtin.include_tasks: subtasks.yml' in indented_content"
+          - "'    ansible.builtin.include_tasks: nested.yml' in indented_content"
+          - "not (indented_content is search('(?m)^\\s*include:'))"
+        fail_msg: "Indented include: directives were not correctly rewritten, or indentation was not preserved"
+
+    - name: Read back the already-patched fixture
+      ansible.builtin.set_fact:
+        already_patched_content: "{{ lookup('file', fixture_already_patched) }}"
+
+    - name: Assert the already-modern fixture content is unchanged
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.include_tasks: subtasks.yml' in already_patched_content"
+        fail_msg: "Already-modern include_tasks fixture should still contain the original modern directive"
+
+    - name: Assert the replace task is idempotent for an already-patched file
+      ansible.builtin.assert:
+        that:
+          - patch_result_pass1.results[2].changed == false
+        fail_msg: "Replace task must report changed=false when ansible.builtin.include_tasks: is already present"
+
+    - name: Read back the include_role fixture
+      ansible.builtin.set_fact:
+        include_role_content: "{{ lookup('file', fixture_include_role) }}"
+
+    - name: "Assert include_role: was left untouched by the regex (word-boundary safety)"
+      ansible.builtin.assert:
+        that:
+          - "'include_role:' in include_role_content"
+          - "'include_tasksrole:' not in include_role_content"
+          - patch_result_pass1.results[3].changed == false
+        fail_msg: "include_role: must never be rewritten by the include: -> include_tasks: patch"
+
+    - name: Re-run the same patch task a second time (idempotency across repeated playbook runs)
+      ansible.builtin.replace:
+        path: "{{ item }}"
+        regexp: "{{ patch_regexp }}"
+        replace: "{{ patch_replace }}"
+      loop: "{{ patch_targets }}"
+      delegate_to: localhost
+      run_once: true
+      failed_when: false
+      register: patch_result_pass2
+
+    - name: Assert the second pass makes no further changes to any fixture
+      ansible.builtin.assert:
+        that:
+          - patch_result_pass2.results[0].changed == false
+          - patch_result_pass2.results[1].changed == false
+          - patch_result_pass2.results[2].changed == false
+          - patch_result_pass2.results[3].changed == false
+        fail_msg: "A second run of the patch task must be fully idempotent, matching run_once/on-the-fly usage across multiple playbook executions"
+
+    - name: Clean up the test directory
+      ansible.builtin.file:
+        path: "{{ test_tmp_dir }}"
+        state: absent
