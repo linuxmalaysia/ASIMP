@@ -24,7 +24,7 @@ The platform implements a strict **"Measure, Harden, Re-Measure"** paradigm, off
    - Applies robust, production-grade SSH security using Dev-Sec's SSH-hardening suite.
 
 3. **Integrity Validation with `debsums`**:
-   - Verifies system files and packages against secure, original cryptographic hashes to detect modifications, corruption, or tampering.
+   - Compares installed package files against locally stored MD5 checksums to detect local changes or corruption.
 
 4. **Self-Observing Comparative Scorecard**:
    - Automatically computes exact "before" vs. "after" audit scores and saves details locally, outputting a clear visual comparison directly to the console or log files.

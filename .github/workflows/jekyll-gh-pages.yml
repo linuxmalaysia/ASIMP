@@ -16,9 +16,9 @@ permissions:
   id-token: write
 
 # Allow only one concurrent deployment, skipping runs queued between the run in-
-progress and latest queued.
+# progress and latest queued.
 # However, do NOT cancel in-progress runs as we want to allow these production d
-eployments to complete.
+# eployments to complete.
 concurrency:
   group: "pages"
   cancel-in-progress: false

@@ -74,21 +74,6 @@
 
     <!-- GRID AREA: RIGHT NAV -->
     <div id="right">
-      <h3>Search</h3>
-      <!-- Search Google -->
-      <div class="search-container" style="text-align: center; padding: 10px 0;">
-        <form method="get" action="https://www.google.com/custom" target="_blank">
-          <a href="https://www.google.com/">
-            <img src="https://www.google.com/logos/Logo_25wht.gif" alt="Google" style="border:0; vertical-align: middle; width: 100px;">
-          </a>
-          <br><br>
-          <input type="text" name="q" size="15" maxlength="255" placeholder="Search ASIMP..." style="width: 100%; padding: 6px; border: 1px solid var(--lab-border); border-radius: 6px; background: var(--lab-bg); color: var(--lab-text); box-sizing: border-box;">
-          <br><br>
-          <input type="submit" name="sa" value="Search" style="width: 100%; padding: 6px; border: none; border-radius: 6px; background: var(--lab-purple); color: #fff; font-weight: bold; cursor: pointer;">
-        </form>
-      </div>
-
-      <br>
       <h3>Framework Engines</h3>
       <div style="font-size: 0.8em; line-height: 1.5; color: var(--lab-muted);">
         <strong style="color: var(--lab-text);">• Ansible:</strong> Playbooks and Roles orchestration<br>
@@ -138,6 +123,8 @@
       const btnDark = document.getElementById('theme-btn-dark');
       const btnAuto = document.getElementById('theme-btn-auto');
 
+      const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
       function updateActiveButton(theme) {
         [btnLight, btnDark, btnAuto].forEach(btn => {
           if (btn) btn.style.background = 'none';
@@ -148,6 +135,18 @@
           btnDark.style.background = 'var(--lab-border)';
         } else if (theme === 'auto' && btnAuto) {
           btnAuto.style.background = 'var(--lab-border)';
+        }
+      }
+
+      function handleSystemThemeChange(e) {
+        if (!localStorage.getItem('theme')) {
+          if (e.matches) {
+            document.documentElement.classList.add('theme-dark');
+            document.documentElement.classList.remove('theme-light');
+          } else {
+            document.documentElement.classList.add('theme-light');
+            document.documentElement.classList.remove('theme-dark');
+          }
         }
       }
 
@@ -162,7 +161,7 @@
           localStorage.setItem('theme', 'light');
         } else {
           localStorage.removeItem('theme');
-          if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          if (darkQuery.matches) {
             document.documentElement.classList.add('theme-dark');
             document.documentElement.classList.remove('theme-light');
           } else {
@@ -176,6 +175,13 @@
       btnLight?.addEventListener('click', () => setTheme('light'));
       btnDark?.addEventListener('click', () => setTheme('dark'));
       btnAuto?.addEventListener('click', () => setTheme('auto'));
+
+      // Retain matchMedia object and register a change listener for auto mode
+      if (darkQuery.addEventListener) {
+        darkQuery.addEventListener('change', handleSystemThemeChange);
+      } else if (darkQuery.addListener) {
+        darkQuery.addListener(handleSystemThemeChange);
+      }
 
       const savedTheme = localStorage.getItem('theme') || 'auto';
       setTheme(savedTheme);
