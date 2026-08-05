@@ -39,7 +39,7 @@
         - name: Patch dev-sec.ssh-hardening moduli conditional
           ansible.builtin.replace:
             path: "roles/dev-sec.ssh-hardening/tasks/hardening.yml"
-            regexp: '- sshd_register_moduli.stdout'
+            regexp: '- sshd_register_moduli.stdout$'
             replace: '- sshd_register_moduli.stdout | length > 0'
 
         - name: Patch ansible-hardening service tasks (auditd)
@@ -103,7 +103,7 @@
             replace: "augenrules --load\n  ignore_errors: \"{{ '{{' }} is_sandbox_jules | default(false) {{ '}}' }}\""
       delegate_to: localhost
       run_once: true
-      failed_when: false
+      ignore_errors: true
       tags: always
 
     - name: Patch lynis-ansible tasks to use include_tasks on-the-fly

@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-08-05
+
+### Added
+- **Google Jules Sandbox Compatibility & Mock Audit Engine**: Implemented native unprivileged sandbox detection fact (`is_sandbox_jules`) inside localhost and remote playbooks.
+- **Standalone Simulation Script**: Added `tools/mock-asimp.sh` mock scan engine that outputs comparative compliance scorecards and templates the security audit report `SECURITY_AUDIT_REPORT.md` within `data/asimp_mock/`.
+- **Sandbox-Aware Playbook Execution**: Added fallback mock execution tasks in the `reporting-ASIMP` role to simulate compliance scanning and output scorecard files gracefully when running within restrictive environments without administrative privileges.
+
+### Fixed
+- Fixed playbook blocks configuration in `play.yml` and `play-localhost.yml` to replace deprecated `failed_when` attributes on blocks with `ignore_errors` for standard compatibility with modern Ansible Core releases.
+
+---
+
 ## [1.1.0] - 2026-07-30
 
 ### Added
