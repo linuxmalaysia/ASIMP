@@ -19,6 +19,7 @@ This document traces the historical development, milestones, and design evolutio
 
 ### 🚀 Enterprise Evolution & SCAP Standardization (2026)
 * **The SCAP Transition (July 2026)**: In response to modern compliance mandates (e.g., CIS Benchmarks, NIST, and FedRAMP), ASIMP was re-architected.
+* **Google Jules Sandbox Compatibility (August 2026)**: Built unprivileged sandbox auditing support to handle testing and dry-run environments (such as the Google Jules containerized containment space). Provided a dedicated `tools/mock-asimp.sh` mock scan engine and native Ansible sandbox detection to output compliance scorecards and `SECURITY_AUDIT_REPORT.md` within the `data/asimp_mock/` directory, avoiding permission/restricted service barriers while keeping standard production paths active.
 * **Dual-Engine Pipeline**: Implemented a "Before and After" analysis cycle in the newly-created `reporting-ASIMP` role.
 * **Dynamic OpenSCAP Auditing**: Developed automated compliance audits using OpenSCAP. ASIMP dynamically resolves standard Security Content Automation Protocol (SCAP) datastreams for specific OS versions (such as Ubuntu 20.04/22.04/24.04, Rocky Linux, CentOS, and RedHat RHEL) and evaluates compliance against the strict **CIS Linux Level 2 (Server)** profile.
 * **Debsums Package Integrity**: Incorporated automated `debsums` scans to identify tampered, modified, or corrupted binary files across the OS filesystem.

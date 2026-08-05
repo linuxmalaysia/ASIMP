@@ -105,6 +105,29 @@ To secure and audit remote systems:
 ansible-playbook -i your_inventory_file -b -K play.yml
 ```
 
+### Option C: Google Jules Sandbox Mock Execution
+When deploying or testing inside unprivileged, containerized sandboxes like the Google Jules environment where full SCAP or Lynis operations are restricted, ASIMP offers robust mock capabilities.
+
+#### 1. Real Playbook Native Integration
+If you execute the normal playbooks (`play.yml` or `play-localhost.yml`) inside the Google Jules sandbox, ASIMP automatically detects the environment and switches to mock reporting mode. It writes mock results and scorecards into workspace folders (`data/asimp_mock/`), ensuring standard execution paths run to completion and produce a complete audit report.
+
+```bash
+# Executing playbooks natively in the sandbox automatically runs mock audits
+ansible-playbook --connection=local play-localhost.yml
+```
+
+#### 2. Direct Mock Script (`tools/mock-asimp.sh`)
+Alternatively, a dedicated standalone mock script `tools/mock-asimp.sh` is provided to simulate the entire "Measure, Harden, Re-Measure" loop, establishing baseline scores and templating `SECURITY_AUDIT_REPORT.md` inside `data/asimp_mock/` instantly:
+
+```bash
+# Run the direct mock script
+./tools/mock-asimp.sh
+```
+
+The mock run will produce:
+- JSON Baseline Scores: `data/asimp_mock/var/log/asimp-baseline-scores.json`
+- Security Audit Report: `data/asimp_mock/opt/report/openscap/SECURITY_AUDIT_REPORT.md`
+
 ---
 
 ## 📊 Security Metrics & Reports
