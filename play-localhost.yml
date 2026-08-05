@@ -119,7 +119,7 @@
         - "/etc/ansible/roles/linuxmalaysia.lynis_ansible/tasks/main.yml"
       delegate_to: localhost
       run_once: true
-      failed_when: false
+      ignore_errors: true
       tags: always
 
     - name: Run BEFORE Hardening Audits (OpenSCAP & Lynis)

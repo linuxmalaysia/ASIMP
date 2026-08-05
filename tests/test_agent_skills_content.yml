@@ -62,7 +62,7 @@
         - "docs/"
         - "front matter"
       jinja2-template-overrides:
-        - '#jinja2: trim_blocks: True, lstrip_blocks: True'
+        - "{% raw %}#jinja2: trim_blocks: True, lstrip_blocks: True{% endraw %}"
         - "capitalized Python booleans"
         - "absolute first line"
       jules-sandbox-mode:
@@ -117,11 +117,11 @@
           - "'# CORRECT' in skill_contents['ansible-fqcn-idempotency']"
           - "'# INCORRECT' in skill_contents['jinja2-template-overrides']"
           - "'# CORRECT' in skill_contents['jinja2-template-overrides']"
-      fail_msg: "Skills documenting anti-patterns must clearly label both the incorrect and correct examples"
+        fail_msg: "Skills documenting anti-patterns must clearly label both the incorrect and correct examples"
 
     - name: Assert the FQCN skill explicitly prohibits short module names
       ansible.builtin.assert:
         that:
           - "'strictly prohibited' in skill_contents['ansible-fqcn-idempotency']"
           - "'guarantees collection compatibility' in skill_contents['ansible-fqcn-idempotency']"
-      fail_msg: "ansible-fqcn-idempotency/SKILL.md must explicitly state that short (non-FQCN) module names are prohibited"
+        fail_msg: "ansible-fqcn-idempotency/SKILL.md must explicitly state that short (non-FQCN) module names are prohibited"

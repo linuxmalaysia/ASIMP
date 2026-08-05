@@ -100,11 +100,11 @@
         that:
           - play_yml_patch_task.delegate_to == 'localhost'
           - play_yml_patch_task.run_once == true
-          - play_yml_patch_task.failed_when == false
+          - play_yml_patch_task.ignore_errors == true
           - play_localhost_patch_task.delegate_to == 'localhost'
           - play_localhost_patch_task.run_once == true
-          - play_localhost_patch_task.failed_when == false
-        fail_msg: "The patch task must set delegate_to: localhost, run_once: true and failed_when: false so it tolerates missing lynis-ansible installs and only runs once per play"
+          - play_localhost_patch_task.ignore_errors == true
+        fail_msg: "The patch task must set delegate_to: localhost, run_once: true and ignore_errors: true so it tolerates missing lynis-ansible installs and only runs once per play"
 
     - name: Assert both patch tasks are tagged 'always' so they are not skipped by tag filtering
       ansible.builtin.assert:
