@@ -1,4 +1,5 @@
 ---
+
 name: ubuntu-scap-auditing
 description: Manages dynamic SCAP Security Guide (SSG) retrieval and OpenSCAP auditing on Ubuntu systems (specifically Ubuntu 24.04). Use when configuring or fixing OpenSCAP datastream updates, evaluating rules, or working with USN OVAL checks.
 license: Apache-2.0
@@ -12,7 +13,10 @@ metadata:
   author: Google Jules & Antigravity
   version: "1.0.0"
   project: ASIMP
+okf_version: "0.1"
+topics: [scap, openscap, ubuntu, auditing, oval, compliance]
 ---
+
 
 # Ubuntu Dynamic SCAP Auditing and Compliance Engine
 

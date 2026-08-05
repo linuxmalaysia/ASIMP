@@ -1,3 +1,10 @@
+---
+okf_version: "0.1"
+type: role-documentation
+title: "Readme"
+timestamp: "2026-08-05T12:00:00Z"
+topics: [ansible, role, asimp, hardening]
+---
 Role Name
 =========
 

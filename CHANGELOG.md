@@ -1,3 +1,10 @@
+---
+okf_version: "0.1"
+type: meta
+title: "Changelog"
+timestamp: "2026-08-05T12:00:00Z"
+topics: [asimp, changelog, history, releases]
+---
 # Changelog
 
 All notable changes to this project will be documented in this file.

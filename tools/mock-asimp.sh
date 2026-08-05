@@ -107,6 +107,7 @@ type: report
 title: "Google Jules Sovereign OS Security Hardening & Compliance Report"
 description: "Simulated security audit and compliance report for Google Jules sandbox"
 timestamp: "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+topics: [security, compliance, audit, report, sandbox]
 ---
 # Google Jules Sovereign OS Security Hardening & Compliance Report
 

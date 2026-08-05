@@ -1,3 +1,10 @@
+---
+okf_version: "0.1"
+type: documentation
+title: "ASIMP (Ansible System Integrity Management Platform)"
+timestamp: "2026-08-05T12:00:00Z"
+topics: [asimp, readme, security, baseline, hardening]
+---
 # ASIMP (Ansible System Integrity Management Platform)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)

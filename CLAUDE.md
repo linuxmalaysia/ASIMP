@@ -1,3 +1,10 @@
+---
+okf_version: "0.1"
+type: instructions
+title: "CLAUDE.md - Claude Code Instructions for ASIMP"
+timestamp: "2026-08-05T12:00:00Z"
+topics: [ai, agents, guidelines, rules, conventions]
+---
 # CLAUDE.md - Claude Code Instructions for ASIMP
 
 This file provides system-specific build commands, test commands, and coding rules for Anthropic's **Claude Code** when working in the **ASIMP** repository.

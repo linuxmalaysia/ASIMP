@@ -1,4 +1,5 @@
 ---
+
 name: ai-agent-instructions
 description: Coordinates cross-client AI developer guidelines and rules across various LLM assistants. Use when modifying agent rules, aligning conventions, or adding client-specific instructions.
 license: Apache-2.0
@@ -12,7 +13,10 @@ metadata:
   author: Google Jules & Antigravity
   version: "1.0.0"
   project: ASIMP
+okf_version: "0.1"
+topics: [ai, agents, rules, guidelines, clients]
 ---
+
 
 # Multi-Agent AI Instruction Mapping
 

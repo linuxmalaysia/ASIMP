@@ -1,4 +1,5 @@
 ---
+
 name: asimp-core-workflow
 description: Automates and guides the execution of the ASIMP 'Measure, Harden, Re-Measure' compliance and system hardening workflow. Use when evaluating systems, applying baselines, or reviewing security compliance deltas.
 license: Apache-2.0
@@ -12,7 +13,10 @@ metadata:
   author: Google Jules & Antigravity
   version: "1.0.0"
   project: ASIMP
+okf_version: "0.1"
+topics: [asimp, hardening, compliance, baseline, workflow]
 ---
+
 
 # ASIMP "Measure, Harden, Re-Measure" Core Workflow
 
