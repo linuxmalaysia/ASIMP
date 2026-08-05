@@ -31,6 +31,35 @@ It follows a strict **"Measure, Harden, Re-Measure"** workflow.
 
 ---
 
+## 🌌 Google Antigravity & Google Jules Agent Skills
+
+This repository implements a comprehensive suite of **Google Antigravity-compatible Agent Skills** inside `.agents/skills/`. This seamlessly bridges **Google Jules** and **Google Antigravity**, representing all operational and domain-specific knowledge about the ASIMP project.
+
+### Location & Structure
+Skills are located under the `.agents/skills/<skill-folder>/` directory. Each skill is self-contained and consists of:
+- **`SKILL.md`**: Main instructions, use cases, and guidelines with combined OKF and Antigravity YAML frontmatter, concluding with the standard **Deep State of Mind (DSOM) AI Protocol** footer.
+- **Combined Frontmatter**: Unifies the Agent Skills specification (`name`, `description`, `license`, `compatibility`, `metadata`) and the Google Open Knowledge Format (OKF) specification (`type`, `title`, `resource`, `tags`, `timestamp`).
+
+### Available Agent Skills
+
+| Skill Directory | Skill Name | Purpose / Knowledge Covered |
+| :--- | :--- | :--- |
+| `asimp-core-workflow` | `asimp-core-workflow` | Manages the ASIMP 'Measure, Harden, Re-Measure' workflow with OpenSCAP and Lynis. |
+| `ubuntu-scap-auditing` | `ubuntu-scap-auditing` | Controls dynamic SCAP Security Guide (SSG) zip retrieval from ComplianceAsCode and evaluations. |
+| `ansible-boolean-conditionals` | `ansible-boolean-conditionals` | Enforces strict boolean evaluations in `when:` conditionals to prevent crashes. |
+| `jinja2-template-overrides` | `jinja2-template-overrides` | Standardizes Jinja2 template parameter override headers using capitalized Python booleans (True/False). |
+| `jules-sandbox-mode` | `jules-sandbox-mode` | Detects Google Jules environment (using `/home/jules`) and bypasses or ignores container-restricted tasks. |
+| `ai-agent-instructions` | `ai-agent-instructions` | Coordinates multi-agent cross-referencing between AGENTS.md, CLAUDE.md, and other rule files. |
+| `ansible-galaxy-roles` | `ansible-galaxy-roles` | Documents custom `roles_path` in `ansible.cfg` and Galaxy dependency installs with `--ignore-errors`. |
+| `jekyll-docs-deployment` | `jekyll-docs-deployment` | Guides Jekyll documentation preprocessing via `prepare_docs.py` and GitHub Pages deployment. |
+| `ansible-testing-linting` | `ansible-testing-linting` | Details syntax check and lint command routines for local verification. |
+| `ansible-fqcn-idempotency` | `ansible-fqcn-idempotency` | Enforces Fully Qualified Collection Names (FQCN) and task idempotency (`changed_when` / `failed_when`). |
+
+### Deep State of Mind (DSOM) Protocol
+All skills conclude with a standard **Deep State of Mind (DSOM)** AI Protocol footer, guaranteeing that the context boundaries, alignment constraints, and execution statuses are synchronized between Google Jules and Google Antigravity on every activation.
+
+---
+
 ## 🛠️ Code Conventions & File Hierarchy
 
 ### Ansible Best Practices for Agents
