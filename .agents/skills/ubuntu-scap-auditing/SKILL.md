@@ -1,18 +1,13 @@
 ---
-# Antigravity/Agent Skills Frontmatter
 name: ubuntu-scap-auditing
 description: Manages dynamic SCAP Security Guide (SSG) retrieval and OpenSCAP auditing on Ubuntu systems (specifically Ubuntu 24.04). Use when configuring or fixing OpenSCAP datastream updates, evaluating rules, or working with USN OVAL checks.
 license: Apache-2.0
 compatibility: Google Antigravity / Google Jules
-
-# Open Knowledge Format (OKF) Frontmatter
 type: skill
 title: Ubuntu Dynamic SCAP Auditing and Compliance Engine
 resource: .agents/skills/ubuntu-scap-auditing
 tags: [scap, openscap, ubuntu, auditing, oval, compliance]
 timestamp: 2024-11-20T12:00:00Z
-
-# Metadata
 metadata:
   author: Google Jules & Antigravity
   version: "1.0.0"

@@ -1,18 +1,13 @@
 ---
-# Antigravity/Agent Skills Frontmatter
 name: ansible-fqcn-idempotency
 description: Enforces the use of Fully Qualified Collection Names (FQCN) and strict task idempotency using changed_when / failed_when flags. Use when writing or updating any Ansible playbooks or roles.
 license: Apache-2.0
 compatibility: Google Antigravity / Google Jules
-
-# Open Knowledge Format (OKF) Frontmatter
 type: skill
 title: Ansible FQCN and Task Idempotency Standards
 resource: .agents/skills/ansible-fqcn-idempotency
 tags: [ansible, fqcn, idempotency, changed_when, failed_when, best-practices]
 timestamp: 2024-11-20T12:00:00Z
-
-# Metadata
 metadata:
   author: Google Jules & Antigravity
   version: "1.0.0"

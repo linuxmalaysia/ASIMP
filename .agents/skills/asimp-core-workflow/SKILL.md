@@ -1,18 +1,13 @@
 ---
-# Antigravity/Agent Skills Frontmatter
 name: asimp-core-workflow
 description: Automates and guides the execution of the ASIMP 'Measure, Harden, Re-Measure' compliance and system hardening workflow. Use when evaluating systems, applying baselines, or reviewing security compliance deltas.
 license: Apache-2.0
 compatibility: Google Antigravity / Google Jules
-
-# Open Knowledge Format (OKF) Frontmatter
 type: skill
 title: ASIMP "Measure, Harden, Re-Measure" Core Workflow
 resource: .agents/skills/asimp-core-workflow
 tags: [asimp, hardening, compliance, baseline, workflow]
 timestamp: 2024-11-20T12:00:00Z
-
-# Metadata
 metadata:
   author: Google Jules & Antigravity
   version: "1.0.0"

@@ -1,18 +1,13 @@
 ---
-# Antigravity/Agent Skills Frontmatter
 name: ansible-galaxy-roles
 description: Manages Ansible Galaxy dependencies and role path configurations. Use when introducing external roles, downloading dependencies via requirements.yml, or configuring custom role search paths.
 license: Apache-2.0
 compatibility: Google Antigravity / Google Jules
-
-# Open Knowledge Format (OKF) Frontmatter
 type: skill
 title: Ansible Galaxy Role Paths and Dependencies
 resource: .agents/skills/ansible-galaxy-roles
 tags: [ansible, galaxy, roles, dependencies, requirements]
 timestamp: 2024-11-20T12:00:00Z
-
-# Metadata
 metadata:
   author: Google Jules & Antigravity
   version: "1.0.0"

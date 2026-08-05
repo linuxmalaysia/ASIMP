@@ -1,18 +1,13 @@
 ---
-# Antigravity/Agent Skills Frontmatter
 name: jules-sandbox-mode
 description: Detects and handles Google Jules sandbox environments to prevent container-related failures. Use when designing tasks that manage system-level upgrades, debsums checking, or container-restricted services.
 license: Apache-2.0
 compatibility: Google Antigravity / Google Jules
-
-# Open Knowledge Format (OKF) Frontmatter
 type: skill
 title: Google Jules Sandbox Detection and Compatibility
 resource: .agents/skills/jules-sandbox-mode
 tags: [sandbox, jules, environment-detection, containment, error-handling]
 timestamp: 2024-11-20T12:00:00Z
-
-# Metadata
 metadata:
   author: Google Jules & Antigravity
   version: "1.0.0"

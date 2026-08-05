@@ -1,18 +1,13 @@
 ---
-# Antigravity/Agent Skills Frontmatter
 name: ansible-testing-linting
 description: Guides syntax validation and linting checks on ASIMP Ansible playbooks and roles. Use before committing changes to ensure formatting, structure, and execution conform to standard rules.
 license: Apache-2.0
 compatibility: Google Antigravity / Google Jules
-
-# Open Knowledge Format (OKF) Frontmatter
 type: skill
 title: Ansible Playbook Syntax Checking and Linting
 resource: .agents/skills/ansible-testing-linting
 tags: [ansible, testing, linting, syntax-check, validation]
 timestamp: 2024-11-20T12:00:00Z
-
-# Metadata
 metadata:
   author: Google Jules & Antigravity
   version: "1.0.0"

@@ -1,18 +1,13 @@
 ---
-# Antigravity/Agent Skills Frontmatter
 name: jekyll-docs-deployment
 description: Manages the Jekyll documentation site hosted on GitHub Pages. Use when modifying docs in docs/, adjusting the jekyll-gh-pages.yml deployment workflow, or updating the prepare_docs.py front-matter prepending script.
 license: Apache-2.0
 compatibility: Google Antigravity / Google Jules
-
-# Open Knowledge Format (OKF) Frontmatter
 type: skill
 title: Jekyll Docs Pipeline and GitHub Pages Deployment
 resource: .agents/skills/jekyll-docs-deployment
 tags: [jekyll, github-pages, documentation, cicd, pre-processing]
 timestamp: 2024-11-20T12:00:00Z
-
-# Metadata
 metadata:
   author: Google Jules & Antigravity
   version: "1.0.0"

@@ -1,18 +1,13 @@
 ---
-# Antigravity/Agent Skills Frontmatter
 name: jinja2-template-overrides
 description: Formats modern Jinja2 template parameter override headers correctly using capitalized Python booleans (True/False). Use when writing or modifying Jinja2 templates inside Ansible roles.
 license: Apache-2.0
 compatibility: Google Antigravity / Google Jules
-
-# Open Knowledge Format (OKF) Frontmatter
 type: skill
 title: Jinja2 Template Parameter Override Headers
 resource: .agents/skills/jinja2-template-overrides
 tags: [jinja2, templates, ansible, headers]
 timestamp: 2024-11-20T12:00:00Z
-
-# Metadata
 metadata:
   author: Google Jules & Antigravity
   version: "1.0.0"

@@ -1,18 +1,13 @@
 ---
-# Antigravity/Agent Skills Frontmatter
 name: ansible-boolean-conditionals
 description: Enforces strict boolean evaluations in Ansible 'when:' conditionals to prevent syntax errors and runtime crashes. Use when writing or modifying Ansible tasks with registered variables.
 license: Apache-2.0
 compatibility: Google Antigravity / Google Jules
-
-# Open Knowledge Format (OKF) Frontmatter
 type: skill
 title: Strict Boolean Validation in Ansible Conditionals
 resource: .agents/skills/ansible-boolean-conditionals
 tags: [ansible, conditionals, best-practices, boolean]
 timestamp: 2024-11-20T12:00:00Z
-
-# Metadata
 metadata:
   author: Google Jules & Antigravity
   version: "1.0.0"

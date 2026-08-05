@@ -1,18 +1,13 @@
 ---
-# Antigravity/Agent Skills Frontmatter
 name: ai-agent-instructions
 description: Coordinates cross-client AI developer guidelines and rules across various LLM assistants. Use when modifying agent rules, aligning conventions, or adding client-specific instructions.
 license: Apache-2.0
 compatibility: Google Antigravity / Google Jules
-
-# Open Knowledge Format (OKF) Frontmatter
 type: skill
 title: Multi-Agent AI Instruction Mapping
 resource: .agents/skills/ai-agent-instructions
 tags: [ai, agents, rules, guidelines, clients]
 timestamp: 2024-11-20T12:00:00Z
-
-# Metadata
 metadata:
   author: Google Jules & Antigravity
   version: "1.0.0"
