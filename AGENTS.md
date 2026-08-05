@@ -1,3 +1,10 @@
+---
+okf_version: "0.1"
+type: instructions
+title: "ASIMP Agent & Google Jules Guidelines & Instructions"
+timestamp: "2026-08-05T12:00:00Z"
+topics: [ai, agents, guidelines, rules, conventions]
+---
 # ASIMP Agent & Google Jules Guidelines & Instructions
 
 Welcome, **Google Jules** and other AI/LLM agents! This document outlines coding conventions, architecture constraints, and testing protocols specifically for automated development tools working on **ASIMP (Ansible System Integrity Management Platform)**.
@@ -57,6 +64,44 @@ Skills are located under the `.agents/skills/<skill-folder>/` directory. Each sk
 
 ### Deep State of Mind (DSOM) Protocol
 All skills conclude with a standard **Deep State of Mind (DSOM)** AI Protocol footer, guaranteeing that the context boundaries, alignment constraints, and execution statuses are synchronized between Google Jules and Google Antigravity on every activation.
+
+---
+
+## 📖 Google Open Knowledge Format (OKF) v0.1 Specification
+
+To ensure a standardized, self-describing, human-readable, and machine-parseable representation of project knowledge, **all** markdown (`.md`) files in this repository strictly adhere to the **Google Open Knowledge Format (OKF) v0.1** specification.
+
+### 📐 Required Frontmatter Fields
+Every `.md` document in the repository must begin with a YAML frontmatter block containing exactly these five mandatory fields:
+
+1. **`okf_version`**: Declares the version of the OKF specification. For this repository, it must be `"0.1"`.
+2. **`type`**: Identifies the semantic classification of the document. Standard types used in this repository include:
+   - `documentation`: For general manuals, readmes, and user guides.
+   - `skill`: For Google Antigravity/Jules agent skills.
+   - `instructions`: For agent-specific guidelines and rule mappings (e.g., `.clinerules`, `CLAUDE.md`).
+   - `report`: For compliance audits and security hardening scorecards.
+   - `meta`: For changelogs and historical project logs.
+   - `role-documentation`: For Ansible role-specific README files.
+3. **`title`**: A clean, descriptive, human-readable display title for the document.
+4. **`timestamp`**: An ISO 8601 UTC datetime string indicating when the document was created or last updated (e.g., `"2026-08-05T12:00:00Z"`).
+5. **`topics`**: A YAML array/list of short string tags summarizing the key concepts, modules, or domains covered by the document.
+
+### 📝 Example OKF v0.1 Frontmatter
+```yaml
+---
+okf_version: "0.1"
+type: documentation
+title: "ASIMP Architecture & System Component Flow"
+timestamp: "2026-08-05T12:00:00Z"
+topics: [asimp, architecture, design, audit, workflow]
+---
+```
+
+### 🤖 Rules for Agents
+When creating new `.md` files or editing existing ones:
+- **Mandatory Frontmatter**: You must always include the 5 required fields at the very beginning of the document.
+- **Topics & Tags Mapping**: If the document contains any legacy `tags` field, ensure those are mapped/mirrored to the `topics` list field as well.
+- **Automation**: You can run the automation script `scripts/add_okf_frontmatter.py` to automatically scan, parse, format, and align all workspace markdown files.
 
 ---
 

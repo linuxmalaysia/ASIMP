@@ -1,4 +1,5 @@
 ---
+
 name: jinja2-template-overrides
 description: Formats modern Jinja2 template parameter override headers correctly using capitalized Python booleans (True/False). Use when writing or modifying Jinja2 templates inside Ansible roles.
 license: Apache-2.0
@@ -12,7 +13,10 @@ metadata:
   author: Google Jules & Antigravity
   version: "1.0.0"
   project: ASIMP
+okf_version: "0.1"
+topics: [jinja2, templates, ansible, headers]
 ---
+
 
 # Jinja2 Template Parameter Override Headers
 

@@ -370,6 +370,7 @@
           title: "Google Jules Sovereign OS Security Hardening & Compliance Report"
           description: "Simulated security audit and compliance report for Google Jules sandbox"
           timestamp: "{{ ansible_date_time.iso8601 }}"
+          topics: [security, compliance, audit, report, sandbox]
           ---
           # Google Jules Sovereign OS Security Hardening & Compliance Report
 

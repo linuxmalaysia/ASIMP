@@ -1,4 +1,5 @@
 ---
+
 name: jules-sandbox-mode
 description: Detects and handles Google Jules sandbox environments to prevent container-related failures. Use when designing tasks that manage system-level upgrades, debsums checking, or container-restricted services.
 license: Apache-2.0
@@ -12,7 +13,10 @@ metadata:
   author: Google Jules & Antigravity
   version: "1.0.0"
   project: ASIMP
+okf_version: "0.1"
+topics: [sandbox, jules, environment-detection, containment, error-handling]
 ---
+
 
 # Google Jules Sandbox Detection and Compatibility
 

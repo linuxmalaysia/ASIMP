@@ -1,3 +1,10 @@
+---
+okf_version: "0.1"
+type: meta
+title: "Project History & Evolution"
+timestamp: "2026-08-05T12:00:00Z"
+topics: [asimp, changelog, history, releases]
+---
 # Project History & Evolution
 
 This document traces the historical development, milestones, and design evolution of **ASIMP (Ansible System Integrity Management Platform)** from its inception to the current enterprise-ready security automation suite.

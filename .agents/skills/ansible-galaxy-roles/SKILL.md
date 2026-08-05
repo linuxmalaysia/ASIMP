@@ -1,4 +1,5 @@
 ---
+
 name: ansible-galaxy-roles
 description: Manages Ansible Galaxy dependencies and role path configurations. Use when introducing external roles, downloading dependencies via requirements.yml, or configuring custom role search paths.
 license: Apache-2.0
@@ -12,7 +13,10 @@ metadata:
   author: Google Jules & Antigravity
   version: "1.0.0"
   project: ASIMP
+okf_version: "0.1"
+topics: [ansible, galaxy, roles, dependencies, requirements]
 ---
+
 
 # Ansible Galaxy Role Paths and Dependencies
 

@@ -1,4 +1,5 @@
 ---
+
 name: ansible-fqcn-idempotency
 description: Enforces the use of Fully Qualified Collection Names (FQCN) and strict task idempotency using changed_when / failed_when flags. Use when writing or updating any Ansible playbooks or roles.
 license: Apache-2.0
@@ -12,7 +13,10 @@ metadata:
   author: Google Jules & Antigravity
   version: "1.0.0"
   project: ASIMP
+okf_version: "0.1"
+topics: [ansible, fqcn, idempotency, changed_when, failed_when, best-practices]
 ---
+
 
 # Ansible FQCN and Task Idempotency Standards
 

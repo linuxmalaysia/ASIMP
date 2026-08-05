@@ -1,4 +1,5 @@
 ---
+
 name: ansible-boolean-conditionals
 description: Enforces strict boolean evaluations in Ansible 'when:' conditionals to prevent syntax errors and runtime crashes. Use when writing or modifying Ansible tasks with registered variables.
 license: Apache-2.0
@@ -12,7 +13,10 @@ metadata:
   author: Google Jules & Antigravity
   version: "1.0.0"
   project: ASIMP
+okf_version: "0.1"
+topics: [ansible, conditionals, best-practices, boolean]
 ---
+
 
 # Strict Boolean Validation in Ansible Conditionals
 

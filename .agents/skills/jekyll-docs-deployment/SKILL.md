@@ -1,4 +1,5 @@
 ---
+
 name: jekyll-docs-deployment
 description: Manages the Jekyll documentation site hosted on GitHub Pages. Use when modifying docs in docs/, adjusting the jekyll-gh-pages.yml deployment workflow, or updating the prepare_docs.py front-matter prepending script.
 license: Apache-2.0
@@ -12,7 +13,10 @@ metadata:
   author: Google Jules & Antigravity
   version: "1.0.0"
   project: ASIMP
+okf_version: "0.1"
+topics: [jekyll, github-pages, documentation, cicd, pre-processing]
 ---
+
 
 # Jekyll Docs Pipeline and GitHub Pages Deployment
 
