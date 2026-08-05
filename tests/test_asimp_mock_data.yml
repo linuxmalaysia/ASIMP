@@ -1,0 +1,127 @@
+---
+# Content/schema regression tests for the checked-in ASIMP mock artifacts:
+#   - data/asimp_mock/var/log/asimp-baseline-scores.json
+#   - data/asimp_mock/opt/report/openscap/SECURITY_AUDIT_REPORT.md
+#
+# This PR flattened asimp-baseline-scores.json from a nested
+# {"scores": {"before": {...}, "after": {...}}} shape to a flat
+# {"openscap_before": "...", "lynis_before": "..."} shape. That flat shape is
+# exactly what roles/reporting-ASIMP/tasks/main.yml writes out (see the
+# "Save baseline scores to file (Mock)" task) and exactly what it later reads
+# back via `baseline.lynis_before` / `baseline.openscap_before` in the "Run
+# Mock AFTER hardening evaluation" block. These tests guard against the
+# checked-in mock fixture drifting back out of sync with what the role
+# itself produces/consumes, and verify the accompanying Markdown report is
+# internally consistent with it.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_asimp_mock_data.yml
+- name: Verify ASIMP mock data fixtures are well-formed and mutually consistent
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    baseline_json_path: "{{ repo_root }}/data/asimp_mock/var/log/asimp-baseline-scores.json"
+    report_md_path: "{{ repo_root }}/data/asimp_mock/opt/report/openscap/SECURITY_AUDIT_REPORT.md"
+    # Hard-coded mock values used verbatim by the "Set mock BEFORE/AFTER
+    # score facts" tasks in roles/reporting-ASIMP/tasks/main.yml.
+    expected_openscap_before: "58.4"
+    expected_lynis_before: "62"
+    expected_lynis_after: "88"
+    expected_openscap_after: "91.2"
+
+  tasks:
+    - name: Read the raw baseline JSON fixture
+      ansible.builtin.set_fact:
+        baseline_json_raw: "{{ lookup('file', baseline_json_path) }}"
+
+    - name: Parse the baseline JSON fixture
+      ansible.builtin.set_fact:
+        baseline_json: "{{ baseline_json_raw | from_json }}"
+
+    - name: Assert the baseline JSON uses the flat schema produced by reporting-ASIMP
+      ansible.builtin.assert:
+        that:
+          - baseline_json.keys() | sort == ['lynis_before', 'openscap_before']
+        fail_msg: >-
+          asimp-baseline-scores.json must use the flat {openscap_before, lynis_before}
+          schema written by the "Save baseline scores to file (Mock)" task in
+          roles/reporting-ASIMP/tasks/main.yml, not a nested {"scores": {...}} shape.
+
+    - name: Assert the baseline JSON values are strings matching the role's hard-coded mock values
+      ansible.builtin.assert:
+        that:
+          - baseline_json.openscap_before is string
+          - baseline_json.lynis_before is string
+          - baseline_json.openscap_before == expected_openscap_before
+          - baseline_json.lynis_before == expected_lynis_before
+        fail_msg: "asimp-baseline-scores.json values must match the mock BEFORE scores hard-coded in roles/reporting-ASIMP/tasks/main.yml"
+
+    - name: Read the Security Audit Report markdown
+      ansible.builtin.set_fact:
+        report_md_raw: "{{ lookup('file', report_md_path) }}"
+
+    - name: Extract the YAML frontmatter block from the report
+      ansible.builtin.set_fact:
+        report_frontmatter_text: "{{ report_md_raw.split('---')[1] }}"
+      when: report_md_raw is search('(?s)^---.*?---')
+
+    - name: Fail loudly if no frontmatter block could be extracted
+      ansible.builtin.fail:
+        msg: "SECURITY_AUDIT_REPORT.md must start with a '---' delimited OKF frontmatter block"
+      when: report_frontmatter_text is not defined
+
+    - name: Parse the report frontmatter as YAML
+      ansible.builtin.set_fact:
+        report_frontmatter: "{{ report_frontmatter_text | from_yaml }}"
+
+    - name: Assert the frontmatter declares the expected OKF metadata
+      ansible.builtin.assert:
+        that:
+          - report_frontmatter.okf_version == 0.1
+          - report_frontmatter.type == 'report'
+          - "'security' in report_frontmatter.topics"
+          - "'compliance' in report_frontmatter.topics"
+          - "'sandbox' in report_frontmatter.topics"
+        fail_msg: "SECURITY_AUDIT_REPORT.md frontmatter must declare okf_version, type, and expected topics"
+
+    - name: Assert the frontmatter timestamp is a well-formed ISO-8601 UTC timestamp
+      ansible.builtin.assert:
+        that:
+          - report_frontmatter.timestamp is match('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$')
+        fail_msg: "The frontmatter 'timestamp' field must be an ISO-8601 UTC timestamp (YYYY-MM-DDTHH:MM:SSZ)"
+
+    - name: Compute the expected 'Report Timestamp' line from the frontmatter timestamp
+      ansible.builtin.set_fact:
+        expected_report_timestamp_line: "**Report Timestamp**: {{ report_frontmatter.timestamp | regex_replace('T', ' ') | regex_replace('Z$', '') }}"
+
+    - name: Assert the body 'Report Timestamp' line matches the frontmatter timestamp
+      ansible.builtin.assert:
+        that:
+          - expected_report_timestamp_line in report_md_raw
+        fail_msg: >-
+          The '**Report Timestamp**' line in the report body must correspond to the
+          same instant as the YAML frontmatter 'timestamp' field (just formatted with
+          a space instead of 'T' and no trailing 'Z'), matching the previous timestamp
+          bump made together in this PR.
+
+    - name: Assert the report body's baseline scores match the baseline JSON fixture
+      ansible.builtin.assert:
+        that:
+          - "report_md_raw is search('Baseline: ' + (baseline_json.lynis_before | string) + ' / 100')"
+          - "report_md_raw is search('Baseline: ' + (baseline_json.openscap_before | string) + '%')"
+        fail_msg: "The report's baseline Lynis/OpenSCAP scores must match the values in asimp-baseline-scores.json"
+
+    - name: Assert the report body's after-hardening scores match the role's hard-coded mock AFTER values
+      ansible.builtin.assert:
+        that:
+          - "report_md_raw is search('After Hardening: ' + expected_lynis_after + ' / 100')"
+          - "report_md_raw is search('After Hardening: ' + expected_openscap_after + '%')"
+        fail_msg: "The report's after-hardening Lynis/OpenSCAP scores must match the mock AFTER scores hard-coded in roles/reporting-ASIMP/tasks/main.yml"
+
+    - name: Assert the report footer attribution line is present
+      ansible.builtin.assert:
+        that:
+          - "'Deep State of Mind (DSOM) For My AI Protocol' in report_md_raw"
+        fail_msg: "SECURITY_AUDIT_REPORT.md must retain its DSOM footer attribution line"

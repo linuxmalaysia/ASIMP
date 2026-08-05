@@ -1,0 +1,109 @@
+---
+# Structural regression tests for the sandbox-awareness changes made to
+# roles/reporting-ASIMP/tasks/main.yml.
+#
+# The role now:
+#   * defaults `openscap_scan_supported` to false up front (previously
+#     undefined until later OS-specific blocks set it, which could leave it
+#     undefined for the Google Jules sandbox path)
+#   * skips OpenSCAP package installation, the Ubuntu SCAP Security Guide
+#     download/extract block, the "no compatible datastream" warning, and
+#     the "Ensure lynis is installed" task whenever running inside the
+#     Google Jules sandbox (`is_sandbox_jules`), since none of those real
+#     tools are available/needed there and the mock BEFORE/AFTER blocks
+#     take over instead.
+#
+# These tests parse the real tasks file and assert the relevant tasks carry
+# the expected `when:` conditions, without requiring a live target host,
+# package manager, or network access.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_reporting_asimp_sandbox_skip.yml
+- name: Verify sandbox-aware skip conditions in roles/reporting-ASIMP/tasks/main.yml
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    sandbox_condition: "not (is_sandbox_jules | default(false) | bool)"
+    sandbox_gated_task_names:
+      - "OpenSCAP | Install Packages (Ubuntu)"
+      - "OpenSCAP | Install Packages (RHEL/CentOS/Rocky)"
+      - "OpenSCAP | Fetch latest SCAP Security Guide release from GitHub (Ubuntu)"
+      - "OpenSCAP | Display warning if no compatible datastream found"
+      - "Ensure lynis is installed"
+
+  tasks:
+    - name: Load reporting-ASIMP tasks/main.yml
+      ansible.builtin.set_fact:
+        reporting_tasks: "{{ lookup('file', repo_root + '/roles/reporting-ASIMP/tasks/main.yml') | from_yaml }}"
+
+    - name: Assert all expected sandbox-gated tasks are present in the role
+      ansible.builtin.assert:
+        that:
+          - item in (reporting_tasks | map(attribute='name') | list)
+        fail_msg: "Expected task '{{ item }}' was not found in roles/reporting-ASIMP/tasks/main.yml"
+      loop: "{{ sandbox_gated_task_names }}"
+
+    - name: Build a name-to-task lookup for convenience
+      ansible.builtin.set_fact:
+        reporting_tasks_by_name: "{{ dict(reporting_tasks | map(attribute='name') | zip(reporting_tasks)) }}"
+
+    - name: Normalize each gated task's `when` clause into a list
+      ansible.builtin.set_fact:
+        reporting_task_when_lists: "{{ reporting_task_when_lists | default({}) | combine({item: ([reporting_tasks_by_name[item].when] if reporting_tasks_by_name[item].when is string else reporting_tasks_by_name[item].when)}) }}"
+      loop: "{{ sandbox_gated_task_names }}"
+
+    - name: Assert each sandbox-gated task's `when` clause includes the sandbox-skip condition
+      ansible.builtin.assert:
+        that:
+          - sandbox_condition in reporting_task_when_lists[item]
+        fail_msg: "Task '{{ item }}' must be skipped when running inside the Google Jules sandbox via a '{{ sandbox_condition }}' condition"
+        success_msg: "Task '{{ item }}' correctly skips execution inside the Google Jules sandbox"
+      loop: "{{ sandbox_gated_task_names }}"
+
+    - name: Extract the 'OpenSCAP | Set report directory and sandbox facts' task
+      ansible.builtin.set_fact:
+        sandbox_facts_task: "{{ reporting_tasks_by_name['OpenSCAP | Set report directory and sandbox facts'] }}"
+
+    - name: Assert openscap_scan_supported now defaults to false up front
+      ansible.builtin.assert:
+        that:
+          - "'openscap_scan_supported' in sandbox_facts_task['ansible.builtin.set_fact']"
+          - sandbox_facts_task['ansible.builtin.set_fact'].openscap_scan_supported == false
+        fail_msg: "The 'OpenSCAP | Set report directory and sandbox facts' task must initialize openscap_scan_supported to false so it is always defined, even in the sandbox"
+
+    - name: Extract the Ubuntu-specific OpenSCAP fetch/extract block task
+      ansible.builtin.set_fact:
+        ubuntu_fetch_task: "{{ reporting_tasks_by_name['OpenSCAP | Fetch latest SCAP Security Guide release from GitHub (Ubuntu)'] }}"
+
+    - name: Assert the Ubuntu fetch/extract block still requires is_ubuntu in addition to the sandbox check
+      ansible.builtin.assert:
+        that:
+          - "'is_ubuntu' in reporting_task_when_lists['OpenSCAP | Fetch latest SCAP Security Guide release from GitHub (Ubuntu)']"
+        fail_msg: "The Ubuntu-only OpenSCAP fetch block must still be gated on is_ubuntu, in addition to skipping the sandbox"
+
+    - name: Assert the OpenSCAP install-package tasks still require their respective OS family fact
+      ansible.builtin.assert:
+        that:
+          - "'is_ubuntu' in reporting_task_when_lists['OpenSCAP | Install Packages (Ubuntu)']"
+          - "'is_rhel' in reporting_task_when_lists['OpenSCAP | Install Packages (RHEL/CentOS/Rocky)']"
+        fail_msg: "OS-specific OpenSCAP package installation tasks must still check their OS-family fact alongside the sandbox-skip condition"
+
+    - name: Assert the 'no compatible datastream' warning still requires openscap_scan_supported to be false
+      ansible.builtin.assert:
+        that:
+          - "'not openscap_scan_supported' in reporting_task_when_lists['OpenSCAP | Display warning if no compatible datastream found']"
+        fail_msg: "The warning task must still only fire when openscap_scan_supported is false, in addition to skipping the sandbox"
+
+    - name: Assert the lynis install task uses a plain scalar `when:` (not a list) with the sandbox condition
+      ansible.builtin.assert:
+        that:
+          - reporting_tasks_by_name['Ensure lynis is installed'].when == sandbox_condition
+        fail_msg: "'Ensure lynis is installed' must be skipped entirely inside the Google Jules sandbox via when: {{ sandbox_condition }}"
+
+    - name: Assert the non-Ubuntu OS-specific configuration block is unaffected by this change (regression guard)
+      ansible.builtin.assert:
+        that:
+          - reporting_tasks_by_name['OpenSCAP | Non-Ubuntu OS-specific configurations'].when == 'not is_ubuntu'
+        fail_msg: "The non-Ubuntu OpenSCAP configuration block's condition must remain unchanged by the sandbox-awareness patch"

@@ -1,0 +1,146 @@
+---
+# Structural regression tests for the "Dynamically patch external roles for
+# sandbox compatibility" task in play.yml and play-localhost.yml.
+#
+# Previously this task was an inline `block:` containing more than a dozen
+# individual ansible.builtin.replace sub-tasks (one per vendored role file).
+# That block was replaced with a single delegated invocation of
+# scripts/patch_roles.py, which performs the equivalent, more robust
+# patching in Python. These tests parse the real playbook files and assert
+# that:
+#   * the new task exists and invokes the helper script exactly as expected
+#   * it keeps the same safety flags (delegate_to/run_once/ignore_errors/tags)
+#   * it still runs early, before the patched roles are applied
+#   * the old, now-removed inline sub-tasks are not still present (regression
+#     guard against reintroducing the inline block)
+#   * play.yml and play-localhost.yml define an identical task
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_patch_external_roles_task.yml
+- name: Verify external-role patch task is correctly wired in play.yml and play-localhost.yml
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    patch_task_name: "Dynamically patch external roles for sandbox compatibility"
+    expected_command: "python3 scripts/patch_roles.py"
+    removed_inline_task_names:
+      - "Patch opensshd.conf.j2 template quotes"
+      - "Patch dev-sec.ssh-hardening moduli conditional"
+      - "Patch ansible-hardening service tasks (auditd)"
+      - "Patch ansible-hardening service tasks (autofs)"
+      - "Patch ansible-hardening service tasks (clamav)"
+      - "Patch ansible-hardening service tasks (chrony)"
+      - "Patch ansible-hardening service tasks (firewalld)"
+      - "Patch ansible-hardening handlers (restart auditd)"
+      - "Patch ansible-hardening handlers (restart chrony)"
+      - "Patch ansible-hardening handlers (restart ssh)"
+      - "Patch ansible-hardening handlers (restart clamav)"
+      - "Patch ansible-hardening handlers (generate rules)"
+
+  tasks:
+    - name: Load play.yml plays
+      ansible.builtin.set_fact:
+        play_yml_plays: "{{ lookup('file', repo_root + '/play.yml') | from_yaml }}"
+
+    - name: Load play-localhost.yml plays
+      ansible.builtin.set_fact:
+        play_localhost_plays: "{{ lookup('file', repo_root + '/play-localhost.yml') | from_yaml }}"
+
+    - name: Extract the hardening play from play.yml
+      ansible.builtin.set_fact:
+        play_yml_hardening_play: "{{ play_yml_plays | selectattr('name', 'equalto', 'Run ASIMP Security Hardening and Audits') | first }}"
+
+    - name: Extract the hardening play from play-localhost.yml
+      ansible.builtin.set_fact:
+        play_localhost_hardening_play: "{{ play_localhost_plays | selectattr('name', 'equalto', 'Run localhost ASIMP Security Hardening and Audits') | first }}"
+
+    - name: Extract task name lists for ordering/regression checks
+      ansible.builtin.set_fact:
+        play_yml_task_names: "{{ play_yml_hardening_play.tasks | map(attribute='name') | list }}"
+        play_localhost_task_names: "{{ play_localhost_hardening_play.tasks | map(attribute='name') | list }}"
+
+    - name: Assert the patch task exists in both playbooks
+      ansible.builtin.assert:
+        that:
+          - patch_task_name in play_yml_task_names
+          - patch_task_name in play_localhost_task_names
+        fail_msg: "The '{{ patch_task_name }}' task must exist in both play.yml and play-localhost.yml"
+
+    - name: Assert none of the old, individually-patched inline sub-tasks are still present
+      ansible.builtin.assert:
+        that:
+          - item not in play_yml_task_names
+          - item not in play_localhost_task_names
+        fail_msg: "The now-removed inline patch sub-task '{{ item }}' must not reappear in play.yml or play-localhost.yml; the patching logic was consolidated into scripts/patch_roles.py"
+      loop: "{{ removed_inline_task_names }}"
+
+    - name: Extract the patch task from play.yml
+      ansible.builtin.set_fact:
+        play_yml_patch_task: "{{ play_yml_hardening_play.tasks | selectattr('name', 'equalto', patch_task_name) | first }}"
+
+    - name: Extract the patch task from play-localhost.yml
+      ansible.builtin.set_fact:
+        play_localhost_patch_task: "{{ play_localhost_hardening_play.tasks | selectattr('name', 'equalto', patch_task_name) | first }}"
+
+    - name: Assert both patch tasks use the ansible.builtin.command module
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.command' in play_yml_patch_task"
+          - "'ansible.builtin.command' in play_localhost_patch_task"
+          - "'ansible.builtin.replace' not in play_yml_patch_task"
+          - "'ansible.builtin.replace' not in play_localhost_patch_task"
+          - "'block' not in play_yml_patch_task"
+          - "'block' not in play_localhost_patch_task"
+        fail_msg: "The patch task must now invoke scripts/patch_roles.py via ansible.builtin.command instead of an inline replace block"
+
+    - name: Assert both patch tasks invoke the helper script with the exact expected command
+      ansible.builtin.assert:
+        that:
+          - play_yml_patch_task['ansible.builtin.command'] == expected_command
+          - play_localhost_patch_task['ansible.builtin.command'] == expected_command
+        fail_msg: "The patch task must run '{{ expected_command }}'"
+
+    - name: Assert both patch tasks are safely delegated, run once, and never fail the play
+      ansible.builtin.assert:
+        that:
+          - play_yml_patch_task.delegate_to == 'localhost'
+          - play_yml_patch_task.run_once == true
+          - play_yml_patch_task.ignore_errors == true
+          - play_localhost_patch_task.delegate_to == 'localhost'
+          - play_localhost_patch_task.run_once == true
+          - play_localhost_patch_task.ignore_errors == true
+        fail_msg: "The patch task must set delegate_to: localhost, run_once: true and ignore_errors: true so it tolerates a missing/failing patcher script and only runs once per play"
+
+    - name: Assert both patch tasks are tagged 'always' so they are not skipped by tag filtering
+      ansible.builtin.assert:
+        that:
+          - play_yml_patch_task.tags == 'always'
+          - play_localhost_patch_task.tags == 'always'
+        fail_msg: "The patch task must be tagged 'always' so it still runs when users select specific tags"
+
+    - name: Assert the patch task runs before the Lynis role is applied in play.yml
+      ansible.builtin.assert:
+        that:
+          - play_yml_task_names.index(patch_task_name) < play_yml_task_names.index('Apply Lynis Hardening Configuration')
+        fail_msg: "The external-role patch task must run before the Lynis role is included in play.yml, otherwise the patch has no effect"
+
+    - name: Assert the patch task runs before the Lynis role is applied in play-localhost.yml
+      ansible.builtin.assert:
+        that:
+          - play_localhost_task_names.index(patch_task_name) < play_localhost_task_names.index('Apply Lynis Hardening Configuration')
+        fail_msg: "The external-role patch task must run before the Lynis role is included in play-localhost.yml, otherwise the patch has no effect"
+
+    - name: Assert the patch task runs before SSH hardening is applied in both playbooks
+      ansible.builtin.assert:
+        that:
+          - play_yml_task_names.index(patch_task_name) < play_yml_task_names.index('Apply SSH Hardening')
+          - play_localhost_task_names.index(patch_task_name) < play_localhost_task_names.index('Apply SSH Hardening')
+        fail_msg: "The external-role patch task must run before dev-sec.ssh-hardening is included, otherwise its templates/tasks would not yet be patched"
+
+    - name: Assert play.yml and play-localhost.yml define an identical patch task
+      ansible.builtin.assert:
+        that:
+          - play_yml_patch_task == play_localhost_patch_task
+        fail_msg: "play.yml and play-localhost.yml should define the exact same patch task so both entry points behave consistently"
