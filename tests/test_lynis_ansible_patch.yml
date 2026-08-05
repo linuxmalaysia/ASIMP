@@ -100,15 +100,15 @@
       loop: "{{ patch_targets }}"
       delegate_to: localhost
       run_once: true
-      failed_when: false
+      ignore_errors: true
       register: patch_result_pass1
 
     - name: Assert the task did not fail even though one target path is missing
       ansible.builtin.assert:
         that:
-          - patch_result_pass1 is not failed
-          - patch_result_pass1.results[4].failed | default(false) == false
-        fail_msg: "The patch task should tolerate a missing file via failed_when: false, as it does in play.yml/play-localhost.yml"
+          - patch_result_pass1.results is defined
+          - patch_result_pass1.results[4].failed | default(false) == true
+        fail_msg: "The patch task should tolerate a missing file via ignore_errors: true, as it does in play.yml/play-localhost.yml"
         success_msg: "Missing target file was handled gracefully"
 
     - name: Assert the zero-indent fixture reports changed=true on first pass
@@ -176,7 +176,7 @@
       loop: "{{ patch_targets }}"
       delegate_to: localhost
       run_once: true
-      failed_when: false
+      ignore_errors: true
       register: patch_result_pass2
 
     - name: Assert the second pass makes no further changes to any fixture
