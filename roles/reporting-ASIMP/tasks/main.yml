@@ -6,12 +6,32 @@
     is_ubuntu: "{{ ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu' }}"
     is_rhel: "{{ ansible_os_family == 'CentOS' or ansible_os_family == 'RedHat' or ansible_os_family == 'Rocky' }}"
 
+- name: Check if /home/jules exists for sandbox detection
+  ansible.builtin.stat:
+    path: /home/jules
+  register: r_jules_home_stat
+
+- name: OpenSCAP | Set report directory and sandbox facts
+  ansible.builtin.set_fact:
+    openscap_report_dir: "{{ ansible_env.HOME | default('/home/' + ansible_user_id) }}/report/openscap"
+    is_sandbox_jules: "{{ r_jules_home_stat.stat.exists }}"
+
+- name: OpenSCAP | Create report directory
+  ansible.builtin.file:
+    path: "{{ openscap_report_dir }}"
+    state: directory
+    mode: '0755'
+
 - name: OpenSCAP | Install Packages (Ubuntu)
   ansible.builtin.apt:
     name:
       - openscap-scanner
       - ssg-debian
       - ssg-debderived
+      - unzip
+      - wget
+      - curl
+      - bzip2
     state: present
     update_cache: yes
   when: is_ubuntu
@@ -68,35 +88,96 @@
               sys.exit(1)
           print(round(get_score(sys.argv[1]), 2))
 
-- name: OpenSCAP | Find SCAP Security Guide datastreams
-  ansible.builtin.find:
-    paths: /usr/share/xml/scap/ssg/content/
-    patterns: "*ds.xml"
-  register: ssg_files
-  ignore_errors: yes
+- name: OpenSCAP | Fetch latest SCAP Security Guide release from GitHub (Ubuntu)
+  block:
+    - name: OpenSCAP | Get latest release download URL
+      ansible.builtin.shell: >
+        curl -s https://api.github.com/repos/ComplianceAsCode/content/releases/latest |
+        grep "browser_download_url" | grep "scap-security-guide-" | grep ".zip" | head -n 1 | cut -d '"' -f 4
+      register: scap_latest_url_raw
+      changed_when: false
+      ignore_errors: yes
 
-- name: OpenSCAP | Set datastream and profile facts
+    - name: OpenSCAP | Set latest URL fact
+      ansible.builtin.set_fact:
+        scap_latest_url: "{{ scap_latest_url_raw.stdout | trim }}"
+      when: scap_latest_url_raw.rc == 0 and scap_latest_url_raw.stdout | trim | length > 0
+
+    - name: OpenSCAP | Fallback to default known URL if query failed
+      ansible.builtin.set_fact:
+        scap_latest_url: "https://github.com/ComplianceAsCode/content/releases/download/v0.1.79/scap-security-guide-0.1.79.zip"
+      when: scap_latest_url is not defined or scap_latest_url | length == 0
+
+    - name: OpenSCAP | Download latest SCAP Security Guide zip
+      ansible.builtin.get_url:
+        url: "{{ scap_latest_url }}"
+        dest: "{{ openscap_report_dir }}/{{ scap_latest_url | basename }}"
+        mode: '0644'
+      register: download_guide
+      ignore_errors: yes
+
+    - name: OpenSCAP | Extract SCAP Security Guide zip
+      ansible.builtin.unarchive:
+        src: "{{ openscap_report_dir }}/{{ scap_latest_url | basename }}"
+        dest: "{{ openscap_report_dir }}"
+        remote_src: yes
+      when: download_guide is succeeded or download_guide.skipped is not defined
+      ignore_errors: yes
+
+    - name: OpenSCAP | Find extracted Ubuntu datastream XML file
+      ansible.builtin.find:
+        paths: "{{ openscap_report_dir }}"
+        patterns: "ssg-ubuntu{{ ansible_distribution_version | replace('.', '') }}-ds.xml"
+        recurse: yes
+      register: found_downloaded_ds
+      ignore_errors: yes
+
+    - name: OpenSCAP | Set datastream path to downloaded file
+      ansible.builtin.set_fact:
+        openscap_datastream: "{{ found_downloaded_ds.files[0].path }}"
+        openscap_scan_supported: true
+      when: found_downloaded_ds.matched is defined and found_downloaded_ds.matched > 0
+
+    - name: OpenSCAP | Set fallback datastream path if not found in find
+      ansible.builtin.set_fact:
+        openscap_datastream: "{{ openscap_report_dir }}/{{ scap_latest_url | basename | replace('.zip', '') }}/ssg-ubuntu{{ ansible_distribution_version | replace('.', '') }}-ds.xml"
+        openscap_scan_supported: true
+      when: openscap_datastream is not defined or openscap_datastream == ""
+  when: is_ubuntu
+
+- name: OpenSCAP | Non-Ubuntu OS-specific configurations
+  block:
+    - name: OpenSCAP | Find SCAP Security Guide datastreams
+      ansible.builtin.find:
+        paths: /usr/share/xml/scap/ssg/content/
+        patterns: "*ds.xml"
+      register: ssg_files
+      ignore_errors: yes
+
+    - name: OpenSCAP | Set datastream fact
+      ansible.builtin.set_fact:
+        openscap_datastream: >-
+          {%- if ansible_distribution | lower == 'rocky' -%}
+          /usr/share/xml/scap/ssg/content/ssg-rocky{{ ansible_distribution_major_version }}-ds.xml
+          {%- elif ansible_distribution | lower == 'centos' -%}
+          /usr/share/xml/scap/ssg/content/ssg-centos{{ ansible_distribution_major_version }}-ds.xml
+          {%- else -%}
+          /usr/share/xml/scap/ssg/content/ssg-rhel{{ ansible_distribution_major_version }}-ds.xml
+          {%- endif -%}
+
+    - name: OpenSCAP | Check if resolved datastream file exists
+      ansible.builtin.stat:
+        path: "{{ openscap_datastream }}"
+      register: ds_file_stat
+
+    - name: OpenSCAP | Mark scan as supported if OS-version-compatible datastream exists
+      ansible.builtin.set_fact:
+        openscap_scan_supported: "{{ ds_file_stat.stat.exists }}"
+  when: not is_ubuntu
+
+- name: OpenSCAP | Set common profile fact
   ansible.builtin.set_fact:
-    openscap_datastream: >-
-      {%- if is_ubuntu -%}
-      /usr/share/xml/scap/ssg/content/ssg-ubuntu{{ ansible_distribution_version | replace('.', '') }}-ds.xml
-      {%- elif ansible_distribution | lower == 'rocky' -%}
-      /usr/share/xml/scap/ssg/content/ssg-rocky{{ ansible_distribution_major_version }}-ds.xml
-      {%- elif ansible_distribution | lower == 'centos' -%}
-      /usr/share/xml/scap/ssg/content/ssg-centos{{ ansible_distribution_major_version }}-ds.xml
-      {%- else -%}
-      /usr/share/xml/scap/ssg/content/ssg-rhel{{ ansible_distribution_major_version }}-ds.xml
-      {%- endif -%}
     openscap_profile: "xccdf_org.ssgproject.content_profile_cis_level2_server"
-
-- name: OpenSCAP | Check if resolved datastream file exists
-  ansible.builtin.stat:
-    path: "{{ openscap_datastream }}"
-  register: ds_file_stat
-
-- name: OpenSCAP | Mark scan as supported if OS-version-compatible datastream exists
-  ansible.builtin.set_fact:
-    openscap_scan_supported: "{{ ds_file_stat.stat.exists }}"
 
 - name: OpenSCAP | Display warning if no compatible datastream found
   ansible.builtin.debug:
@@ -118,12 +199,31 @@
       ansible.builtin.shell: >
         oscap xccdf eval
         --profile {{ openscap_profile }}
-        --results /var/log/openscap-before-results.xml
-        --report /var/log/openscap-before-report.html
+        --fetch-remote-resources
+        --results {{ openscap_report_dir }}/ssg-results-ubuntu{{ ansible_distribution_version | replace('.', '') }}.xml
+        --report {{ openscap_report_dir }}/ssg-results-ubuntu{{ ansible_distribution_version | replace('.', '') }}.html
         {{ openscap_datastream }}
       register: oscap_before_run
       failed_when: false
       changed_when: true
+      when: openscap_scan_supported | default(true)
+
+    - name: Copy BEFORE results to ASIMP path
+      ansible.builtin.copy:
+        src: "{{ openscap_report_dir }}/ssg-results-ubuntu{{ ansible_distribution_version | replace('.', '') }}.xml"
+        dest: /var/log/openscap-before-results.xml
+        remote_src: yes
+        mode: '0644'
+      failed_when: false
+      when: openscap_scan_supported | default(true)
+
+    - name: Copy BEFORE report to ASIMP path
+      ansible.builtin.copy:
+        src: "{{ openscap_report_dir }}/ssg-results-ubuntu{{ ansible_distribution_version | replace('.', '') }}.html"
+        dest: /var/log/openscap-before-report.html
+        remote_src: yes
+        mode: '0644'
+      failed_when: false
       when: openscap_scan_supported | default(true)
 
     - name: Parse OpenSCAP BEFORE compliance score
@@ -151,6 +251,40 @@
             "openscap_before": "{{ parsed_openscap_before.stdout | default('0.0') | trim }}",
             "lynis_before": "{{ parsed_lynis_before.stdout | default('0') | trim }}"
           }
+
+    - name: OpenSCAP | Generate BEFORE Remediation Script (Ubuntu)
+      ansible.builtin.shell: >
+        oscap xccdf generate fix
+        --profile {{ openscap_profile }}
+        --fix-type bash
+        --output {{ openscap_report_dir }}/remediate-{{ ansible_distribution_release }}-latest.sh
+        {{ openscap_datastream }}
+      failed_when: false
+      changed_when: true
+      when: is_ubuntu and openscap_scan_supported | default(true)
+
+    - name: OpenSCAP | Download and run BEFORE OVAL Vulnerability Assessment (Ubuntu)
+      block:
+        - name: OpenSCAP | Download OVAL definitions
+          ansible.builtin.get_url:
+            url: "https://security-metadata.canonical.com/oval/com.ubuntu.{{ ansible_distribution_release }}.usn.oval.xml.bz2"
+            dest: "{{ openscap_report_dir }}/com.ubuntu.{{ ansible_distribution_release }}.usn.oval.xml.bz2"
+            mode: '0644'
+          register: download_oval
+
+        - name: OpenSCAP | Decompress OVAL definitions
+          ansible.builtin.shell: "bunzip2 -f -k {{ openscap_report_dir }}/com.ubuntu.{{ ansible_distribution_release }}.usn.oval.xml.bz2"
+          when: download_oval is succeeded
+
+        - name: OpenSCAP | Run OVAL evaluation
+          ansible.builtin.shell: >
+            oscap oval eval
+            --report {{ openscap_report_dir }}/oval-{{ ansible_distribution_release }}.html
+            {{ openscap_report_dir }}/com.ubuntu.{{ ansible_distribution_release }}.usn.oval.xml
+          failed_when: false
+          changed_when: true
+      when: is_ubuntu
+      ignore_errors: yes
   when: reporting_phase == 'before'
 
 # ==============================================================================
@@ -171,13 +305,50 @@
       ansible.builtin.shell: >
         oscap xccdf eval
         --profile {{ openscap_profile }}
-        --results /var/log/openscap-after-results.xml
-        --report /var/log/openscap-after-report.html
+        --fetch-remote-resources
+        --results {{ openscap_report_dir }}/ssg-results-ubuntu{{ ansible_distribution_version | replace('.', '') }}-after.xml
+        --report {{ openscap_report_dir }}/ssg-results-ubuntu{{ ansible_distribution_version | replace('.', '') }}-after.html
         {{ openscap_datastream }}
       register: oscap_after_run
       failed_when: false
       changed_when: true
       when: openscap_scan_supported | default(true)
+
+    - name: Copy AFTER results to ASIMP path
+      ansible.builtin.copy:
+        src: "{{ openscap_report_dir }}/ssg-results-ubuntu{{ ansible_distribution_version | replace('.', '') }}-after.xml"
+        dest: /var/log/openscap-after-results.xml
+        remote_src: yes
+        mode: '0644'
+      failed_when: false
+      when: openscap_scan_supported | default(true)
+
+    - name: Copy AFTER report to ASIMP path
+      ansible.builtin.copy:
+        src: "{{ openscap_report_dir }}/ssg-results-ubuntu{{ ansible_distribution_version | replace('.', '') }}-after.html"
+        dest: /var/log/openscap-after-report.html
+        remote_src: yes
+        mode: '0644'
+      failed_when: false
+      when: openscap_scan_supported | default(true)
+
+    - name: Copy AFTER results to default requested path for user reference
+      ansible.builtin.copy:
+        src: "{{ openscap_report_dir }}/ssg-results-ubuntu{{ ansible_distribution_version | replace('.', '') }}-after.xml"
+        dest: "{{ openscap_report_dir }}/ssg-results-ubuntu{{ ansible_distribution_version | replace('.', '') }}.xml"
+        remote_src: yes
+        mode: '0644'
+      failed_when: false
+      when: is_ubuntu and openscap_scan_supported | default(true)
+
+    - name: Copy AFTER report to default requested path for user reference
+      ansible.builtin.copy:
+        src: "{{ openscap_report_dir }}/ssg-results-ubuntu{{ ansible_distribution_version | replace('.', '') }}-after.html"
+        dest: "{{ openscap_report_dir }}/ssg-results-ubuntu{{ ansible_distribution_version | replace('.', '') }}.html"
+        remote_src: yes
+        mode: '0644'
+      failed_when: false
+      when: is_ubuntu and openscap_scan_supported | default(true)
 
     - name: Parse OpenSCAP AFTER compliance score
       ansible.builtin.shell: python3 /usr/local/bin/parse_openscap_score.py /var/log/openscap-after-results.xml
@@ -198,10 +369,13 @@
       changed_when: false
       failed_when: false
 
-    - name: Evaluate audit completion status
+    - name: Evaluate individual audit success status
       ansible.builtin.set_fact:
         openscap_success: "{{ (not openscap_scan_supported) or (oscap_after_run.rc is defined and parsed_openscap_after.rc == 0) }}"
         lynis_success: "{{ lynis_after_run.rc is defined and parsed_lynis_after.rc == 0 }}"
+
+    - name: Evaluate overall audit completion status
+      ansible.builtin.set_fact:
         audits_completed: "{{ openscap_success and lynis_success }}"
 
     - name: Display Host-Base Security Hardening Before & After Report
@@ -218,6 +392,7 @@
           - "Reports generated successfully:"
           - "{% if openscap_scan_supported %}  - OpenSCAP Before Report: /var/log/openscap-before-report.html{% endif %}"
           - "{% if openscap_scan_supported %}  - OpenSCAP After Report:  /var/log/openscap-after-report.html{% endif %}"
+          - "{% if is_ubuntu %}  - OpenSCAP Dynamic Report: {{ openscap_report_dir }}/ssg-results-ubuntu{{ ansible_distribution_version | replace('.', '') }}.html{% endif %}"
           - "{% if not openscap_scan_supported %}  - OpenSCAP: Not supported on this platform (no compatible datastream){% endif %}"
           - "========================================================================"
       when: audits_completed
@@ -239,4 +414,16 @@
           - "  - OpenSCAP After: {{ parsed_openscap_after.stdout | default('N/A') | trim if openscap_scan_supported else 'N/A' }}"
           - "========================================================================"
       when: not audits_completed
+
+    - name: OpenSCAP | Download and run AFTER OVAL Vulnerability Assessment (Ubuntu)
+      block:
+        - name: OpenSCAP | Run OVAL evaluation
+          ansible.builtin.shell: >
+            oscap oval eval
+            --report {{ openscap_report_dir }}/oval-{{ ansible_distribution_release }}.html
+            {{ openscap_report_dir }}/com.ubuntu.{{ ansible_distribution_release }}.usn.oval.xml
+          failed_when: false
+          changed_when: true
+      when: is_ubuntu
+      ignore_errors: yes
   when: reporting_phase == 'after'
