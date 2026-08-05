@@ -1,0 +1,87 @@
+---
+# Regression tests for the new "Google Antigravity & Google Jules Agent
+# Skills" section added to AGENTS.md, verifying that it correctly documents
+# and cross-references every skill folder under .agents/skills/.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_agents_md_skills_section.yml
+- name: Verify the Agent Skills section of AGENTS.md
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    skills_dir: "{{ repo_root }}/.agents/skills"
+    section_heading: "## 🌌 Google Antigravity & Google Jules Agent Skills"
+    location_heading: "### Location & Structure"
+    available_skills_heading: "### Available Agent Skills"
+    dsom_protocol_heading: "### Deep State of Mind (DSOM) Protocol"
+    preceding_heading: "## 📁 Repository Structure"
+    following_heading: "## 🛠️ Code Conventions & File Hierarchy"
+    expected_skill_dirs:
+      - ai-agent-instructions
+      - ansible-boolean-conditionals
+      - ansible-fqcn-idempotency
+      - ansible-galaxy-roles
+      - ansible-testing-linting
+      - asimp-core-workflow
+      - jekyll-docs-deployment
+      - jinja2-template-overrides
+      - jules-sandbox-mode
+      - ubuntu-scap-auditing
+
+  tasks:
+    - name: Load raw content of AGENTS.md
+      ansible.builtin.set_fact:
+        agents_md_content: "{{ lookup('file', repo_root + '/AGENTS.md') }}"
+
+    - name: Assert AGENTS.md contains all the expected Agent Skills headings
+      ansible.builtin.assert:
+        that:
+          - section_heading in agents_md_content
+          - location_heading in agents_md_content
+          - available_skills_heading in agents_md_content
+          - dsom_protocol_heading in agents_md_content
+        fail_msg: "AGENTS.md must document the Agent Skills section with Location & Structure, Available Agent Skills, and DSOM Protocol subsections"
+
+    - name: Assert the Agent Skills section is inserted between Repository Structure and Code Conventions
+      ansible.builtin.assert:
+        that:
+          - agents_md_content.find(preceding_heading) != -1
+          - agents_md_content.find(section_heading) != -1
+          - agents_md_content.find(following_heading) != -1
+          - agents_md_content.find(preceding_heading) < agents_md_content.find(section_heading)
+          - agents_md_content.find(section_heading) < agents_md_content.find(following_heading)
+        fail_msg: "The new Agent Skills section must be placed between '## 📁 Repository Structure' and '## 🛠️ Code Conventions & File Hierarchy'"
+
+    - name: Assert AGENTS.md references the .agents/skills directory location
+      ansible.builtin.assert:
+        that:
+          - "'.agents/skills/' in agents_md_content"
+          - "'SKILL.md' in agents_md_content"
+        fail_msg: "AGENTS.md must reference the .agents/skills/<skill-folder>/SKILL.md location convention"
+
+    - name: Assert every expected skill directory is cross-referenced in the AGENTS.md table
+      ansible.builtin.assert:
+        that:
+          - '("| `" + item + "` | `" + item + "` |") in agents_md_content'
+        fail_msg: "AGENTS.md 'Available Agent Skills' table must list a row for '{{ item }}' with matching Skill Directory and Skill Name columns"
+      loop: "{{ expected_skill_dirs }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Discover the skill directories that actually exist on disk
+      ansible.builtin.find:
+        paths: "{{ skills_dir }}"
+        file_type: directory
+      register: found_skill_dirs
+
+    - name: Extract just the directory names from the discovery results
+      ansible.builtin.set_fact:
+        actual_skill_dirs: "{{ found_skill_dirs.files | map(attribute='path') | map('basename') | list }}"
+
+    - name: Assert no drift between AGENTS.md documentation and the skills present on disk
+      ansible.builtin.assert:
+        that:
+          - (actual_skill_dirs | sort | list) == (expected_skill_dirs | sort | list)
+        fail_msg: "The set of directories under .agents/skills must exactly match the skills documented in AGENTS.md"

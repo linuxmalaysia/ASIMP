@@ -1,0 +1,164 @@
+---
+# Structural regression tests for the new Google Antigravity-compatible Agent
+# Skills added under .agents/skills/<skill-folder>/SKILL.md.
+#
+# Every skill must:
+#   - Exist as exactly one SKILL.md file per expected skill directory.
+#   - Expose a valid, combined Agent Skills + Google Open Knowledge Format
+#     (OKF) YAML frontmatter block (name, description, license,
+#     compatibility, type, title, resource, tags, timestamp, metadata).
+#   - Document activation triggers under a "When to Use This Skill" heading.
+#   - End with the standard Deep State of Mind (DSOM) AI Protocol footer.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_agent_skills_frontmatter.yml
+- name: Verify Agent Skills SKILL.md frontmatter and DSOM footer
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    skills_dir: "{{ repo_root }}/.agents/skills"
+    expected_skill_dirs:
+      - ai-agent-instructions
+      - ansible-boolean-conditionals
+      - ansible-fqcn-idempotency
+      - ansible-galaxy-roles
+      - ansible-testing-linting
+      - asimp-core-workflow
+      - jekyll-docs-deployment
+      - jinja2-template-overrides
+      - jules-sandbox-mode
+      - ubuntu-scap-auditing
+    dsom_footer_heading: "## 🧠 Deep State of Mind (DSOM) AI Protocol"
+
+  tasks:
+    - name: Discover SKILL.md files that actually exist on disk
+      ansible.builtin.find:
+        paths: "{{ skills_dir }}"
+        patterns: "SKILL.md"
+        recurse: true
+      register: found_skill_files
+
+    - name: Assert exactly the expected set of skill directories exist, one SKILL.md each
+      ansible.builtin.assert:
+        that:
+          - found_skill_files.matched == (expected_skill_dirs | length)
+          - (found_skill_files.files | map(attribute='path') | map('dirname') | map('basename') | sort | list) == (expected_skill_dirs | sort | list)
+        fail_msg: ".agents/skills must contain exactly one SKILL.md per expected skill folder, no more, no less"
+
+    - name: Load raw content of every SKILL.md
+      ansible.builtin.set_fact:
+        skill_contents: "{{ skill_contents | default({}) | combine({item: lookup('file', skills_dir + '/' + item + '/SKILL.md')}) }}"
+      loop: "{{ expected_skill_dirs }}"
+
+    - name: Assert every SKILL.md begins with the '---' front matter delimiter
+      ansible.builtin.assert:
+        that:
+          - skill_contents[item].startswith('---')
+        fail_msg: "{{ item }}/SKILL.md must start with a YAML front matter block delimited by '---' on the very first line"
+      loop: "{{ expected_skill_dirs }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Parse the YAML frontmatter block of every SKILL.md
+      ansible.builtin.set_fact:
+        skill_frontmatter: "{{ skill_frontmatter | default({}) | combine({item: (skill_contents[item].split('---', 2)[1] | from_yaml)}) }}"
+      loop: "{{ expected_skill_dirs }}"
+
+    - name: Assert frontmatter 'name' matches the containing directory name
+      ansible.builtin.assert:
+        that:
+          - skill_frontmatter[item].name == item
+        fail_msg: "{{ item }}/SKILL.md frontmatter 'name' field must equal the skill directory name"
+      loop: "{{ expected_skill_dirs }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert the shared Agent Skills fields are present and correct
+      ansible.builtin.assert:
+        that:
+          - skill_frontmatter[item].license == 'Apache-2.0'
+          - skill_frontmatter[item].compatibility == 'Google Antigravity / Google Jules'
+          - skill_frontmatter[item].description is string
+          - skill_frontmatter[item].description | length > 0
+          - "'Use when' in skill_frontmatter[item].description or 'Use before' in skill_frontmatter[item].description"
+        fail_msg: "{{ item }}/SKILL.md frontmatter is missing required Agent Skills fields (license/compatibility/description)"
+      loop: "{{ expected_skill_dirs }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert the shared Google OKF fields are present and correct
+      ansible.builtin.assert:
+        that:
+          - skill_frontmatter[item].type == 'skill'
+          - skill_frontmatter[item].title | length > 0
+          - skill_frontmatter[item].resource == '.agents/skills/' + item
+          - skill_frontmatter[item].tags | length > 0
+        fail_msg: "{{ item }}/SKILL.md frontmatter is missing required OKF fields (type/title/resource/tags)"
+      loop: "{{ expected_skill_dirs }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert the frontmatter timestamp is the exact, unmodified OKF timestamp value
+      ansible.builtin.assert:
+        that:
+          - "'timestamp: 2024-11-20T12:00:00Z' in skill_contents[item]"
+        fail_msg: "{{ item }}/SKILL.md frontmatter 'timestamp' must be exactly 2024-11-20T12:00:00Z"
+      loop: "{{ expected_skill_dirs }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert frontmatter metadata block is consistent across every skill
+      ansible.builtin.assert:
+        that:
+          - skill_frontmatter[item].metadata.author == 'Google Jules & Antigravity'
+          - skill_frontmatter[item].metadata.version == '1.0.0'
+          - skill_frontmatter[item].metadata.project == 'ASIMP'
+        fail_msg: "{{ item }}/SKILL.md metadata block must credit 'Google Jules & Antigravity', version '1.0.0', project 'ASIMP'"
+      loop: "{{ expected_skill_dirs }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert every SKILL.md documents activation triggers
+      ansible.builtin.assert:
+        that:
+          - "'## When to Use This Skill' in skill_contents[item]"
+          - "'Activate this skill when' in skill_contents[item] or 'Use this skill whenever' in skill_contents[item]"
+        fail_msg: "{{ item }}/SKILL.md must document activation triggers under '## When to Use This Skill'"
+      loop: "{{ expected_skill_dirs }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert every SKILL.md contains the DSOM AI Protocol footer heading
+      ansible.builtin.assert:
+        that:
+          - dsom_footer_heading in skill_contents[item]
+        fail_msg: "{{ item }}/SKILL.md must include the standard DSOM AI Protocol footer heading"
+      loop: "{{ expected_skill_dirs }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert the DSOM footer heading is the very last heading in the file
+      ansible.builtin.assert:
+        that:
+          - skill_contents[item].rfind(dsom_footer_heading) > skill_contents[item].rfind('## When to Use This Skill')
+        fail_msg: "{{ item }}/SKILL.md must place the DSOM AI Protocol footer after the rest of the skill content"
+      loop: "{{ expected_skill_dirs }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert every SKILL.md embeds the exact, unmodified DSOM JSON payload
+      ansible.builtin.assert:
+        that:
+          - "'\"protocol\": \"DSOM\"' in skill_contents[item]"
+          - "'\"version\": \"1.0.0\"' in skill_contents[item]"
+          - "'\"status\": \"synchronized\"' in skill_contents[item]"
+          - "'\"alignment\": \"ASIMP\"' in skill_contents[item]"
+          - "'\"agent\": \"Google Jules\"' in skill_contents[item]"
+          - "'\"integration\": \"Google Antigravity\"' in skill_contents[item]"
+          - "'\"signature\": \"dsom_protocol_jules_antigravity_sync_active\"' in skill_contents[item]"
+        fail_msg: "{{ item }}/SKILL.md must embed the exact, unmodified DSOM JSON payload"
+      loop: "{{ expected_skill_dirs }}"
+      loop_control:
+        label: "{{ item }}"

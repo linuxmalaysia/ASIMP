@@ -1,0 +1,127 @@
+---
+# Content-correctness tests for the technical guidance documented inside each
+# new Agent Skill's SKILL.md. These assert that the specific commands,
+# YAML/Jinja2 snippets, and cross-references described by each skill are
+# present verbatim, so future edits cannot silently drop or corrupt the
+# documented examples.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_agent_skills_content.yml
+- name: Verify technical content of each Agent Skill SKILL.md
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    skills_dir: "{{ repo_root }}/.agents/skills"
+    # ignore_errors snippet contains literal Jinja braces, so it must be
+    # wrapped in a {% raw %} block to avoid being evaluated by this test's
+    # own templating engine (mirrors the technique used for expected_path_arg
+    # in tests/test_playbooks_structure.yml).
+    jules_ignore_errors_snippet: "ignore_errors: \"{% raw %}{{ is_sandbox_jules | bool }}{% endraw %}\""
+    skill_required_snippets:
+      ai-agent-instructions:
+        - "AGENTS.md"
+        - "CLAUDE.md"
+        - ".cursorrules"
+        - ".clinerules"
+        - ".windsurfrules"
+        - ".github/copilot-instructions.md"
+        - "Measure, Harden, Re-Measure"
+      ansible-boolean-conditionals:
+        - "when: register_var.stdout | length > 0"
+        - "when: is_sandbox_jules | bool"
+        - "register_var is defined"
+        - "register_var.stdout is defined"
+      ansible-fqcn-idempotency:
+        - "ansible.builtin.apt` instead of `apt`"
+        - "ansible.builtin.copy` instead of `copy`"
+        - "ansible.builtin.shell` instead of `shell`"
+        - "changed_when: false"
+        - "failed_when: false"
+        - "ansible.builtin.command: ls /var/log/asimp-baseline-scores.json"
+      ansible-galaxy-roles:
+        - "roles_path = roles:common_roles"
+        - "ansible-galaxy role install -r requirements.yml --ignore-errors"
+        - "requirements.yml"
+      ansible-testing-linting:
+        - "ansible-playbook --syntax-check play.yml"
+        - "ansible-playbook --syntax-check play-localhost.yml"
+        - "ansible-lint play-localhost.yml"
+      asimp-core-workflow:
+        - "Phase 1: Measure (Before Baseline)"
+        - "Phase 2: Harden (Remediation & Upgrades)"
+        - "Phase 3: Re-Measure (After Baseline Verification)"
+        - "/var/log/asimp-baseline-scores.json"
+        - "debsums"
+        - "OpenSCAP"
+        - "Lynis"
+      jekyll-docs-deployment:
+        - "scripts/prepare_docs.py"
+        - ".github/workflows/jekyll-gh-pages.yml"
+        - "docs/"
+        - "front matter"
+      jinja2-template-overrides:
+        - '#jinja2: trim_blocks: True, lstrip_blocks: True'
+        - "capitalized Python booleans"
+        - "absolute first line"
+      jules-sandbox-mode:
+        - "/home/jules"
+        - "is_sandbox_jules"
+        - "auditd"
+        - "chrony"
+        - "firewalld"
+        - "autofs"
+        - "clamav"
+        - "register: jules_home_stat"
+      ubuntu-scap-auditing:
+        - "ssg-ubuntu2404-ds.xml"
+        - "ComplianceAsCode/content"
+        - "oscap xccdf eval"
+        - "USN OVAL"
+        - "ignore_errors: true"
+
+  tasks:
+    - name: Load raw content of every SKILL.md under test
+      ansible.builtin.set_fact:
+        skill_contents: "{{ skill_contents | default({}) | combine({item.key: lookup('file', skills_dir + '/' + item.key + '/SKILL.md')}) }}"
+      loop: "{{ skill_required_snippets | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"
+
+    - name: Assert every documented snippet is present verbatim in its SKILL.md
+      ansible.builtin.assert:
+        that:
+          - snippet in skill_contents[skill_name]
+        fail_msg: "{{ skill_name }}/SKILL.md is missing the expected documented snippet: {{ snippet }}"
+      loop: "{{ lookup('ansible.builtin.subelements', skill_required_snippets | dict2items, 'value') }}"
+      loop_control:
+        loop_var: pair
+        label: "{{ pair[0].key }} :: {{ pair[1] }}"
+      vars:
+        skill_name: "{{ pair[0].key }}"
+        snippet: "{{ pair[1] }}"
+
+    - name: Assert the jules-sandbox-mode skill documents the ignore_errors bypass pattern
+      ansible.builtin.assert:
+        that:
+          - jules_ignore_errors_snippet in skill_contents['jules-sandbox-mode']
+        fail_msg: "jules-sandbox-mode/SKILL.md must document the templated ignore_errors bypass pattern for container-restricted services"
+
+    - name: Assert INCORRECT examples are still clearly distinguishable from CORRECT guidance
+      ansible.builtin.assert:
+        that:
+          - "'# INCORRECT' in skill_contents['ansible-boolean-conditionals']"
+          - "'# CORRECT' in skill_contents['ansible-boolean-conditionals']"
+          - "'# INCORRECT' in skill_contents['ansible-fqcn-idempotency']"
+          - "'# CORRECT' in skill_contents['ansible-fqcn-idempotency']"
+          - "'# INCORRECT' in skill_contents['jinja2-template-overrides']"
+          - "'# CORRECT' in skill_contents['jinja2-template-overrides']"
+      fail_msg: "Skills documenting anti-patterns must clearly label both the incorrect and correct examples"
+
+    - name: Assert the FQCN skill explicitly prohibits short module names
+      ansible.builtin.assert:
+        that:
+          - "'strictly prohibited' in skill_contents['ansible-fqcn-idempotency']"
+          - "'guarantees collection compatibility' in skill_contents['ansible-fqcn-idempotency']"
+      fail_msg: "ansible-fqcn-idempotency/SKILL.md must explicitly state that short (non-FQCN) module names are prohibited"
