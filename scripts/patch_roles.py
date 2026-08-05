@@ -8,6 +8,9 @@ import os
 import re
 
 def patch_ssh_templates():
+    """
+    Update SSH-hardening Jinja templates to use Python-style boolean directives for block trimming.
+    """
     paths = [
         "roles/dev-sec.ssh-hardening/templates/opensshd.conf.j2",
         "roles/dev-sec.ssh-hardening/templates/openssh.conf.j2"
@@ -29,6 +32,7 @@ def patch_ssh_templates():
                 print(f"Patched SSH template: {path} ({count} replacements)")
 
 def patch_moduli_task():
+    """Update the SSH hardening moduli task to test whether registered moduli output contains content."""
     path = "roles/dev-sec.ssh-hardening/tasks/hardening.yml"
     if os.path.exists(path):
         with open(path, 'r', encoding='utf-8') as f:
@@ -45,6 +49,15 @@ def patch_moduli_task():
             print(f"Patched moduli conditional in: {path} ({count} replacements)")
 
 def split_into_tasks(lines):
+    """
+    Group YAML lines into top-level task blocks based on list-item indentation.
+    
+    Parameters:
+    	lines (list[str]): YAML lines to partition into task blocks.
+    
+    Returns:
+    	list[tuple[int, list[str]]]: Each tuple contains a block's indentation level and its lines.
+    """
     blocks = []
     current_block = []
     current_indent = None
@@ -68,6 +81,12 @@ def split_into_tasks(lines):
     return blocks
 
 def patch_yaml_file(file_path):
+    """
+    Add sandbox-aware error handling to service-related Ansible tasks and handlers in a YAML file.
+    
+    Parameters:
+        file_path: Path to the YAML file to patch.
+    """
     with open(file_path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
 
@@ -108,6 +127,9 @@ def patch_yaml_file(file_path):
         print(f"Patched YAML file: {file_path}")
 
 def patch_all_roles():
+    """
+    Apply sandbox compatibility patches to YAML task and handler files under the roles directory.
+    """
     for root, dirs, files in os.walk("roles"):
         for file in files:
             if file.endswith(('.yml', '.yaml')):
