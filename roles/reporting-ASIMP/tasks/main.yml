@@ -326,8 +326,9 @@
           register: download_oval
 
         - name: OpenSCAP | Decompress OVAL definitions
-          ansible.builtin.shell: "bunzip2 -f -k {{ openscap_report_dir }}/com.ubuntu.{{ ansible_distribution_release }}.usn.oval.xml.bz2"
+          ansible.builtin.command: "bunzip2 -f -k {{ openscap_report_dir }}/com.ubuntu.{{ ansible_distribution_release }}.usn.oval.xml.bz2"
           when: download_oval is succeeded
+          changed_when: download_oval.changed
 
         - name: OpenSCAP | Run OVAL evaluation
           ansible.builtin.shell: >
