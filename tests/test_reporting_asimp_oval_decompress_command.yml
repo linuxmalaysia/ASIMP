@@ -1,0 +1,159 @@
+---
+# Structural regression tests for the OVAL decompression task change in
+# roles/reporting-ASIMP/tasks/main.yml.
+#
+# The "OpenSCAP | Decompress OVAL definitions" task (nested inside the
+# "Run BEFORE hardening evaluation" -> "OpenSCAP | Download and run BEFORE
+# OVAL Vulnerability Assessment (Ubuntu)" block) was changed from
+# `ansible.builtin.shell` to `ansible.builtin.command`, since the invoked
+# `bunzip2 -f -k ...` command needs no shell features (pipes, redirects,
+# globbing, etc.). Because `ansible.builtin.command` does not report
+# "changed" heuristically the way `ansible.builtin.shell` can be assumed to,
+# an explicit `changed_when: download_oval.changed` was also added so the
+# task's reported change status still reflects whether the archive was
+# actually (re)downloaded.
+#
+# These tests parse the real tasks file and assert the relevant task carries
+# the expected module, arguments, and conditionals, without requiring a live
+# target host, package manager, or network access.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_reporting_asimp_oval_decompress_command.yml
+- name: Verify the OVAL decompress task uses ansible.builtin.command with an explicit changed_when
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    expected_command_regex: '^bunzip2 -f -k \{\{ *openscap_report_dir *\}\}/com\.ubuntu\.\{\{ *ansible_distribution_release *\}\}\.usn\.oval\.xml\.bz2$'
+    shell_metacharacters:
+      - "|"
+      - ">"
+      - "<"
+      - ";"
+      - "&&"
+      - "||"
+      - "`"
+      - "$("
+
+  tasks:
+    - name: Load reporting-ASIMP tasks/main.yml
+      ansible.builtin.set_fact:
+        reporting_tasks: "{{ lookup('file', repo_root + '/roles/reporting-ASIMP/tasks/main.yml') | from_yaml }}"
+
+    - name: Build a name-to-task lookup for the top-level tasks
+      ansible.builtin.set_fact:
+        reporting_tasks_by_name: "{{ dict(reporting_tasks | map(attribute='name') | zip(reporting_tasks)) }}"
+
+    - name: Assert the 'Run BEFORE hardening evaluation' block is present at the top level
+      ansible.builtin.assert:
+        that:
+          - "'Run BEFORE hardening evaluation' in reporting_tasks_by_name"
+          - "'block' in reporting_tasks_by_name['Run BEFORE hardening evaluation']"
+        fail_msg: "Expected top-level block task 'Run BEFORE hardening evaluation' was not found in roles/reporting-ASIMP/tasks/main.yml"
+
+    - name: Build a name-to-task lookup for tasks nested inside the BEFORE evaluation block
+      ansible.builtin.set_fact:
+        before_block_tasks_by_name: >-
+          {{ dict(
+               reporting_tasks_by_name['Run BEFORE hardening evaluation'].block
+               | map(attribute='name')
+               | zip(reporting_tasks_by_name['Run BEFORE hardening evaluation'].block)
+          ) }}
+
+    - name: Assert the OVAL vulnerability assessment sub-block is present
+      ansible.builtin.assert:
+        that:
+          - "'OpenSCAP | Download and run BEFORE OVAL Vulnerability Assessment (Ubuntu)' in before_block_tasks_by_name"
+          - "'block' in before_block_tasks_by_name['OpenSCAP | Download and run BEFORE OVAL Vulnerability Assessment (Ubuntu)']"
+        fail_msg: "Expected nested block 'OpenSCAP | Download and run BEFORE OVAL Vulnerability Assessment (Ubuntu)' was not found under 'Run BEFORE hardening evaluation'"
+
+    - name: Build a name-to-task lookup for tasks nested inside the OVAL sub-block
+      ansible.builtin.set_fact:
+        oval_block_tasks_by_name: >-
+          {{ dict(
+               before_block_tasks_by_name['OpenSCAP | Download and run BEFORE OVAL Vulnerability Assessment (Ubuntu)'].block
+               | map(attribute='name')
+               | zip(before_block_tasks_by_name['OpenSCAP | Download and run BEFORE OVAL Vulnerability Assessment (Ubuntu)'].block)
+          ) }}
+
+    - name: Assert the decompress task and its siblings are all present
+      ansible.builtin.assert:
+        that:
+          - "'OpenSCAP | Download OVAL definitions' in oval_block_tasks_by_name"
+          - "'OpenSCAP | Decompress OVAL definitions' in oval_block_tasks_by_name"
+          - "'OpenSCAP | Run OVAL evaluation' in oval_block_tasks_by_name"
+        fail_msg: "One or more of the expected OVAL sub-tasks is missing from the 'OpenSCAP | Download and run BEFORE OVAL Vulnerability Assessment (Ubuntu)' block"
+
+    - name: Extract the 'OpenSCAP | Decompress OVAL definitions' task
+      ansible.builtin.set_fact:
+        decompress_task: "{{ oval_block_tasks_by_name['OpenSCAP | Decompress OVAL definitions'] }}"
+
+    - name: Assert the decompress task now uses ansible.builtin.command
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.command' in decompress_task"
+        fail_msg: "'OpenSCAP | Decompress OVAL definitions' must use the ansible.builtin.command module"
+        success_msg: "'OpenSCAP | Decompress OVAL definitions' correctly uses ansible.builtin.command"
+
+    - name: Assert the decompress task no longer uses ansible.builtin.shell
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.shell' not in decompress_task"
+        fail_msg: "'OpenSCAP | Decompress OVAL definitions' must no longer use the ansible.builtin.shell module now that it has been converted to ansible.builtin.command"
+
+    - name: Assert the decompress command string is unchanged
+      ansible.builtin.assert:
+        that:
+          - decompress_task['ansible.builtin.command'] is regex(expected_command_regex)
+        fail_msg: >-
+          The bunzip2 command string for 'OpenSCAP | Decompress OVAL definitions' changed
+          unexpectedly. Got: {{ decompress_task['ansible.builtin.command'] }}
+
+    - name: Assert the decompress command contains no shell metacharacters
+      ansible.builtin.assert:
+        that:
+          - item not in decompress_task['ansible.builtin.command']
+        fail_msg: >-
+          'OpenSCAP | Decompress OVAL definitions' now runs via ansible.builtin.command, which
+          does not invoke a shell. The command string must not rely on shell metacharacter
+          '{{ item }}', or it will fail/behave incorrectly at runtime.
+      loop: "{{ shell_metacharacters }}"
+
+    - name: Assert the decompress task's when clause is unchanged
+      ansible.builtin.assert:
+        that:
+          - decompress_task.when == "download_oval is succeeded"
+        fail_msg: "'OpenSCAP | Decompress OVAL definitions' must still be gated on 'when: download_oval is succeeded'"
+
+    - name: Assert the decompress task now defines an explicit changed_when tied to the download result
+      ansible.builtin.assert:
+        that:
+          - "'changed_when' in decompress_task"
+          - decompress_task.changed_when == "download_oval.changed"
+        fail_msg: >-
+          'OpenSCAP | Decompress OVAL definitions' must define
+          'changed_when: download_oval.changed' so its reported change status reflects whether
+          the OVAL archive was actually (re)downloaded, since ansible.builtin.command cannot
+          infer this on its own.
+        success_msg: "'OpenSCAP | Decompress OVAL definitions' correctly derives changed_when from download_oval.changed"
+
+    - name: Assert the sibling download task is unaffected by this change (regression guard)
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.get_url' in oval_block_tasks_by_name['OpenSCAP | Download OVAL definitions']"
+          - oval_block_tasks_by_name['OpenSCAP | Download OVAL definitions'].register == 'download_oval'
+        fail_msg: "'OpenSCAP | Download OVAL definitions' must remain an ansible.builtin.get_url task registering 'download_oval'"
+
+    - name: Assert the sibling OVAL evaluation task is unaffected by this change (regression guard)
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.shell' in oval_block_tasks_by_name['OpenSCAP | Run OVAL evaluation']"
+        fail_msg: "'OpenSCAP | Run OVAL evaluation' must remain an ansible.builtin.shell task, unaffected by the decompress task's module change"
+
+    - name: Assert the enclosing OVAL sub-block's when/ignore_errors are unaffected by this change (regression guard)
+      ansible.builtin.assert:
+        that:
+          - before_block_tasks_by_name['OpenSCAP | Download and run BEFORE OVAL Vulnerability Assessment (Ubuntu)'].when == 'is_ubuntu'
+          - before_block_tasks_by_name['OpenSCAP | Download and run BEFORE OVAL Vulnerability Assessment (Ubuntu)'].ignore_errors == true
+        fail_msg: "The enclosing OVAL block's 'when: is_ubuntu' / 'ignore_errors: yes' must remain unchanged by this patch"
