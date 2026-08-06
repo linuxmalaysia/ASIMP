@@ -1,0 +1,252 @@
+---
+# Structural regression tests for the "real vs. simulated" scoring logic
+# added to the Google Jules sandbox BEFORE/AFTER blocks in
+# roles/reporting-ASIMP/tasks/main.yml.
+#
+# Previously, when running inside the Google Jules sandbox, the role always
+# recorded fixed mock scores (58.4 / 62 for BEFORE, 91.2 / 88 for AFTER) via
+# "Set mock BEFORE score facts" / "Set mock AFTER score facts". This PR adds
+# a `which oscap` / `which lynis` probe so that, whenever those tools are
+# actually available inside the sandbox, the role now runs them for real and
+# uses the real parsed results, only falling back to the historical mock
+# values when the tools are missing or produced no output.
+#
+# These tests parse the real tasks file and assert the new probe/execution/
+# parsing sub-tasks exist with the exact expected module arguments, that the
+# renamed "Set dynamic or simulated BEFORE/AFTER scores" facts use the exact
+# expected fallback expressions (preserving the original 58.4/62/91.2/88
+# values as fallbacks), and that the downstream mock report/JSON artifacts
+# now reference those facts dynamically instead of hard-coded literals.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_reporting_asimp_dynamic_scoring.yml
+- name: Verify dynamic/simulated sandbox scoring logic in roles/reporting-ASIMP/tasks/main.yml
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    before_block_name: "Run Mock BEFORE hardening evaluation (Google Jules Sandbox)"
+    after_block_name: "Run Mock AFTER hardening evaluation (Google Jules Sandbox)"
+    expected_openscap_before_expr: "{% raw %}{{ r_sandbox_oscap_parsed_before.stdout | trim if (r_sandbox_oscap_parsed_before is defined and r_sandbox_oscap_parsed_before.stdout is defined) else '58.4' }}{% endraw %}"
+    expected_lynis_before_expr: "{% raw %}{{ r_sandbox_lynis_parsed_before.stdout | trim if (r_sandbox_lynis_parsed_before is defined and r_sandbox_lynis_parsed_before.stdout is defined) else '62' }}{% endraw %}"
+    expected_openscap_after_expr: "{% raw %}{{ r_sandbox_oscap_parsed_after.stdout | trim if (r_sandbox_oscap_parsed_after is defined and r_sandbox_oscap_parsed_after.stdout is defined) else '91.2' }}{% endraw %}"
+    expected_lynis_after_expr: "{% raw %}{{ r_sandbox_lynis_parsed_after.stdout | trim if (r_sandbox_lynis_parsed_after is defined and r_sandbox_lynis_parsed_after.stdout is defined) else '88' }}{% endraw %}"
+    expected_openscap_before_json_field: "{% raw %}{{ parsed_openscap_before.stdout | trim }}{% endraw %}"
+    expected_lynis_before_json_field: "{% raw %}{{ parsed_lynis_before.stdout | trim }}{% endraw %}"
+    expected_lynis_after_report_line: "{% raw %}After Hardening: {{ parsed_lynis_after.stdout | trim }} / 100{% endraw %}"
+    expected_openscap_after_report_line: "{% raw %}After Hardening: {{ parsed_openscap_after.stdout | trim }}%{% endraw %}"
+
+  tasks:
+    - name: Load reporting-ASIMP tasks/main.yml
+      ansible.builtin.set_fact:
+        reporting_tasks: "{{ lookup('file', repo_root + '/roles/reporting-ASIMP/tasks/main.yml') | from_yaml }}"
+
+    - name: Build a name-to-task lookup for the top-level tasks
+      ansible.builtin.set_fact:
+        reporting_tasks_by_name: "{{ dict(reporting_tasks | map(attribute='name') | zip(reporting_tasks)) }}"
+
+    - name: Assert the mock BEFORE/AFTER blocks are still present with their original gating conditions (regression guard)
+      ansible.builtin.assert:
+        that:
+          - "'block' in reporting_tasks_by_name[before_block_name]"
+          - reporting_tasks_by_name[before_block_name].when == ["reporting_phase == 'before'", "is_sandbox_jules | default(false) | bool"]
+          - "'block' in reporting_tasks_by_name[after_block_name]"
+          - reporting_tasks_by_name[after_block_name].when == ["reporting_phase == 'after'", "is_sandbox_jules | default(false) | bool"]
+        fail_msg: "The sandbox BEFORE/AFTER blocks must still only run for their respective reporting_phase, while inside the Google Jules sandbox"
+
+    - name: Build a name-to-task lookup for tasks nested inside the BEFORE sandbox block
+      ansible.builtin.set_fact:
+        before_tasks_by_name: "{{ dict(reporting_tasks_by_name[before_block_name].block | map(attribute='name') | zip(reporting_tasks_by_name[before_block_name].block)) }}"
+
+    - name: Build a name-to-task lookup for tasks nested inside the AFTER sandbox block
+      ansible.builtin.set_fact:
+        after_tasks_by_name: "{{ dict(reporting_tasks_by_name[after_block_name].block | map(attribute='name') | zip(reporting_tasks_by_name[after_block_name].block)) }}"
+
+    - name: Assert all expected new BEFORE sub-tasks are present
+      ansible.builtin.assert:
+        that:
+          - item in before_tasks_by_name
+        fail_msg: "Expected sub-task '{{ item }}' was not found inside '{{ before_block_name }}'"
+      loop:
+        - "Check if audit tools are available in the sandbox"
+        - "Check if lynis is available in the sandbox"
+        - "Set sandbox tool presence flags"
+        - "Inform what audit tools are missing in the sandbox"
+        - "Execute real BEFORE OpenSCAP scan inside sandbox"
+        - "Parse real BEFORE OpenSCAP compliance score inside sandbox"
+        - "Execute real BEFORE Lynis audit inside sandbox"
+        - "Parse real BEFORE Lynis index inside sandbox"
+        - "Set dynamic or simulated BEFORE scores"
+        - "Save baseline scores to file (Sandbox)"
+        - "Copy sandbox baseline scores to real /var/log if writable"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert all expected new AFTER sub-tasks are present
+      ansible.builtin.assert:
+        that:
+          - item in after_tasks_by_name
+        fail_msg: "Expected sub-task '{{ item }}' was not found inside '{{ after_block_name }}'"
+      loop:
+        - "Read baseline scores from mock file"
+        - "Check if audit tools are available in the sandbox"
+        - "Check if lynis is available in the sandbox"
+        - "Set sandbox AFTER tool presence flags"
+        - "Inform what audit tools are missing in the sandbox"
+        - "Execute real AFTER OpenSCAP scan inside sandbox"
+        - "Parse real AFTER OpenSCAP compliance score inside sandbox"
+        - "Execute real AFTER Lynis audit inside sandbox"
+        - "Parse real AFTER Lynis index inside sandbox"
+        - "Set dynamic or simulated AFTER scores"
+        - "Template mock/real Security Audit Report markdown"
+      loop_control:
+        label: "{{ item }}"
+
+    # --- Tool-presence probes (BEFORE) -----------------------------------
+    - name: Assert the BEFORE oscap/lynis probes use `which` and never fail the play
+      ansible.builtin.assert:
+        that:
+          - before_tasks_by_name['Check if audit tools are available in the sandbox']['ansible.builtin.command'] == 'which oscap'
+          - before_tasks_by_name['Check if audit tools are available in the sandbox'].register == 'r_sandbox_oscap_check_before'
+          - before_tasks_by_name['Check if audit tools are available in the sandbox'].changed_when == false
+          - before_tasks_by_name['Check if audit tools are available in the sandbox'].failed_when == false
+          - before_tasks_by_name['Check if audit tools are available in the sandbox'].ignore_errors == true
+          - before_tasks_by_name['Check if lynis is available in the sandbox']['ansible.builtin.command'] == 'which lynis'
+          - before_tasks_by_name['Check if lynis is available in the sandbox'].register == 'r_sandbox_lynis_check_before'
+        fail_msg: "The BEFORE tool-presence probes must run 'which oscap'/'which lynis', registering distinct '_before' variables, without failing the play"
+
+    - name: Assert the BEFORE tool-presence flags are derived from the probe return codes
+      ansible.builtin.assert:
+        that:
+          - before_tasks_by_name['Set sandbox tool presence flags']['ansible.builtin.set_fact'].oscap_present_before == "{% raw %}{{ r_sandbox_oscap_check_before.rc | default(1) == 0 }}{% endraw %}"
+          - before_tasks_by_name['Set sandbox tool presence flags']['ansible.builtin.set_fact'].lynis_present_before == "{% raw %}{{ r_sandbox_lynis_check_before.rc | default(1) == 0 }}{% endraw %}"
+        fail_msg: "'Set sandbox tool presence flags' must set oscap_present_before/lynis_present_before from the '_before' probe return codes"
+
+    # --- Real execution/parsing (BEFORE) ----------------------------------
+    - name: Assert the real BEFORE OpenSCAP scan only runs when oscap is present and never hard-fails
+      ansible.builtin.assert:
+        that:
+          - "'oscap xccdf eval' in before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox']['ansible.builtin.shell']"
+          - before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox'].register == 'r_sandbox_oscap_run_before'
+          - before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox'].failed_when == false
+          - "'oscap_present_before' in before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox'].when"
+        fail_msg: "'Execute real BEFORE OpenSCAP scan inside sandbox' must be gated on oscap_present_before and tolerate a non-zero exit code"
+
+    - name: Assert the real BEFORE OpenSCAP score parser is gated on oscap presence
+      ansible.builtin.assert:
+        that:
+          - "'parse_openscap_score.py' in before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox']['ansible.builtin.shell']"
+          - before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox'].register == 'r_sandbox_oscap_parsed_before'
+          - "'oscap_present_before' in before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox'].when"
+        fail_msg: "'Parse real BEFORE OpenSCAP compliance score inside sandbox' must invoke parse_openscap_score.py and register r_sandbox_oscap_parsed_before"
+
+    - name: Assert the real BEFORE Lynis audit and parser are gated on lynis presence
+      ansible.builtin.assert:
+        that:
+          - before_tasks_by_name['Execute real BEFORE Lynis audit inside sandbox']['ansible.builtin.shell'] == 'lynis audit system --quick'
+          - before_tasks_by_name['Execute real BEFORE Lynis audit inside sandbox'].when == 'lynis_present_before'
+          - before_tasks_by_name['Execute real BEFORE Lynis audit inside sandbox'].register == 'r_sandbox_lynis_run_before'
+          - "'hardening_index' in before_tasks_by_name['Parse real BEFORE Lynis index inside sandbox']['ansible.builtin.shell']"
+          - before_tasks_by_name['Parse real BEFORE Lynis index inside sandbox'].register == 'r_sandbox_lynis_parsed_before'
+        fail_msg: "The real BEFORE Lynis audit/parse tasks must be gated on lynis_present_before and register the expected '_before' variables"
+
+    # --- Dynamic-or-simulated score facts (BEFORE) ------------------------
+    - name: Assert the BEFORE score facts use real results when available, else fall back to the historical mock values
+      ansible.builtin.assert:
+        that:
+          - before_tasks_by_name['Set dynamic or simulated BEFORE scores']['ansible.builtin.set_fact'].parsed_openscap_before.stdout == expected_openscap_before_expr
+          - before_tasks_by_name['Set dynamic or simulated BEFORE scores']['ansible.builtin.set_fact'].parsed_lynis_before.stdout == expected_lynis_before_expr
+        fail_msg: "'Set dynamic or simulated BEFORE scores' must fall back to '58.4'/'62' only when the real sandbox results are undefined"
+
+    - name: Assert the BEFORE baseline JSON artifacts are now written from the dynamic facts, not hard-coded literals
+      ansible.builtin.assert:
+        that:
+          - expected_openscap_before_json_field in before_tasks_by_name['Save baseline scores to file (Sandbox)']['ansible.builtin.copy'].content
+          - expected_lynis_before_json_field in before_tasks_by_name['Save baseline scores to file (Sandbox)']['ansible.builtin.copy'].content
+          - "'\"openscap_before\": \"58.4\"' not in before_tasks_by_name['Save baseline scores to file (Sandbox)']['ansible.builtin.copy'].content"
+          - "'\"lynis_before\": \"62\"' not in before_tasks_by_name['Save baseline scores to file (Sandbox)']['ansible.builtin.copy'].content"
+          - expected_openscap_before_json_field in before_tasks_by_name['Copy sandbox baseline scores to real /var/log if writable']['ansible.builtin.copy'].content
+          - expected_lynis_before_json_field in before_tasks_by_name['Copy sandbox baseline scores to real /var/log if writable']['ansible.builtin.copy'].content
+        fail_msg: "The baseline JSON artifacts must now be templated from parsed_openscap_before/parsed_lynis_before instead of hard-coded '58.4'/'62' literals"
+
+    # --- Tool-presence probes (AFTER) -------------------------------------
+    - name: Assert the AFTER oscap/lynis probes use `which` and register distinct '_after' variables
+      ansible.builtin.assert:
+        that:
+          - after_tasks_by_name['Check if audit tools are available in the sandbox']['ansible.builtin.command'] == 'which oscap'
+          - after_tasks_by_name['Check if audit tools are available in the sandbox'].register == 'r_sandbox_oscap_check_after'
+          - after_tasks_by_name['Check if lynis is available in the sandbox']['ansible.builtin.command'] == 'which lynis'
+          - after_tasks_by_name['Check if lynis is available in the sandbox'].register == 'r_sandbox_lynis_check_after'
+        fail_msg: "The AFTER tool-presence probes must run 'which oscap'/'which lynis', registering distinct '_after' variables"
+
+    - name: Assert the AFTER tool-presence flags are derived from the '_after' probe return codes
+      ansible.builtin.assert:
+        that:
+          - after_tasks_by_name['Set sandbox AFTER tool presence flags']['ansible.builtin.set_fact'].oscap_present_after == "{% raw %}{{ r_sandbox_oscap_check_after.rc | default(1) == 0 }}{% endraw %}"
+          - after_tasks_by_name['Set sandbox AFTER tool presence flags']['ansible.builtin.set_fact'].lynis_present_after == "{% raw %}{{ r_sandbox_lynis_check_after.rc | default(1) == 0 }}{% endraw %}"
+        fail_msg: "'Set sandbox AFTER tool presence flags' must set oscap_present_after/lynis_present_after from the '_after' probe return codes"
+
+    - name: Assert the real AFTER Lynis audit and parser are gated on lynis presence
+      ansible.builtin.assert:
+        that:
+          - after_tasks_by_name['Execute real AFTER Lynis audit inside sandbox']['ansible.builtin.shell'] == 'lynis audit system --quick'
+          - after_tasks_by_name['Execute real AFTER Lynis audit inside sandbox'].when == 'lynis_present_after'
+          - after_tasks_by_name['Execute real AFTER Lynis audit inside sandbox'].register == 'r_sandbox_lynis_run_after'
+          - "'hardening_index' in after_tasks_by_name['Parse real AFTER Lynis index inside sandbox']['ansible.builtin.shell']"
+          - after_tasks_by_name['Parse real AFTER Lynis index inside sandbox'].register == 'r_sandbox_lynis_parsed_after'
+        fail_msg: "The real AFTER Lynis audit/parse tasks must be gated on lynis_present_after and register the expected '_after' variables"
+
+    # --- Dynamic-or-simulated score facts (AFTER) --------------------------
+    - name: Assert the AFTER score facts use real results when available, else fall back to the historical mock values
+      ansible.builtin.assert:
+        that:
+          - after_tasks_by_name['Set dynamic or simulated AFTER scores']['ansible.builtin.set_fact'].parsed_openscap_after.stdout == expected_openscap_after_expr
+          - after_tasks_by_name['Set dynamic or simulated AFTER scores']['ansible.builtin.set_fact'].parsed_lynis_after.stdout == expected_lynis_after_expr
+        fail_msg: "'Set dynamic or simulated AFTER scores' must fall back to '91.2'/'88' only when the real sandbox results are undefined"
+
+    - name: Assert the AFTER score facts retain their other original literal values (regression guard)
+      ansible.builtin.assert:
+        that:
+          - after_tasks_by_name['Set dynamic or simulated AFTER scores']['ansible.builtin.set_fact'].parsed_openscap_after.rc == 0
+          - after_tasks_by_name['Set dynamic or simulated AFTER scores']['ansible.builtin.set_fact'].parsed_lynis_after.rc == 0
+          - after_tasks_by_name['Set dynamic or simulated AFTER scores']['ansible.builtin.set_fact'].openscap_scan_supported == true
+          - after_tasks_by_name['Set dynamic or simulated AFTER scores']['ansible.builtin.set_fact'].openscap_success == true
+          - after_tasks_by_name['Set dynamic or simulated AFTER scores']['ansible.builtin.set_fact'].lynis_success == true
+          - after_tasks_by_name['Set dynamic or simulated AFTER scores']['ansible.builtin.set_fact'].audits_completed == true
+          - after_tasks_by_name['Set dynamic or simulated AFTER scores']['ansible.builtin.set_fact'].is_ubuntu == true
+        fail_msg: "'Set dynamic or simulated AFTER scores' must retain rc/openscap_scan_supported/openscap_success/lynis_success/audits_completed/is_ubuntu unchanged"
+
+    # --- Report content ----------------------------------------------------
+    - name: Assert the sandbox Security Audit Report no longer claims to be purely 'Simulated'
+      ansible.builtin.assert:
+        that:
+          - "'description: \"Security audit and compliance report for Google Jules sandbox\"' in after_tasks_by_name['Template mock/real Security Audit Report markdown']['ansible.builtin.copy'].content"
+          - "'Simulated security audit and compliance report' not in after_tasks_by_name['Template mock/real Security Audit Report markdown']['ansible.builtin.copy'].content"
+        fail_msg: "The sandbox report frontmatter description must be updated to drop the 'Simulated' qualifier now that real scoring is possible"
+
+    - name: Assert the sandbox report body templates its after-hardening scores from the dynamic facts, not hard-coded literals
+      ansible.builtin.assert:
+        that:
+          - expected_lynis_after_report_line in after_tasks_by_name['Template mock/real Security Audit Report markdown']['ansible.builtin.copy'].content
+          - expected_openscap_after_report_line in after_tasks_by_name['Template mock/real Security Audit Report markdown']['ansible.builtin.copy'].content
+          - "'After Hardening: 88 / 100' not in after_tasks_by_name['Template mock/real Security Audit Report markdown']['ansible.builtin.copy'].content"
+          - "'After Hardening: 91.2%' not in after_tasks_by_name['Template mock/real Security Audit Report markdown']['ansible.builtin.copy'].content"
+        fail_msg: "The sandbox report body must template its after-hardening scores from parsed_lynis_after/parsed_openscap_after instead of hard-coded '88'/'91.2' literals"
+
+    - name: Assert the final sandbox debug summary no longer calls the generated artifacts 'Mock reports'
+      ansible.builtin.assert:
+        that:
+          - after_tasks_by_name['Display Host-Base Security Hardening Before & After Report']['ansible.builtin.debug'].msg is iterable
+          - "'Reports successfully generated:' in after_tasks_by_name['Display Host-Base Security Hardening Before & After Report']['ansible.builtin.debug'].msg"
+          - "'Mock reports successfully generated:' not in after_tasks_by_name['Display Host-Base Security Hardening Before & After Report']['ansible.builtin.debug'].msg"
+        fail_msg: "The final sandbox debug summary must say 'Reports successfully generated:' now that real scoring can occur, not 'Mock reports successfully generated:'"
+
+    - name: Assert the real-OS (non-sandbox) BEFORE/AFTER evaluation blocks are unaffected by this change (regression guard)
+      ansible.builtin.assert:
+        that:
+          - "'Run BEFORE hardening evaluation' in reporting_tasks_by_name"
+          - reporting_tasks_by_name['Run BEFORE hardening evaluation'].when == ["reporting_phase == 'before'", "not (is_sandbox_jules | default(false) | bool)"]
+          - "'Run AFTER hardening evaluation' in reporting_tasks_by_name"
+          - reporting_tasks_by_name['Run AFTER hardening evaluation'].when == ["reporting_phase == 'after'", "not (is_sandbox_jules | default(false) | bool)"]
+        fail_msg: "The real-OS (non-sandbox) BEFORE/AFTER evaluation blocks must remain unchanged by the sandbox dynamic-scoring feature"
