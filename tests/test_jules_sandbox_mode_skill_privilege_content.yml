@@ -1,0 +1,146 @@
+---
+# Content-correctness tests for the privilege-level detection and
+# pre-remediation safety-check guidance added to
+# .agents/skills/jules-sandbox-mode/SKILL.md.
+#
+# This PR reworks the skill's "Execution Rules" from a simple two-rule
+# structure (sandbox detection, then "bypass long-running tasks") into a
+# four-rule structure:
+#   1. Sandbox & Privilege Level Detection (now also probes real write
+#      access to /etc and derives `asimp_privilege_level`)
+#   2. Option Between Limited Environment and Real OS (replaces the old
+#      "Bypass Long-Running Tasks" rule)
+#   3. Pre-Remediation Safety & Break-Prevention Verification (new)
+#   4. Gracefully Handle Container-Restricted Services (renumbered from 3)
+#
+# These tests assert the new headings, code snippets, and cross-references
+# are present verbatim, and that the old, now-superseded heading/content is
+# no longer present (regression guard).
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_jules_sandbox_mode_skill_privilege_content.yml
+- name: Verify jules-sandbox-mode SKILL.md privilege-level and safety-check content
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    skill_path: "{{ repo_root }}/.agents/skills/jules-sandbox-mode/SKILL.md"
+    expected_headings:
+      - "### ⚠️ Root / Sudo Privilege Correction"
+      - "### 1. Sandbox & Privilege Level Detection"
+      - "### 2. Option Between Limited Environment and Real OS"
+      - "### 3. Pre-Remediation Safety & Break-Prevention Verification"
+      - "### 4. Gracefully Handle Container-Restricted Services"
+    removed_headings:
+      - "### 1. Sandbox Detection"
+      - "### 2. Bypass Long-Running Tasks"
+      - "### 3. Gracefully Handle Container-Restricted Services"
+    removed_snippets:
+      - "Comprehensive system-wide upgrades (`apt upgrade`)."
+      - "Global `debsums` integrity checks."
+    expected_detection_snippets:
+      - "(ALL : ALL) NOPASSWD: ALL"
+      - "asimp_privilege_level"
+      - "touch /etc/asimp_write_test"
+      - "register: write_test_res"
+      - "Set dynamic privilege level and execution mode"
+      - "Clean up write access test file"
+    expected_mode_snippets:
+      - "asimp_privilege_level == 'limited'"
+      - "asimp_privilege_level == 'full'"
+      - "ansible-hardening"
+      - "dev-sec.ssh-hardening"
+      - "update-ubuntu-ASIMP"
+      - "non-destructive, audit/test/info mode only"
+    expected_safety_snippets:
+      - "sshd -t"
+      - "mount -a -f"
+      - "524288"
+      - "Safety Check | Check if SSH port (22) is active and reachable"
+      - "when: asimp_privilege_level == 'full'"
+
+  tasks:
+    - name: Load raw content of jules-sandbox-mode/SKILL.md
+      ansible.builtin.set_fact:
+        skill_content: "{{ lookup('file', skill_path) }}"
+
+    - name: Assert all four renumbered Execution Rules headings are present, in order
+      ansible.builtin.assert:
+        that:
+          - item in skill_content
+        fail_msg: "jules-sandbox-mode/SKILL.md must contain the heading: {{ item }}"
+      loop: "{{ expected_headings }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert each heading occurs after the previous one (correct ordering)
+      ansible.builtin.assert:
+        that:
+          - skill_content.find(expected_headings[0]) < skill_content.find(expected_headings[1])
+          - skill_content.find(expected_headings[1]) < skill_content.find(expected_headings[2])
+          - skill_content.find(expected_headings[2]) < skill_content.find(expected_headings[3])
+          - skill_content.find(expected_headings[3]) < skill_content.find(expected_headings[4])
+        fail_msg: "The Execution Rules headings must appear in the order: Root/Sudo Correction, 1 (Detection), 2 (Mode Option), 3 (Safety Check), 4 (Container-Restricted Services)"
+
+    - name: Assert the superseded/renumbered headings no longer exist verbatim (regression guard)
+      ansible.builtin.assert:
+        that:
+          - item not in skill_content
+        fail_msg: "jules-sandbox-mode/SKILL.md must no longer contain the superseded heading: {{ item }}"
+      loop: "{{ removed_headings }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert the removed "Bypass Long-Running Tasks" guidance text is gone (regression guard)
+      ansible.builtin.assert:
+        that:
+          - item not in skill_content
+        fail_msg: "jules-sandbox-mode/SKILL.md must no longer contain the removed guidance: {{ item }}"
+      loop: "{{ removed_snippets }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert the sandbox & privilege-level detection guidance is documented
+      ansible.builtin.assert:
+        that:
+          - item in skill_content
+        fail_msg: "jules-sandbox-mode/SKILL.md must document: {{ item }}"
+      loop: "{{ expected_detection_snippets }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert the limited-vs-full mode branching guidance is documented
+      ansible.builtin.assert:
+        that:
+          - item in skill_content
+        fail_msg: "jules-sandbox-mode/SKILL.md must document: {{ item }}"
+      loop: "{{ expected_mode_snippets }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert the pre-remediation safety-check guidance is documented
+      ansible.builtin.assert:
+        that:
+          - item in skill_content
+        fail_msg: "jules-sandbox-mode/SKILL.md must document: {{ item }}"
+      loop: "{{ expected_safety_snippets }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert the container-restricted services guidance is still documented, unaffected by renumbering (regression guard)
+      ansible.builtin.assert:
+        that:
+          - "'auditd' in skill_content"
+          - "'chrony' in skill_content"
+          - "'firewalld' in skill_content"
+          - "'autofs' in skill_content"
+          - "'clamav' in skill_content"
+        fail_msg: "jules-sandbox-mode/SKILL.md must still document all five container-restricted services, unaffected by the section renumbering"
+
+    - name: Assert the skill still ends with the DSOM AI Protocol footer (regression guard)
+      ansible.builtin.assert:
+        that:
+          - "'## 🧠 Deep State of Mind (DSOM) AI Protocol' in skill_content"
+          - skill_content.rfind('## 🧠 Deep State of Mind (DSOM) AI Protocol') > skill_content.rfind('### 4. Gracefully Handle Container-Restricted Services')
+        fail_msg: "jules-sandbox-mode/SKILL.md must still end with the DSOM AI Protocol footer, after the renumbered rule 4"

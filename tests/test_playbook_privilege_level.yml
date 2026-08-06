@@ -1,0 +1,255 @@
+---
+# Structural regression tests for the dynamic "asimp_privilege_level" detection
+# and the "Pre-Remediation Safety Check & Break-Prevention Verification" block
+# added to play.yml and play-localhost.yml.
+#
+# Previously, whether the real remediation/hardening roles ran was governed
+# solely by the static `is_sandbox_jules` fact (detected via the existence of
+# `/home/jules`). This PR adds a second, dynamic signal: an actual write-access
+# probe against `/etc/asimp_write_test`. The two signals are combined into a
+# single `asimp_privilege_level` fact ('limited' or 'full') that now gates:
+#   - the "Pre-Remediation Safety Check & Break-Prevention Verification" block
+#   - "Apply Ubuntu Update Hardening"
+#   - "Apply OpenStack System Hardening"
+#   - "Apply SSH Hardening"
+#   - "Apply Lynis Hardening Configuration"
+#
+# These tests parse the real playbook files and assert the new tasks exist,
+# are wired up with the exact expected module arguments/conditions, run in
+# the correct order, and that play.yml and play-localhost.yml stay identical
+# for all of this new logic.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_playbook_privilege_level.yml
+- name: Verify asimp_privilege_level detection and pre-remediation safety checks in play.yml and play-localhost.yml
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    write_test_task_name: "Test write access to system settings to determine privilege level"
+    set_privilege_task_name: "Set dynamic privilege level and execution mode"
+    cleanup_task_name: "Clean up write access test file"
+    safety_block_task_name: "Pre-Remediation Safety Check & Break-Prevention Verification"
+    expected_privilege_expr: "{% raw %}{{ 'limited' if (is_sandbox_jules | default(false) | bool or write_test_res.rc | default(1) != 0) else 'full' }}{% endraw %}"
+    expected_sandbox_ignore_errors: "{% raw %}{{ is_sandbox_jules }}{% endraw %}"
+    expected_full_mode_when: "asimp_privilege_level == 'full'"
+    expected_safety_subtask_names:
+      - "Safety Check | Check SSH daemon configuration syntax"
+      - "Safety Check | Fail if SSH daemon configuration is already broken"
+      - "Safety Check | Check free disk space on root partition (/)"
+      - "Safety Check | Assert enough disk space is available (min 512MB / 524288 KB)"
+      - "Safety Check | Validate /etc/fstab mount points"
+      - "Safety Check | Fail if mount points or fstab are corrupted"
+      - "Safety Check | Check if SSH port (22) is active and reachable"
+      - "Safety Check | Log active system port baseline"
+
+  tasks:
+    - name: Load play.yml plays
+      ansible.builtin.set_fact:
+        play_yml_plays: "{{ lookup('file', repo_root + '/play.yml') | from_yaml }}"
+
+    - name: Load play-localhost.yml plays
+      ansible.builtin.set_fact:
+        play_localhost_plays: "{{ lookup('file', repo_root + '/play-localhost.yml') | from_yaml }}"
+
+    - name: Extract the hardening play from play.yml
+      ansible.builtin.set_fact:
+        play_yml_hardening_play: "{{ play_yml_plays | selectattr('name', 'equalto', 'Run ASIMP Security Hardening and Audits') | first }}"
+
+    - name: Extract the hardening play from play-localhost.yml
+      ansible.builtin.set_fact:
+        play_localhost_hardening_play: "{{ play_localhost_plays | selectattr('name', 'equalto', 'Run localhost ASIMP Security Hardening and Audits') | first }}"
+
+    - name: Extract task name lists for ordering/regression checks
+      ansible.builtin.set_fact:
+        play_yml_task_names: "{{ play_yml_hardening_play.tasks | map(attribute='name') | list }}"
+        play_localhost_task_names: "{{ play_localhost_hardening_play.tasks | map(attribute='name') | list }}"
+
+    - name: Assert all new privilege-level tasks exist in both playbooks
+      ansible.builtin.assert:
+        that:
+          - item in play_yml_task_names
+          - item in play_localhost_task_names
+        fail_msg: "The task '{{ item }}' must exist in both play.yml and play-localhost.yml"
+      loop:
+        - "{{ write_test_task_name }}"
+        - "{{ set_privilege_task_name }}"
+        - "{{ cleanup_task_name }}"
+        - "{{ safety_block_task_name }}"
+
+    - name: Build a name-to-task lookup for play.yml
+      ansible.builtin.set_fact:
+        play_yml_tasks_by_name: "{{ dict(play_yml_task_names | zip(play_yml_hardening_play.tasks)) }}"
+
+    - name: Build a name-to-task lookup for play-localhost.yml
+      ansible.builtin.set_fact:
+        play_localhost_tasks_by_name: "{{ dict(play_localhost_task_names | zip(play_localhost_hardening_play.tasks)) }}"
+
+    # --- Write-access probe task ---------------------------------------
+    - name: Assert the write-access probe task runs the expected command with safe flags
+      ansible.builtin.assert:
+        that:
+          - play_yml_tasks_by_name[write_test_task_name]['ansible.builtin.command'] == 'touch /etc/asimp_write_test'
+          - play_yml_tasks_by_name[write_test_task_name].register == 'write_test_res'
+          - play_yml_tasks_by_name[write_test_task_name].changed_when == false
+          - play_yml_tasks_by_name[write_test_task_name].failed_when == false
+          - play_yml_tasks_by_name[write_test_task_name].ignore_errors == true
+          - play_localhost_tasks_by_name[write_test_task_name] == play_yml_tasks_by_name[write_test_task_name]
+        fail_msg: "'{{ write_test_task_name }}' must run 'touch /etc/asimp_write_test', register write_test_res, and tolerate failure without reporting changed"
+
+    # --- Dynamic privilege-level fact -----------------------------------
+    - name: Assert the dynamic privilege-level fact uses the exact expected Jinja expression
+      ansible.builtin.assert:
+        that:
+          - play_yml_tasks_by_name[set_privilege_task_name]['ansible.builtin.set_fact'].asimp_privilege_level == expected_privilege_expr
+          - play_localhost_tasks_by_name[set_privilege_task_name]['ansible.builtin.set_fact'].asimp_privilege_level == expected_privilege_expr
+        fail_msg: >-
+          '{{ set_privilege_task_name }}' must set asimp_privilege_level to 'limited' when either
+          is_sandbox_jules is true or the write-access probe failed, otherwise 'full'
+
+    # --- Cleanup of the probe file --------------------------------------
+    - name: Assert the cleanup task removes the probe file only when it was actually created
+      ansible.builtin.assert:
+        that:
+          - play_yml_tasks_by_name[cleanup_task_name]['ansible.builtin.file'].path == '/etc/asimp_write_test'
+          - play_yml_tasks_by_name[cleanup_task_name]['ansible.builtin.file'].state == 'absent'
+          - play_yml_tasks_by_name[cleanup_task_name].when == 'write_test_res.rc | default(1) == 0'
+          - play_yml_tasks_by_name[cleanup_task_name].ignore_errors == true
+          - play_localhost_tasks_by_name[cleanup_task_name] == play_yml_tasks_by_name[cleanup_task_name]
+        fail_msg: "'{{ cleanup_task_name }}' must remove /etc/asimp_write_test only when write_test_res.rc indicates it was created"
+
+    # --- Ordering: detection tasks run before the role patcher ----------
+    - name: Assert the privilege-level detection tasks run before the external-role patch task in both playbooks
+      ansible.builtin.assert:
+        that:
+          - play_yml_task_names.index(write_test_task_name) < play_yml_task_names.index('Dynamically patch external roles for sandbox compatibility')
+          - play_yml_task_names.index(set_privilege_task_name) < play_yml_task_names.index('Dynamically patch external roles for sandbox compatibility')
+          - play_yml_task_names.index(cleanup_task_name) < play_yml_task_names.index('Dynamically patch external roles for sandbox compatibility')
+          - play_localhost_task_names.index(write_test_task_name) < play_localhost_task_names.index('Dynamically patch external roles for sandbox compatibility')
+          - play_localhost_task_names.index(set_privilege_task_name) < play_localhost_task_names.index('Dynamically patch external roles for sandbox compatibility')
+          - play_localhost_task_names.index(cleanup_task_name) < play_localhost_task_names.index('Dynamically patch external roles for sandbox compatibility')
+        fail_msg: "asimp_privilege_level must be computed before any role-patching or role-inclusion tasks run"
+
+    - name: Assert the detection tasks run in the correct relative order (probe -> set fact -> cleanup)
+      ansible.builtin.assert:
+        that:
+          - play_yml_task_names.index(write_test_task_name) < play_yml_task_names.index(set_privilege_task_name)
+          - play_yml_task_names.index(set_privilege_task_name) < play_yml_task_names.index(cleanup_task_name)
+        fail_msg: "The write-access probe must run before the privilege-level fact is set, which must run before cleanup"
+
+    # --- Pre-Remediation Safety Check block ------------------------------
+    - name: Assert the safety-check task is a block gated on full privilege mode
+      ansible.builtin.assert:
+        that:
+          - "'block' in play_yml_tasks_by_name[safety_block_task_name]"
+          - play_yml_tasks_by_name[safety_block_task_name].when == expected_full_mode_when
+          - "'block' in play_localhost_tasks_by_name[safety_block_task_name]"
+          - play_localhost_tasks_by_name[safety_block_task_name].when == expected_full_mode_when
+        fail_msg: "'{{ safety_block_task_name }}' must be a block gated on when: {{ expected_full_mode_when }}"
+
+    - name: Build a name-to-task lookup for the safety-check sub-tasks (play.yml)
+      ansible.builtin.set_fact:
+        play_yml_safety_subtasks_by_name: "{{ dict(play_yml_tasks_by_name[safety_block_task_name].block | map(attribute='name') | zip(play_yml_tasks_by_name[safety_block_task_name].block)) }}"
+
+    - name: Build a name-to-task lookup for the safety-check sub-tasks (play-localhost.yml)
+      ansible.builtin.set_fact:
+        play_localhost_safety_subtasks_by_name: "{{ dict(play_localhost_tasks_by_name[safety_block_task_name].block | map(attribute='name') | zip(play_localhost_tasks_by_name[safety_block_task_name].block)) }}"
+
+    - name: Assert every expected safety sub-task is present, in order, in both playbooks
+      ansible.builtin.assert:
+        that:
+          - (play_yml_tasks_by_name[safety_block_task_name].block | map(attribute='name') | list) == expected_safety_subtask_names
+          - (play_localhost_tasks_by_name[safety_block_task_name].block | map(attribute='name') | list) == expected_safety_subtask_names
+        fail_msg: "The Pre-Remediation Safety Check block must contain exactly the expected sub-tasks, in order, in both playbooks"
+
+    - name: Assert the SSH daemon syntax check uses sshd -t and tolerates failure
+      ansible.builtin.assert:
+        that:
+          - play_yml_safety_subtasks_by_name['Safety Check | Check SSH daemon configuration syntax']['ansible.builtin.command'] == 'sshd -t'
+          - play_yml_safety_subtasks_by_name['Safety Check | Check SSH daemon configuration syntax'].register == 'sshd_syntax_check'
+          - play_yml_safety_subtasks_by_name['Safety Check | Check SSH daemon configuration syntax'].changed_when == false
+          - play_yml_safety_subtasks_by_name['Safety Check | Check SSH daemon configuration syntax'].failed_when == false
+        fail_msg: "'Safety Check | Check SSH daemon configuration syntax' must run 'sshd -t' without failing the play"
+
+    - name: Assert the SSH syntax failure guard fires only when sshd -t reports a non-zero exit code
+      ansible.builtin.assert:
+        that:
+          - play_yml_safety_subtasks_by_name['Safety Check | Fail if SSH daemon configuration is already broken'].when == 'sshd_syntax_check.rc | default(0) != 0'
+          - "'CRITICAL' in play_yml_safety_subtasks_by_name['Safety Check | Fail if SSH daemon configuration is already broken']['ansible.builtin.fail'].msg"
+        fail_msg: "'Safety Check | Fail if SSH daemon configuration is already broken' must only fail when sshd_syntax_check.rc is non-zero"
+
+    - name: Assert the disk-space check and assertion use the exact expected threshold
+      ansible.builtin.assert:
+        that:
+          - play_yml_safety_subtasks_by_name['Safety Check | Check free disk space on root partition (/)']['ansible.builtin.shell'] == 'df / --output=avail | tail -n1'
+          - play_yml_safety_subtasks_by_name['Safety Check | Check free disk space on root partition (/)'].register == 'free_space_root'
+          - "'(free_space_root.stdout | trim | int) > 524288' in play_yml_safety_subtasks_by_name['Safety Check | Assert enough disk space is available (min 512MB / 524288 KB)']['ansible.builtin.assert'].that"
+          - play_yml_safety_subtasks_by_name['Safety Check | Assert enough disk space is available (min 512MB / 524288 KB)'].when == 'free_space_root.rc | default(1) == 0'
+        fail_msg: "The disk-space safety check must require more than 524288 KB (512MB) free on the root partition"
+
+    - name: Assert the fstab validation check and guard fire correctly
+      ansible.builtin.assert:
+        that:
+          - play_yml_safety_subtasks_by_name['Safety Check | Validate /etc/fstab mount points']['ansible.builtin.command'] == 'mount -a -f'
+          - play_yml_safety_subtasks_by_name['Safety Check | Validate /etc/fstab mount points'].register == 'fstab_check'
+          - play_yml_safety_subtasks_by_name['Safety Check | Fail if mount points or fstab are corrupted'].when == 'fstab_check.rc | default(0) != 0'
+        fail_msg: "'/etc/fstab' must be validated with 'mount -a -f' and the fail guard must trigger only on a non-zero exit code"
+
+    - name: Assert the SSH port reachability check targets port 22 and tolerates failure
+      ansible.builtin.assert:
+        that:
+          - play_yml_safety_subtasks_by_name['Safety Check | Check if SSH port (22) is active and reachable']['ansible.builtin.wait_for'].port == 22
+          - play_yml_safety_subtasks_by_name['Safety Check | Check if SSH port (22) is active and reachable']['ansible.builtin.wait_for'].timeout == 5
+          - play_yml_safety_subtasks_by_name['Safety Check | Check if SSH port (22) is active and reachable']['ansible.builtin.wait_for'].state == 'started'
+          - play_yml_safety_subtasks_by_name['Safety Check | Check if SSH port (22) is active and reachable'].ignore_errors == true
+        fail_msg: "The SSH port reachability check must wait_for port 22 with a 5 second timeout and never fail the play"
+
+    - name: Assert both playbooks define an identical safety-check block
+      ansible.builtin.assert:
+        that:
+          - play_yml_tasks_by_name[safety_block_task_name] == play_localhost_tasks_by_name[safety_block_task_name]
+        fail_msg: "play.yml and play-localhost.yml must define the exact same Pre-Remediation Safety Check block"
+
+    - name: Assert the safety-check block runs after the BEFORE audits and before Ubuntu update hardening
+      ansible.builtin.assert:
+        that:
+          - play_yml_task_names.index('Run BEFORE Hardening Audits (OpenSCAP & Lynis)') < play_yml_task_names.index(safety_block_task_name)
+          - play_yml_task_names.index(safety_block_task_name) < play_yml_task_names.index('Apply Ubuntu Update Hardening')
+          - play_localhost_task_names.index('Run BEFORE Hardening Audits (OpenSCAP & Lynis)') < play_localhost_task_names.index(safety_block_task_name)
+          - play_localhost_task_names.index(safety_block_task_name) < play_localhost_task_names.index('Apply Ubuntu Update Hardening')
+        fail_msg: "The Pre-Remediation Safety Check block must run after the BEFORE audits and before any remediation/hardening roles"
+
+    # --- Remediation/hardening roles gated on full privilege mode -------
+    - name: Assert Apply Ubuntu Update Hardening requires both the OS family and full privilege level
+      ansible.builtin.assert:
+        that:
+          - play_yml_tasks_by_name['Apply Ubuntu Update Hardening'].when == ["(ansible_distribution == 'Ubuntu' or ansible_os_family == 'Debian')", expected_full_mode_when]
+          - play_localhost_tasks_by_name['Apply Ubuntu Update Hardening'].when == ["(ansible_distribution == 'Ubuntu' or ansible_os_family == 'Debian')", expected_full_mode_when]
+        fail_msg: "'Apply Ubuntu Update Hardening' must require both the Ubuntu/Debian OS family check and asimp_privilege_level == 'full'"
+
+    - name: Assert the remaining remediation/hardening roles are gated on full privilege level
+      ansible.builtin.assert:
+        that:
+          - play_yml_tasks_by_name[item].when == expected_full_mode_when
+          - play_localhost_tasks_by_name[item].when == expected_full_mode_when
+        fail_msg: "'{{ item }}' must only run when asimp_privilege_level == 'full'"
+      loop:
+        - "Apply OpenStack System Hardening"
+        - "Apply SSH Hardening"
+        - "Apply Lynis Hardening Configuration"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert the remediation/hardening roles retain their sandbox-tolerant ignore_errors (regression guard)
+      ansible.builtin.assert:
+        that:
+          - play_yml_tasks_by_name[item].ignore_errors == expected_sandbox_ignore_errors
+          - play_localhost_tasks_by_name[item].ignore_errors == expected_sandbox_ignore_errors
+        fail_msg: "'{{ item }}' must still set ignore_errors: \"{{ expected_sandbox_ignore_errors }}\", unaffected by the new privilege-level gating"
+      loop:
+        - "Apply OpenStack System Hardening"
+        - "Apply SSH Hardening"
+        - "Apply Lynis Hardening Configuration"
+      loop_control:
+        label: "{{ item }}"

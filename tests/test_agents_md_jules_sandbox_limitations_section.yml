@@ -1,0 +1,115 @@
+---
+# Regression tests for the new "Google Jules Sandbox Limitations &
+# Compatibility Standards" section added to AGENTS.md.
+#
+# This section documents, at the repository-guidance level, the same
+# root/sudo privilege fallacy, container-restricted services, and
+# upgrade/integrity operational constraints covered by the
+# jules-sandbox-mode skill, plus the mandatory playbook compliance standard
+# (sandbox detection, limited-vs-full branching, and pre-remediation safety
+# checks) that every Ansible playbook/role in this repository must follow.
+#
+# These tests assert the new section exists, is correctly placed between the
+# Agent Skills section and the OKF v0.1 specification section, and documents
+# the expected constraints and compliance requirements verbatim.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_agents_md_jules_sandbox_limitations_section.yml
+- name: Verify the Google Jules Sandbox Limitations & Compatibility Standards section of AGENTS.md
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    section_heading: "## 🔒 Google Jules Sandbox Limitations & Compatibility Standards"
+    constraints_heading: "### ⚠️ Google Jules Sandbox Constraints & Sudo Correction"
+    compliance_heading: "### 📜 Mandatory Playbook Compliance Standard"
+    preceding_heading: "### Deep State of Mind (DSOM) Protocol"
+    following_heading: "## 📖 Google Open Knowledge Format (OKF) v0.1 Specification"
+    expected_constraint_snippets:
+      - "(ALL : ALL) NOPASSWD: ALL"
+      - "/etc/sysctl.conf"
+      - "auditd"
+      - "chrony"
+      - "firewalld"
+      - "autofs"
+      - "clamav"
+      - "apt upgrade"
+      - "dnf upgrade"
+      - "debsums"
+    expected_compliance_snippets:
+      - "is_sandbox_jules"
+      - "/home/jules"
+      - "sshd -t"
+      - "/etc/fstab"
+      - "non-destructive, audit/test/info mode only"
+
+  tasks:
+    - name: Load raw content of AGENTS.md
+      ansible.builtin.set_fact:
+        agents_md_content: "{{ lookup('file', repo_root + '/AGENTS.md') }}"
+
+    - name: Assert AGENTS.md contains the new Jules Sandbox Limitations section and its two subsections
+      ansible.builtin.assert:
+        that:
+          - section_heading in agents_md_content
+          - constraints_heading in agents_md_content
+          - compliance_heading in agents_md_content
+        fail_msg: "AGENTS.md must document '{{ section_heading }}' with '{{ constraints_heading }}' and '{{ compliance_heading }}' subsections"
+
+    - name: Assert the new section is inserted between the Agent Skills section and the OKF v0.1 specification
+      ansible.builtin.assert:
+        that:
+          - agents_md_content.find(preceding_heading) != -1
+          - agents_md_content.find(section_heading) != -1
+          - agents_md_content.find(following_heading) != -1
+          - agents_md_content.find(preceding_heading) < agents_md_content.find(section_heading)
+          - agents_md_content.find(section_heading) < agents_md_content.find(following_heading)
+        fail_msg: "'{{ section_heading }}' must be placed between '{{ preceding_heading }}' and '{{ following_heading }}'"
+
+    - name: Assert the subsections appear in the expected order within the new section
+      ansible.builtin.assert:
+        that:
+          - agents_md_content.find(section_heading) < agents_md_content.find(constraints_heading)
+          - agents_md_content.find(constraints_heading) < agents_md_content.find(compliance_heading)
+          - agents_md_content.find(compliance_heading) < agents_md_content.find(following_heading)
+        fail_msg: "'{{ constraints_heading }}' must precede '{{ compliance_heading }}', both nested under '{{ section_heading }}'"
+
+    - name: Assert the sandbox constraints subsection documents every expected restriction
+      ansible.builtin.assert:
+        that:
+          - item in agents_md_content
+        fail_msg: "AGENTS.md must document the sandbox constraint: {{ item }}"
+      loop: "{{ expected_constraint_snippets }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert the mandatory playbook compliance standard documents every expected requirement
+      ansible.builtin.assert:
+        that:
+          - item in agents_md_content
+        fail_msg: "AGENTS.md must document the compliance requirement: {{ item }}"
+      loop: "{{ expected_compliance_snippets }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert the compliance standard explicitly requires branching between limited and real-OS execution
+      ansible.builtin.assert:
+        that:
+          - "'Conditional Enforcement' in agents_md_content"
+          - "'run full-throttle remediations, package upgrades, and auditing with full privileges' in agents_md_content"
+        fail_msg: "AGENTS.md must explicitly require playbooks to branch between limited/sandbox execution and a real, unconstrained OS"
+
+    - name: Assert the compliance standard explicitly requires pre-remediation safety checks
+      ansible.builtin.assert:
+        that:
+          - "'Pre-Remediation Safety & Break-Prevention Verification' in agents_md_content"
+          - "'will not break the host system or active project codes' in agents_md_content"
+        fail_msg: "AGENTS.md must explicitly require pre-remediation safety and break-prevention verification before hardening a real OS"
+
+    - name: Assert the pre-existing Agent Skills and OKF sections remain intact around the new section (regression guard)
+      ansible.builtin.assert:
+        that:
+          - "'## 🌌 Google Antigravity & Google Jules Agent Skills' in agents_md_content"
+          - "'### 📐 Required Frontmatter Fields' in agents_md_content"
+        fail_msg: "Inserting the new Jules Sandbox Limitations section must not disturb the surrounding Agent Skills or OKF v0.1 sections"
