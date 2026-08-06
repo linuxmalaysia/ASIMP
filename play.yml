@@ -10,7 +10,7 @@
 - name: Run ASIMP Security Hardening and Audits
   hosts: os_Ubuntu:os_Debian:os_CentOS:os_RedHat:os_Rocky
   gather_facts: true
-  become: true
+  become: false
   vars:
     security_enable_firewalld: false
     security_contrib_enabled: true
@@ -75,10 +75,13 @@
       tags: always
 
     - name: Run BEFORE Hardening Audits (OpenSCAP & Lynis)
-      ansible.builtin.include_role:
-        name: reporting-ASIMP
-      vars:
-        reporting_phase: before
+      block:
+        - name: Run BEFORE Hardening Audits (OpenSCAP & Lynis)
+          ansible.builtin.include_role:
+            name: reporting-ASIMP
+          vars:
+            reporting_phase: before
+      become: "{{ asimp_privilege_level == 'full' }}"
 
     - name: Pre-Remediation Safety Check & Break-Prevention Verification
       block:
@@ -88,6 +91,7 @@
           changed_when: false
           failed_when: false
           ignore_errors: true
+          become: true
 
         - name: Safety Check | Fail if SSH daemon configuration is already broken
           ansible.builtin.fail:
@@ -114,59 +118,74 @@
           changed_when: false
           failed_when: false
           ignore_errors: true
+          become: true
 
         - name: Safety Check | Fail if mount points or fstab are corrupted
           ansible.builtin.fail:
             msg: "CRITICAL: /etc/fstab has invalid mount points! Proceeding with remediation could break system boot capability."
           when: fstab_check.rc | default(0) != 0
 
-        - name: Safety Check | Check if SSH port (22) is active and reachable
+        - name: Safety Check | Check if SSH port is active and reachable
           ansible.builtin.wait_for:
-            port: 22
+            port: "{{ ansible_port | default(22) }}"
             timeout: 5
             state: started
-          ignore_errors: true
 
         - name: Safety Check | Log active system port baseline
           ansible.builtin.debug:
-            msg: "Pre-flight Safety Check Passed! SSH Port 22 is active. Storage and SSHD syntax are healthy."
+            msg: "Pre-flight Safety Check Passed! SSH Port {{ ansible_port | default(22) }} is active. Storage and SSHD syntax are healthy."
       when: asimp_privilege_level == 'full'
 
     - name: Apply Ubuntu Update Hardening
-      ansible.builtin.include_role:
-        name: update-ubuntu-ASIMP
-      vars:
-        upgrade_ubuntu_check: "{{ not is_sandbox_jules }}"
-        dist_upgrade_ubuntu_check: "{{ not is_sandbox_jules }}"
-        safe_upgrade_ubuntu_check: "{{ not is_sandbox_jules }}"
-        debsums_ubuntu_check: "{{ not is_sandbox_jules }}"
+      block:
+        - name: Apply Ubuntu Update Hardening
+          ansible.builtin.include_role:
+            name: update-ubuntu-ASIMP
+          vars:
+            upgrade_ubuntu_check: "{{ not is_sandbox_jules }}"
+            dist_upgrade_ubuntu_check: "{{ not is_sandbox_jules }}"
+            safe_upgrade_ubuntu_check: "{{ not is_sandbox_jules }}"
+            debsums_ubuntu_check: "{{ not is_sandbox_jules }}"
       when:
         - (ansible_distribution == 'Ubuntu' or ansible_os_family == 'Debian')
         - asimp_privilege_level == 'full'
+      become: true
 
     - name: Apply OpenStack System Hardening
-      ansible.builtin.include_role:
-        name: ansible-hardening
+      block:
+        - name: Apply OpenStack System Hardening
+          ansible.builtin.include_role:
+            name: ansible-hardening
       ignore_errors: "{{ is_sandbox_jules }}"
       when: asimp_privilege_level == 'full'
+      become: true
 
     - name: Apply SSH Hardening
-      ansible.builtin.include_role:
-        name: dev-sec.ssh-hardening
+      block:
+        - name: Apply SSH Hardening
+          ansible.builtin.include_role:
+            name: dev-sec.ssh-hardening
       ignore_errors: "{{ is_sandbox_jules }}"
       when: asimp_privilege_level == 'full'
+      become: true
 
     - name: Apply Lynis Hardening Configuration
-      ansible.builtin.include_role:
-        name: lynis-ansible
-      vars:
-        lynis_use_packages: true
-        lynis_audit_system_linux: true
+      block:
+        - name: Apply Lynis Hardening Configuration
+          ansible.builtin.include_role:
+            name: lynis-ansible
+          vars:
+            lynis_use_packages: true
+            lynis_audit_system_linux: true
       ignore_errors: "{{ is_sandbox_jules }}"
       when: asimp_privilege_level == 'full'
+      become: true
 
     - name: Run AFTER Hardening Audits (OpenSCAP & Lynis)
-      ansible.builtin.include_role:
-        name: reporting-ASIMP
-      vars:
-        reporting_phase: after
+      block:
+        - name: Run AFTER Hardening Audits (OpenSCAP & Lynis)
+          ansible.builtin.include_role:
+            name: reporting-ASIMP
+          vars:
+            reporting_phase: after
+      become: "{{ asimp_privilege_level == 'full' }}"

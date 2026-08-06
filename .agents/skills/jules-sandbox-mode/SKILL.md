@@ -32,11 +32,13 @@ Activate this skill when:
 ## Execution Rules
 
 ### ⚠️ Root / Sudo Privilege Correction
+
 Although the `jules` user is configured with passwordless `sudo` (`(ALL : ALL) NOPASSWD: ALL`), the underlying execution container is **sandboxed**. Root access inside a container cannot bypass host kernel restrictions or security isolation. Therefore:
 - Changing host-level OS settings (like `/etc/sysctl.conf` or host kernel modules) will fail.
 - Virtualized clocks and network boundaries are locked, so services like `chrony` or `firewalld` are restricted.
 
 ### 1. Sandbox & Privilege Level Detection
+
 Always perform dynamic detection of the sandbox environment and system configuration write permissions. Set `asimp_privilege_level` to `'limited'` when in the Google Jules sandbox or when root write access to system settings is missing; otherwise, set it to `'full'`.
 
 ```yaml
@@ -69,6 +71,7 @@ Always perform dynamic detection of the sandbox environment and system configura
 ```
 
 ### 2. Option Between Limited Environment and Real OS
+
 All playbooks and automation tasks must branch between limited/sandbox environments and a real, unconstrained OS:
 - **Limited/Sandbox Mode (`asimp_privilege_level == 'limited'`)**:
   - Run in non-destructive, audit/test/info mode only.
@@ -78,6 +81,7 @@ All playbooks and automation tasks must branch between limited/sandbox environme
   - Run all out: execute updates, full system remediation/hardening, and before/after baseline scanning.
 
 ### 3. Pre-Remediation Safety & Break-Prevention Verification
+
 Before executing any systems-level remediation or hardening on a real OS, playbooks must run pre-remediation safety checks to verify that the configurations won't break system access or project codes.
 
 ```yaml
@@ -121,20 +125,20 @@ Before executing any systems-level remediation or hardening on a real OS, playbo
         msg: "CRITICAL: /etc/fstab has invalid mount points! Proceeding with remediation could break system boot capability."
       when: fstab_check.rc | default(0) != 0
 
-    - name: Safety Check | Check if SSH port (22) is active and reachable
+    - name: Safety Check | Check if SSH port is active and reachable
       ansible.builtin.wait_for:
-        port: 22
+        port: "{{ ansible_port | default(22) }}"
         timeout: 5
         state: started
-      ignore_errors: true
 
     - name: Safety Check | Log active system port baseline
       ansible.builtin.debug:
-        msg: "Pre-flight Safety Check Passed! SSH Port 22 is active. Storage and SSHD syntax are healthy."
+        msg: "Pre-flight Safety Check Passed! SSH Port {{ ansible_port | default(22) }} is active. Storage and SSHD syntax are healthy."
   when: asimp_privilege_level == 'full'
 ```
 
 ### 4. Gracefully Handle Container-Restricted Services
+
 Containerized environments do not have permissions to load kernel modules or control system services like:
 - `auditd` (Audit Daemon)
 - `chrony` (Time Synchronization)

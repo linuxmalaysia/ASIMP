@@ -252,10 +252,15 @@
         {{ openscap_datastream | default('/usr/share/xml/scap/ssg/content/ssg-ubuntu2404-ds.xml') }}
       register: r_sandbox_oscap_run_before
       failed_when: false
-      changed_when: true
+      changed_when: false
       when:
         - oscap_present_before
         - openscap_datastream is defined or ansible_distribution == 'Ubuntu'
+
+    - name: Check if sandbox BEFORE OpenSCAP results exist
+      ansible.builtin.stat:
+        path: "{{ openscap_report_dir }}/ssg-results-before.xml"
+      register: r_sandbox_oscap_file_before
 
     - name: Parse real BEFORE OpenSCAP compliance score inside sandbox
       ansible.builtin.shell: python3 /usr/local/bin/parse_openscap_score.py {{ openscap_report_dir }}/ssg-results-before.xml
@@ -264,14 +269,19 @@
       failed_when: false
       when:
         - oscap_present_before
-        - r_sandbox_oscap_run_before.rc is defined
+        - r_sandbox_oscap_file_before.stat.exists
 
     - name: Execute real BEFORE Lynis audit inside sandbox
       ansible.builtin.shell: lynis audit system --quick
       register: r_sandbox_lynis_run_before
       failed_when: false
-      changed_when: true
+      changed_when: false
       when: lynis_present_before
+
+    - name: Check if sandbox BEFORE Lynis report exists
+      ansible.builtin.stat:
+        path: "/var/log/lynis-report.dat"
+      register: r_sandbox_lynis_file_before
 
     - name: Parse real BEFORE Lynis index inside sandbox
       ansible.builtin.shell: grep -E "^hardening_index=" /var/log/lynis-report.dat | cut -d'=' -f2
@@ -280,14 +290,32 @@
       failed_when: false
       when:
         - lynis_present_before
-        - r_sandbox_lynis_run_before.rc is defined
+        - r_sandbox_lynis_file_before.stat.exists
 
     - name: Set dynamic or simulated BEFORE scores
       ansible.builtin.set_fact:
         parsed_openscap_before:
-          stdout: "{{ r_sandbox_oscap_parsed_before.stdout | trim if (r_sandbox_oscap_parsed_before is defined and r_sandbox_oscap_parsed_before.stdout is defined) else '58.4' }}"
+          stdout: >-
+            {%- if r_sandbox_oscap_file_before.stat.exists and
+                   r_sandbox_oscap_parsed_before is defined and
+                   r_sandbox_oscap_parsed_before.stdout is defined and
+                   r_sandbox_oscap_parsed_before.stdout | trim | length > 0 and
+                   r_sandbox_oscap_parsed_before.stdout | trim | regex_search('^[0-9.]+$') -%}
+            {{ r_sandbox_oscap_parsed_before.stdout | trim }}
+            {%- else -%}
+            58.4
+            {%- endif -%}
         parsed_lynis_before:
-          stdout: "{{ r_sandbox_lynis_parsed_before.stdout | trim if (r_sandbox_lynis_parsed_before is defined and r_sandbox_lynis_parsed_before.stdout is defined) else '62' }}"
+          stdout: >-
+            {%- if r_sandbox_lynis_file_before.stat.exists and
+                   r_sandbox_lynis_parsed_before is defined and
+                   r_sandbox_lynis_parsed_before.stdout is defined and
+                   r_sandbox_lynis_parsed_before.stdout | trim | length > 0 and
+                   r_sandbox_lynis_parsed_before.stdout | trim | regex_search('^[0-9]+$') -%}
+            {{ r_sandbox_lynis_parsed_before.stdout | trim }}
+            {%- else -%}
+            62
+            {%- endif -%}
 
     - name: Save baseline scores to file (Sandbox)
       ansible.builtin.copy:
@@ -470,10 +498,15 @@
         {{ openscap_datastream | default('/usr/share/xml/scap/ssg/content/ssg-ubuntu2404-ds.xml') }}
       register: r_sandbox_oscap_run_after
       failed_when: false
-      changed_when: true
+      changed_when: false
       when:
         - oscap_present_after
         - openscap_datastream is defined or ansible_distribution == 'Ubuntu'
+
+    - name: Check if sandbox AFTER OpenSCAP results exist
+      ansible.builtin.stat:
+        path: "{{ openscap_report_dir }}/ssg-results-after.xml"
+      register: r_sandbox_oscap_file_after
 
     - name: Parse real AFTER OpenSCAP compliance score inside sandbox
       ansible.builtin.shell: python3 /usr/local/bin/parse_openscap_score.py {{ openscap_report_dir }}/ssg-results-after.xml
@@ -482,14 +515,19 @@
       failed_when: false
       when:
         - oscap_present_after
-        - r_sandbox_oscap_run_after.rc is defined
+        - r_sandbox_oscap_file_after.stat.exists
 
     - name: Execute real AFTER Lynis audit inside sandbox
       ansible.builtin.shell: lynis audit system --quick
       register: r_sandbox_lynis_run_after
       failed_when: false
-      changed_when: true
+      changed_when: false
       when: lynis_present_after
+
+    - name: Check if sandbox AFTER Lynis report exists
+      ansible.builtin.stat:
+        path: "/var/log/lynis-report.dat"
+      register: r_sandbox_lynis_file_after
 
     - name: Parse real AFTER Lynis index inside sandbox
       ansible.builtin.shell: grep -E "^hardening_index=" /var/log/lynis-report.dat | cut -d'=' -f2
@@ -498,20 +536,38 @@
       failed_when: false
       when:
         - lynis_present_after
-        - r_sandbox_lynis_run_after.rc is defined
+        - r_sandbox_lynis_file_after.stat.exists
 
     - name: Set dynamic or simulated AFTER scores
       ansible.builtin.set_fact:
         parsed_openscap_after:
-          stdout: "{{ r_sandbox_oscap_parsed_after.stdout | trim if (r_sandbox_oscap_parsed_after is defined and r_sandbox_oscap_parsed_after.stdout is defined) else '91.2' }}"
+          stdout: >-
+            {%- if r_sandbox_oscap_file_after.stat.exists and
+                   r_sandbox_oscap_parsed_after is defined and
+                   r_sandbox_oscap_parsed_after.stdout is defined and
+                   r_sandbox_oscap_parsed_after.stdout | trim | length > 0 and
+                   r_sandbox_oscap_parsed_after.stdout | trim | regex_search('^[0-9.]+$') -%}
+            {{ r_sandbox_oscap_parsed_after.stdout | trim }}
+            {%- else -%}
+            91.2
+            {%- endif -%}
           rc: 0
         parsed_lynis_after:
-          stdout: "{{ r_sandbox_lynis_parsed_after.stdout | trim if (r_sandbox_lynis_parsed_after is defined and r_sandbox_lynis_parsed_after.stdout is defined) else '88' }}"
+          stdout: >-
+            {%- if r_sandbox_lynis_file_after.stat.exists and
+                   r_sandbox_lynis_parsed_after is defined and
+                   r_sandbox_lynis_parsed_after.stdout is defined and
+                   r_sandbox_lynis_parsed_after.stdout | trim | length > 0 and
+                   r_sandbox_lynis_parsed_after.stdout | trim | regex_search('^[0-9]+$') -%}
+            {{ r_sandbox_lynis_parsed_after.stdout | trim }}
+            {%- else -%}
+            88
+            {%- endif -%}
           rc: 0
         openscap_scan_supported: true
-        openscap_success: true
-        lynis_success: true
-        audits_completed: true
+        openscap_success: "{{ r_sandbox_oscap_file_after.stat.exists and r_sandbox_oscap_parsed_after is defined and r_sandbox_oscap_parsed_after.rc | default(1) == 0 if oscap_present_after else true }}"
+        lynis_success: "{{ r_sandbox_lynis_file_after.stat.exists and r_sandbox_lynis_parsed_after is defined and r_sandbox_lynis_parsed_after.rc | default(1) == 0 if lynis_present_after else true }}"
+        audits_completed: "{{ (r_sandbox_oscap_file_after.stat.exists and r_sandbox_oscap_parsed_after is defined and r_sandbox_oscap_parsed_after.rc | default(1) == 0 if oscap_present_after else true) and (r_sandbox_lynis_file_after.stat.exists and r_sandbox_lynis_parsed_after is defined and r_sandbox_lynis_parsed_after.rc | default(1) == 0 if lynis_present_after else true) }}"
         is_ubuntu: true
 
     - name: Template mock/real Security Audit Report markdown
@@ -519,10 +575,9 @@
         dest: "{{ ansible_env.PWD | default(playbook_dir) }}/data/asimp_mock/opt/report/openscap/SECURITY_AUDIT_REPORT.md"
         content: |
           ---
-          okf_version: 0.1
+          okf_version: "0.1"
           type: report
           title: "Google Jules Sovereign OS Security Hardening & Compliance Report"
-          description: "Security audit and compliance report for Google Jules sandbox"
           timestamp: "{{ ansible_date_time.iso8601 }}"
           topics: [security, compliance, audit, report, sandbox]
           ---
