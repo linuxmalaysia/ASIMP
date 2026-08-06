@@ -31,22 +31,24 @@
         is_sandbox_jules: "{{ jules_home_stat.stat.exists }}"
         security_rhel7_initialize_aide: "{{ not jules_home_stat.stat.exists }}"
 
-    - name: Test write access to system settings to determine privilege level
-      ansible.builtin.command: touch /etc/asimp_write_test
-      register: write_test_res
-      changed_when: false
+    - name: Test write access - Create temporary file in /etc
+      ansible.builtin.tempfile:
+        state: file
+        path: /etc
+        suffix: _asimp_write_test
+      register: r_write_tempfile
       failed_when: false
       ignore_errors: true
 
     - name: Set dynamic privilege level and execution mode
       ansible.builtin.set_fact:
-        asimp_privilege_level: "{{ 'limited' if (is_sandbox_jules | default(false) | bool or write_test_res.rc | default(1) != 0) else 'full' }}"
+        asimp_privilege_level: "{{ 'limited' if (is_sandbox_jules | default(false) | bool or r_write_tempfile.path is not defined or r_write_tempfile.path | length == 0) else 'full' }}"
 
-    - name: Clean up write access test file
+    - name: Test write access - Clean up temporary file
       ansible.builtin.file:
-        path: /etc/asimp_write_test
+        path: "{{ r_write_tempfile.path }}"
         state: absent
-      when: write_test_res.rc | default(1) == 0
+      when: r_write_tempfile.path is defined and r_write_tempfile.path | length > 0
       ignore_errors: true
 
     - name: Dynamically patch external roles for sandbox compatibility
