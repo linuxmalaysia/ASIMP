@@ -15,6 +15,7 @@
   ansible.builtin.set_fact:
     openscap_report_dir: "{{ ansible_env.HOME | default('/home/' + ansible_user_id) }}/report/openscap"
     is_sandbox_jules: "{{ r_jules_home_stat.stat.exists }}"
+    openscap_scan_supported: false
 
 - name: OpenSCAP | Create report directory
   ansible.builtin.file:
@@ -34,7 +35,9 @@
       - bzip2
     state: present
     update_cache: yes
-  when: is_ubuntu
+  when:
+    - is_ubuntu
+    - not (is_sandbox_jules | default(false) | bool)
   ignore_errors: yes
 
 - name: OpenSCAP | Install Packages (RHEL/CentOS/Rocky)
@@ -43,7 +46,9 @@
       - openscap-scanner
       - scap-security-guide
     state: present
-  when: is_rhel
+  when:
+    - is_rhel
+    - not (is_sandbox_jules | default(false) | bool)
   ignore_errors: yes
 
 - name: Create OpenSCAP score parser helper script
@@ -143,7 +148,9 @@
         openscap_datastream: "{{ openscap_report_dir }}/{{ scap_latest_url | basename | replace('.zip', '') }}/ssg-ubuntu{{ ansible_distribution_version | replace('.', '') }}-ds.xml"
         openscap_scan_supported: true
       when: openscap_datastream is not defined or openscap_datastream == ""
-  when: is_ubuntu
+  when:
+    - is_ubuntu
+    - not (is_sandbox_jules | default(false) | bool)
 
 - name: OpenSCAP | Non-Ubuntu OS-specific configurations
   block:
@@ -182,13 +189,16 @@
 - name: OpenSCAP | Display warning if no compatible datastream found
   ansible.builtin.debug:
     msg: "WARNING: No OS-version-compatible OpenSCAP datastream found for this platform. OpenSCAP scanning will be skipped."
-  when: not openscap_scan_supported
+  when:
+    - not openscap_scan_supported
+    - not (is_sandbox_jules | default(false) | bool)
 
 - name: Ensure lynis is installed
   ansible.builtin.package:
     name: lynis
     state: present
   ignore_errors: yes
+  when: not (is_sandbox_jules | default(false) | bool)
 
 # ==============================================================================
 # BEFORE HARDENING PHASE
