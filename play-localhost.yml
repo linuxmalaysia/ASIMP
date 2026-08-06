@@ -27,6 +27,8 @@
 
     - name: Dynamically patch external roles for sandbox compatibility
       ansible.builtin.command: python3 scripts/patch_roles.py
+      register: patch_roles_result
+      changed_when: "'Patched ' in patch_roles_result.stdout"
       delegate_to: localhost
       run_once: true
       ignore_errors: true

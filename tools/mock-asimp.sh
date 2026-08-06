@@ -78,18 +78,8 @@ if [ "$IS_JULES_MOCK" = true ]; then
     JSON_FILE="$MOCK_LOG_DIR/asimp-baseline-scores.json"
     cat <<EOF > "$JSON_FILE"
 {
-  "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
-  "environment": "Google Jules Sandbox Mock",
-  "scores": {
-    "before": {
-      "lynis_hi": $BASELINE_LYNIS_HI,
-      "openscap_pct": $BASELINE_OPENSCAP_PCT
-    },
-    "after": {
-      "lynis_hi": $AFTER_LYNIS_HI,
-      "openscap_pct": $AFTER_OPENSCAP_PCT
-    }
-  }
+  "openscap_before": "$BASELINE_OPENSCAP_PCT",
+  "lynis_before": "$BASELINE_LYNIS_HI"
 }
 EOF
 
