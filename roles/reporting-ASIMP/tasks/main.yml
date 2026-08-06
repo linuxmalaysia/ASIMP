@@ -325,9 +325,17 @@
             mode: '0644'
           register: download_oval
 
+        - name: OpenSCAP | Check if decompressed OVAL XML exists
+          ansible.builtin.stat:
+            path: "{{ openscap_report_dir }}/com.ubuntu.{{ ansible_distribution_release }}.usn.oval.xml"
+          register: decompressed_oval_stat
+
         - name: OpenSCAP | Decompress OVAL definitions
-          ansible.builtin.shell: "bunzip2 -f -k {{ openscap_report_dir }}/com.ubuntu.{{ ansible_distribution_release }}.usn.oval.xml.bz2"
-          when: download_oval is succeeded
+          ansible.builtin.command: "bunzip2 -f -k {{ openscap_report_dir }}/com.ubuntu.{{ ansible_distribution_release }}.usn.oval.xml.bz2"
+          when:
+            - download_oval is succeeded
+            - download_oval.changed | default(false) | bool or not (decompressed_oval_stat.stat.exists | default(false) | bool)
+          changed_when: download_oval.changed | default(false) | bool or not (decompressed_oval_stat.stat.exists | default(false) | bool)
 
         - name: OpenSCAP | Run OVAL evaluation
           ansible.builtin.shell: >
