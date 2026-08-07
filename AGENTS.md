@@ -67,6 +67,25 @@ All skills conclude with a standard **Deep State of Mind (DSOM)** AI Protocol fo
 
 ---
 
+## 🔒 Google Jules Sandbox Limitations & Compatibility Standards
+
+Google Jules executes in a secure, containerized sandbox environment. This introduces several system-level operational constraints that must be accounted for by all AI agents.
+
+### ⚠️ Google Jules Sandbox Constraints & Sudo Correction
+
+1. **Root / Sudo Privilege Fallacy**: While the `jules` user inside the sandbox technically has full passwordless `sudo` privileges configured (`(ALL : ALL) NOPASSWD: ALL`), it is run within a restricted containerized context. Therefore, root-level operations cannot override or bypass host OS virtualization constraints. Any operations attempting to alter host OS settings (such as `/etc/sysctl.conf`, loading kernel modules, modifying sysctl settings) will fail.
+2. **Container-Restricted Services**: Managing or interacting with hardware-bound or kernel-restricted system services (such as `auditd`, `chrony`, `firewalld`, `autofs`, `clamav`) will fail or stall.
+3. **Upgrade/Integrity Operations**: Global package manager upgrades (`apt upgrade` / `dnf upgrade`) and complete system-wide file integrity verifications (`debsums`) can hang, freeze, or fail due to network blocks or virtualization limits.
+
+### 📜 Mandatory Playbook Compliance Standard
+
+Any Ansible playbook or automation code created, edited, or used in this repository **MUST** detect and account for the Jules sandbox environment (or any environment with identical conditions):
+- **Detection Pattern**: Use the `is_sandbox_jules` fact check (via detecting `/home/jules`) to determine if the environment is sandboxed.
+- **Conditional Enforcement**: Always provide distinct options/paths between limited environments (sandbox/ordinary user) and a real, unconstrained OS. On a real OS, run full-throttle remediations, package upgrades, and auditing with full privileges. On a sandboxed/limited OS, run in non-destructive, audit/test/info mode only, or gracefully skip tasks that modify restricted services.
+- **Pre-Remediation Safety & Break-Prevention Verification**: Before applying any remediation or hardening on a real OS, playbooks must implement dry-run and safety checks (such as verifying existing configuration syntax with `sshd -t`, checking root partition space, validating `/etc/fstab` and baselining crucial ports) to ensure that the modifications will not break the host system or active project codes.
+
+---
+
 ## 📖 Google Open Knowledge Format (OKF) v0.1 Specification
 
 To ensure a standardized, self-describing, human-readable, and machine-parseable representation of project knowledge, **all** markdown (`.md`) files in this repository strictly adhere to the **Google Open Knowledge Format (OKF) v0.1** specification.

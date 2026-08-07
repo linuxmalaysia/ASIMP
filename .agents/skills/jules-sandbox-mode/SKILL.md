@@ -31,8 +31,15 @@ Activate this skill when:
 
 ## Execution Rules
 
-### 1. Sandbox Detection
-The sandbox is detected by checking the existence of the path `/home/jules`. If it exists, set the Ansible fact `is_sandbox_jules` to `true`.
+### ⚠️ Root / Sudo Privilege Correction
+
+Although the `jules` user is configured with passwordless `sudo` (`(ALL : ALL) NOPASSWD: ALL`), the underlying execution container is **sandboxed**. Root access inside a container cannot bypass host kernel restrictions or security isolation. Therefore:
+- Changing host-level OS settings (like `/etc/sysctl.conf` or host kernel modules) will fail.
+- Virtualized clocks and network boundaries are locked, so services like `chrony` or `firewalld` are restricted.
+
+### 1. Sandbox & Privilege Level Detection
+
+Always perform dynamic detection of the sandbox environment and system configuration write permissions. Set `asimp_privilege_level` to `'limited'` when in the Google Jules sandbox or when root write access to system settings is missing; otherwise, set it to `'full'`.
 
 ```yaml
 - name: Detect Google Jules sandbox environment
@@ -43,14 +50,97 @@ The sandbox is detected by checking the existence of the path `/home/jules`. If 
 - name: Set is_sandbox_jules fact
   ansible.builtin.set_fact:
     is_sandbox_jules: "{{ jules_home_stat.stat.exists }}"
+
+- name: Test write access - Create temporary file in /etc
+  ansible.builtin.tempfile:
+    state: file
+    path: /etc
+    suffix: _asimp_write_test
+  register: r_write_tempfile
+  failed_when: false
+  ignore_errors: true
+
+- name: Set dynamic privilege level and execution mode
+  ansible.builtin.set_fact:
+    asimp_privilege_level: "{{ 'limited' if (is_sandbox_jules | default(false) | bool or r_write_tempfile.path is not defined or r_write_tempfile.path | length == 0) else 'full' }}"
+
+- name: Test write access - Clean up temporary file
+  ansible.builtin.file:
+    path: "{{ r_write_tempfile.path }}"
+    state: absent
+  when: r_write_tempfile.path is defined and r_write_tempfile.path | length > 0
+  ignore_errors: true
 ```
 
-### 2. Bypass Long-Running Tasks
-Under sandbox mode, skip slow and expensive tasks such as:
-- Comprehensive system-wide upgrades (`apt upgrade`).
-- Global `debsums` integrity checks.
+### 2. Option Between Limited Environment and Real OS
 
-### 3. Gracefully Handle Container-Restricted Services
+All playbooks and automation tasks must branch between limited/sandbox environments and a real, unconstrained OS:
+- **Limited/Sandbox Mode (`asimp_privilege_level == 'limited'`)**:
+  - Run in non-destructive, audit/test/info mode only.
+  - Test if `oscap` and `lynis` commands are installed using `which`. If available, run them to report **real scoring**; if not, list what is missing and fall back to producing simulated/mock scorecards.
+  - Skip systems-level remediation roles (`ansible-hardening`, `dev-sec.ssh-hardening`, `update-ubuntu-ASIMP`) to prevent container-related failures.
+- **Real OS Mode (`asimp_privilege_level == 'full'`)**:
+  - Run all out: execute updates, full system remediation/hardening, and before/after baseline scanning.
+
+### 3. Pre-Remediation Safety & Break-Prevention Verification
+
+Before executing any systems-level remediation or hardening on a real OS, playbooks must run pre-remediation safety checks to verify that the configurations won't break system access or project codes.
+
+```yaml
+- name: Pre-Remediation Safety Check & Break-Prevention Verification
+  block:
+    - name: Safety Check | Check SSH daemon configuration syntax
+      ansible.builtin.command: sshd -t
+      register: sshd_syntax_check
+      changed_when: false
+      failed_when: false
+      ignore_errors: true
+
+    - name: Safety Check | Fail if SSH daemon configuration is already broken
+      ansible.builtin.fail:
+        msg: "CRITICAL: The existing SSH configuration has syntax errors! Remediation cannot proceed safely to prevent system lockout."
+      when: sshd_syntax_check.rc | default(0) != 0
+
+    - name: Safety Check | Check free disk space on root partition (/)
+      ansible.builtin.shell: df / --output=avail | tail -n1
+      register: free_space_root
+      changed_when: false
+      failed_when: false
+      ignore_errors: true
+
+    - name: Safety Check | Assert enough disk space is available (min 512MB / 524288 KB)
+      ansible.builtin.assert:
+        that:
+          - (free_space_root.stdout | trim | int) > 524288
+        fail_msg: "CRITICAL: Insufficient disk space on root partition (less than 512MB free). Upgrading or hardening may break the system."
+      when: free_space_root.rc | default(1) == 0
+
+    - name: Safety Check | Validate /etc/fstab mount points
+      ansible.builtin.command: mount -a -f
+      register: fstab_check
+      changed_when: false
+      failed_when: false
+      ignore_errors: true
+
+    - name: Safety Check | Fail if mount points or fstab are corrupted
+      ansible.builtin.fail:
+        msg: "CRITICAL: /etc/fstab has invalid mount points! Proceeding with remediation could break system boot capability."
+      when: fstab_check.rc | default(0) != 0
+
+    - name: Safety Check | Check if SSH port is active and reachable
+      ansible.builtin.wait_for:
+        port: "{{ ansible_port | default(22) }}"
+        timeout: 5
+        state: started
+
+    - name: Safety Check | Log active system port baseline
+      ansible.builtin.debug:
+        msg: "Pre-flight Safety Check Passed! SSH Port {{ ansible_port | default(22) }} is active. Storage and SSHD syntax are healthy."
+  when: asimp_privilege_level == 'full'
+```
+
+### 4. Gracefully Handle Container-Restricted Services
+
 Containerized environments do not have permissions to load kernel modules or control system services like:
 - `auditd` (Audit Daemon)
 - `chrony` (Time Synchronization)
