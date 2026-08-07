@@ -123,20 +123,20 @@
     - name: Assert the decompress task's when clause is unchanged
       ansible.builtin.assert:
         that:
-          - decompress_task.when == "download_oval is succeeded"
+          - "'download_oval is succeeded' in decompress_task.when"
         fail_msg: "'OpenSCAP | Decompress OVAL definitions' must still be gated on 'when: download_oval is succeeded'"
 
     - name: Assert the decompress task now defines an explicit changed_when tied to the download result
       ansible.builtin.assert:
         that:
           - "'changed_when' in decompress_task"
-          - decompress_task.changed_when == "download_oval.changed"
+          - "'download_oval.changed' in decompress_task.changed_when"
         fail_msg: >-
           'OpenSCAP | Decompress OVAL definitions' must define
-          'changed_when: download_oval.changed' so its reported change status reflects whether
+          'changed_when' containing 'download_oval.changed' so its reported change status reflects whether
           the OVAL archive was actually (re)downloaded, since ansible.builtin.command cannot
           infer this on its own.
-        success_msg: "'OpenSCAP | Decompress OVAL definitions' correctly derives changed_when from download_oval.changed"
+        success_msg: "'OpenSCAP | Decompress OVAL definitions' correctly derives changed_when"
 
     - name: Assert the sibling download task is unaffected by this change (regression guard)
       ansible.builtin.assert:

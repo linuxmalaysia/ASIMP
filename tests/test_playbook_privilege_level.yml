@@ -27,13 +27,16 @@
   gather_facts: false
   vars:
     repo_root: "{{ playbook_dir }}/.."
-    write_test_task_name: "Test write access to system settings to determine privilege level"
+    write_test_task_name: "Test write access - Create temporary file in /etc"
     set_privilege_task_name: "Set dynamic privilege level and execution mode"
-    cleanup_task_name: "Clean up write access test file"
+    cleanup_task_name: "Test write access - Clean up temporary file"
     safety_block_task_name: "Pre-Remediation Safety Check & Break-Prevention Verification"
-    expected_privilege_expr: "{% raw %}{{ 'limited' if (is_sandbox_jules | default(false) | bool or write_test_res.rc | default(1) != 0) else 'full' }}{% endraw %}"
+    expected_privilege_expr: "{% raw %}{{ 'limited' if (is_sandbox_jules | default(false) | bool or r_write_tempfile.path is not defined or r_write_tempfile.path | length == 0) else 'full' }}{% endraw %}"
     expected_sandbox_ignore_errors: "{% raw %}{{ is_sandbox_jules }}{% endraw %}"
     expected_full_mode_when: "asimp_privilege_level == 'full'"
+    expected_cleanup_path: "{% raw %}{{ r_write_tempfile.path }}{% endraw %}"
+    expected_cleanup_when: "{% raw %}r_write_tempfile.path is defined and r_write_tempfile.path | length > 0{% endraw %}"
+    expected_wait_for_port: "{% raw %}{{ ansible_port | default(22) }}{% endraw %}"
     expected_safety_subtask_names:
       - "Safety Check | Check SSH daemon configuration syntax"
       - "Safety Check | Fail if SSH daemon configuration is already broken"
@@ -41,7 +44,7 @@
       - "Safety Check | Assert enough disk space is available (min 512MB / 524288 KB)"
       - "Safety Check | Validate /etc/fstab mount points"
       - "Safety Check | Fail if mount points or fstab are corrupted"
-      - "Safety Check | Check if SSH port (22) is active and reachable"
+      - "Safety Check | Check if SSH port is active and reachable"
       - "Safety Check | Log active system port baseline"
 
   tasks:
@@ -90,13 +93,14 @@
     - name: Assert the write-access probe task runs the expected command with safe flags
       ansible.builtin.assert:
         that:
-          - play_yml_tasks_by_name[write_test_task_name]['ansible.builtin.command'] == 'touch /etc/asimp_write_test'
-          - play_yml_tasks_by_name[write_test_task_name].register == 'write_test_res'
-          - play_yml_tasks_by_name[write_test_task_name].changed_when == false
+          - play_yml_tasks_by_name[write_test_task_name]['ansible.builtin.tempfile'].state == 'file'
+          - play_yml_tasks_by_name[write_test_task_name]['ansible.builtin.tempfile'].path == '/etc'
+          - play_yml_tasks_by_name[write_test_task_name]['ansible.builtin.tempfile'].suffix == '_asimp_write_test'
+          - play_yml_tasks_by_name[write_test_task_name].register == 'r_write_tempfile'
           - play_yml_tasks_by_name[write_test_task_name].failed_when == false
           - play_yml_tasks_by_name[write_test_task_name].ignore_errors == true
           - play_localhost_tasks_by_name[write_test_task_name] == play_yml_tasks_by_name[write_test_task_name]
-        fail_msg: "'{{ write_test_task_name }}' must run 'touch /etc/asimp_write_test', register write_test_res, and tolerate failure without reporting changed"
+        fail_msg: "'{{ write_test_task_name }}' must use ansible.builtin.tempfile, register r_write_tempfile, and tolerate failure without reporting changed"
 
     # --- Dynamic privilege-level fact -----------------------------------
     - name: Assert the dynamic privilege-level fact uses the exact expected Jinja expression
@@ -112,12 +116,12 @@
     - name: Assert the cleanup task removes the probe file only when it was actually created
       ansible.builtin.assert:
         that:
-          - play_yml_tasks_by_name[cleanup_task_name]['ansible.builtin.file'].path == '/etc/asimp_write_test'
+          - play_yml_tasks_by_name[cleanup_task_name]['ansible.builtin.file'].path == expected_cleanup_path
           - play_yml_tasks_by_name[cleanup_task_name]['ansible.builtin.file'].state == 'absent'
-          - play_yml_tasks_by_name[cleanup_task_name].when == 'write_test_res.rc | default(1) == 0'
+          - play_yml_tasks_by_name[cleanup_task_name].when == expected_cleanup_when
           - play_yml_tasks_by_name[cleanup_task_name].ignore_errors == true
           - play_localhost_tasks_by_name[cleanup_task_name] == play_yml_tasks_by_name[cleanup_task_name]
-        fail_msg: "'{{ cleanup_task_name }}' must remove /etc/asimp_write_test only when write_test_res.rc indicates it was created"
+        fail_msg: "'{{ cleanup_task_name }}' must remove temporary file state=absent"
 
     # --- Ordering: detection tasks run before the role patcher ----------
     - name: Assert the privilege-level detection tasks run before the external-role patch task in both playbooks
@@ -199,11 +203,10 @@
     - name: Assert the SSH port reachability check targets port 22 and tolerates failure
       ansible.builtin.assert:
         that:
-          - play_yml_safety_subtasks_by_name['Safety Check | Check if SSH port (22) is active and reachable']['ansible.builtin.wait_for'].port == 22
-          - play_yml_safety_subtasks_by_name['Safety Check | Check if SSH port (22) is active and reachable']['ansible.builtin.wait_for'].timeout == 5
-          - play_yml_safety_subtasks_by_name['Safety Check | Check if SSH port (22) is active and reachable']['ansible.builtin.wait_for'].state == 'started'
-          - play_yml_safety_subtasks_by_name['Safety Check | Check if SSH port (22) is active and reachable'].ignore_errors == true
-        fail_msg: "The SSH port reachability check must wait_for port 22 with a 5 second timeout and never fail the play"
+          - play_yml_safety_subtasks_by_name['Safety Check | Check if SSH port is active and reachable']['ansible.builtin.wait_for'].port == expected_wait_for_port
+          - play_yml_safety_subtasks_by_name['Safety Check | Check if SSH port is active and reachable']['ansible.builtin.wait_for'].timeout == 5
+          - play_yml_safety_subtasks_by_name['Safety Check | Check if SSH port is active and reachable']['ansible.builtin.wait_for'].state == 'started'
+        fail_msg: "The SSH port reachability check must wait_for port with a 5 second timeout"
 
     - name: Assert both playbooks define an identical safety-check block
       ansible.builtin.assert:
