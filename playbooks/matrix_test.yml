@@ -1,0 +1,157 @@
+---
+- name: Play 1 - Provision Multi-OS Podman Container Matrix
+  hosts: localhost
+  gather_facts: false
+  vars:
+    # Option to recreate or keep containers
+    recreate_containers: true
+  tasks:
+    - name: Ensure playbooks directory exists (safety backup)
+      ansible.builtin.file:
+        path: playbooks
+        state: directory
+        mode: '0755'
+
+    - name: Ensure Podman Container Matrix is started
+      containers.podman.podman_container:
+        name: "{{ hostvars[item].ansible_host }}"
+        image: "{{ hostvars[item].image }}"
+        state: started
+        command: sleep infinity
+        recreate: "{{ recreate_containers }}"
+      loop: "{{ groups['matrix_hosts'] }}"
+      register: r_podman_provision
+      failed_when: false # Allow running syntax check or dry run without active podman binary
+
+    - name: Log container provisioning status
+      ansible.builtin.debug:
+        msg: "Container provisioning status for {{ item.item }}: {{ 'Success' if item.rc | default(0) == 0 else 'Skipped/Failed (Podman daemon might be missing)' }}"
+      loop: "{{ r_podman_provision.results }}"
+      when: r_podman_provision.results is defined
+
+    - name: Bootstrap Python on Debian/Ubuntu targets
+      ansible.builtin.command: "podman exec {{ hostvars[item].ansible_host }} sh -c 'apt-get update && apt-get install -y python3'"
+      loop: "{{ groups['matrix_hosts'] }}"
+      when:
+        - hostvars[item].os_distro in ['ubuntu', 'debian']
+        - (r_podman_provision.results | default([]) | selectattr('item', 'equalto', item) | map(attribute='rc') | first | default(1)) == 0
+      register: r_apt_bootstrap
+      failed_when: false
+      changed_when: r_apt_bootstrap.rc | default(1) == 0
+
+    - name: Bootstrap Python on AlmaLinux targets
+      ansible.builtin.command: "podman exec {{ hostvars[item].ansible_host }} dnf install -y python3"
+      loop: "{{ groups['matrix_hosts'] }}"
+      when:
+        - hostvars[item].os_distro == 'almalinux'
+        - (r_podman_provision.results | default([]) | selectattr('item', 'equalto', item) | map(attribute='rc') | first | default(1)) == 0
+      register: r_dnf_bootstrap
+      failed_when: false
+      changed_when: r_dnf_bootstrap.rc | default(1) == 0
+
+- name: Play 2 - Parallel Matrix Verification & Telemetry Collection
+  hosts: matrix_hosts
+  gather_facts: true
+  vars:
+    # Initialise standard telemetry values for this host
+    host_telemetry:
+      status: "success"
+      exit_code: 0
+      kernel_release: "Unknown Kernel"
+      os_info: "Unknown OS"
+      failures: []
+      timestamp: ""
+  tasks:
+    - name: Compliance Auditing Block
+      block:
+        - name: Retrieve target kernel details
+          ansible.builtin.command: uname -a
+          register: r_kernel_info
+          changed_when: false
+
+        - name: Retrieve package manager integrity baseline
+          ansible.builtin.command: which apt-get dnf dpkg rpm
+          register: r_pkg_info
+          changed_when: false
+          failed_when: false
+
+        - name: Update host facts with current state
+          ansible.builtin.set_fact:
+            host_telemetry: "{{ host_telemetry | combine({
+              'kernel_release': r_kernel_info.stdout | default('Unknown'),
+              'os_info': ansible_distribution + ' ' + ansible_distribution_version,
+              'timestamp': lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%SZ')
+            }) }}"
+
+        - name: Verify system directory permissions
+          ansible.builtin.stat:
+            path: /etc/shadow
+          register: r_shadow_stat
+
+        - name: Raise failure if shadow file is group-writable (Simulated scan check)
+          ansible.builtin.fail:
+            msg: "Security Vulnerability: /etc/shadow must not be group-writable!"
+          when:
+            - r_shadow_stat.stat.exists
+            - r_shadow_stat.stat.gwrite | default(false) | bool
+
+        - name: Execute developer mode specific validation checks
+          block:
+            - name: Verify developer-specific compiler constraints
+              ansible.builtin.stat:
+                path: /usr/bin/gcc
+              register: r_gcc_stat
+
+            - name: Simulate compilation lockout failure in dev mode (Ubuntu 26 test target only)
+              ansible.builtin.fail:
+                msg: "Developer Policy Violation: gcc compiler must be restricted to root-only"
+              when:
+                - execution_mode == "dev"
+                - inventory_hostname == "ubuntu26"
+                - r_gcc_stat.stat.exists | default(false) | bool
+          when: execution_mode == "dev"
+
+      rescue:
+        - name: Capture execution error state and failure trace
+          ansible.builtin.set_fact:
+            host_telemetry: "{{ host_telemetry | combine({
+              'status': 'failed',
+              'exit_code': 1,
+              'failures': host_telemetry.failures + [ {
+                'task': ansible_failed_task.name | default('Unknown Task'),
+                'error': ansible_failed_result.msg | default('An unhandled execution error occurred'),
+                'timestamp': lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%SZ')
+              } ]
+            }) }}"
+
+      always:
+        - name: Trigger feedback collector role for telemetry persistence
+          ansible.builtin.include_role:
+            name: feedback_collector
+
+- name: Play 3 - Container Lifecycle Cleanup & Finalisation
+  hosts: localhost
+  gather_facts: false
+  vars:
+    # Developer option to keep containers running for direct debugging
+    cleanup_containers: true
+  tasks:
+    - name: Consolidate individual host reports into unified telemetry report
+      ansible.builtin.include_role:
+        name: feedback_collector
+        tasks_from: consolidate.yml
+
+    - name: Stop and clean up Podman matrix containers
+      containers.podman.podman_container:
+        name: "{{ hostvars[item].ansible_host }}"
+        state: stopped
+      loop: "{{ groups['matrix_hosts'] }}"
+      when:
+        - cleanup_containers | bool
+        - hostvars[item].ansible_host is defined
+      register: r_cleanup
+      failed_when: false
+
+    - name: Log matrix cleanup execution
+      ansible.builtin.debug:
+        msg: "Podman container cleanup completed."
