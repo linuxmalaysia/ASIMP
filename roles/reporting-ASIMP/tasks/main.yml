@@ -125,6 +125,7 @@
         url: "{{ scap_latest_url }}"
         dest: "{{ openscap_report_dir }}/{{ scap_latest_url | basename }}"
         mode: '0644'
+        checksum: "sha512:{{ scap_latest_url }}.sha512"
       register: download_guide
       ignore_errors: yes
 

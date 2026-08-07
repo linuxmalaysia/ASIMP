@@ -42,10 +42,11 @@
     expected_detection_snippets:
       - "(ALL : ALL) NOPASSWD: ALL"
       - "asimp_privilege_level"
-      - "touch /etc/asimp_write_test"
-      - "register: write_test_res"
+      - "ansible.builtin.tempfile"
+      - "suffix: _asimp_write_test"
+      - "register: r_write_tempfile"
       - "Set dynamic privilege level and execution mode"
-      - "Clean up write access test file"
+      - "Test write access - Clean up temporary file"
     expected_mode_snippets:
       - "asimp_privilege_level == 'limited'"
       - "asimp_privilege_level == 'full'"
@@ -57,7 +58,7 @@
       - "sshd -t"
       - "mount -a -f"
       - "524288"
-      - "Safety Check | Check if SSH port (22) is active and reachable"
+      - "Safety Check | Check if SSH port is active and reachable"
       - "when: asimp_privilege_level == 'full'"
 
   tasks:
