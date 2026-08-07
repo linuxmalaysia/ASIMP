@@ -432,6 +432,7 @@
       ansible.builtin.shell: python3 {{ openscap_report_dir }}/parse_openscap_score.py /var/log/openscap-before-results.xml
       register: parsed_openscap_before
       changed_when: false
+      failed_when: false
       when: openscap_scan_supported | default(true)
 
     - name: Run Lynis BEFORE hardening audit
@@ -444,14 +445,15 @@
       ansible.builtin.shell: grep -E "^hardening_index=" {{ openscap_report_dir }}/lynis-report-before.dat | cut -d'=' -f2
       register: parsed_lynis_before
       changed_when: false
+      failed_when: false
 
     - name: Save baseline scores to file
       ansible.builtin.copy:
         dest: /var/log/asimp-baseline-scores.json
-        content: >
+        content: >-
           {
-            "openscap_before": "{{ parsed_openscap_before.stdout | default('0.0') | trim }}",
-            "lynis_before": "{{ parsed_lynis_before.stdout | default('0') | trim }}"
+            "openscap_before": "{{ parsed_openscap_before.stdout | trim if (parsed_openscap_before is defined and parsed_openscap_before.rc | default(1) == 0 and parsed_openscap_before.stdout is defined and parsed_openscap_before.stdout | trim | length > 0 and parsed_openscap_before.stdout | trim | regex_search('^[0-9.]+$')) else 'N/A' }}",
+            "lynis_before": "{{ parsed_lynis_before.stdout | trim if (parsed_lynis_before is defined and parsed_lynis_before.rc | default(1) == 0 and parsed_lynis_before.stdout is defined and parsed_lynis_before.stdout | trim | length > 0 and parsed_lynis_before.stdout | trim | regex_search('^[0-9]+$')) else 'N/A' }}"
           }
         mode: '0644'
 
@@ -494,6 +496,7 @@
             {{ openscap_report_dir }}/com.ubuntu.{{ ansible_distribution_release }}.usn.oval.xml
           failed_when: false
           changed_when: true
+          register: r_oval_run_before
       when: is_ubuntu
       ignore_errors: yes
   when:
@@ -644,19 +647,19 @@
         oscap_after_refreshed: "{{ r_post_scan_oscap_after.stat.exists and (not r_pre_scan_oscap_after.stat.exists or r_post_scan_oscap_after.stat.mtime > r_pre_scan_oscap_after.stat.mtime) }}"
         lynis_after_refreshed: "{{ r_post_scan_lynis_after.stat.exists and (not r_pre_scan_lynis_after.stat.exists or r_post_scan_lynis_after.stat.mtime > r_pre_scan_lynis_after.stat.mtime) }}"
 
+    - name: Sandbox AFTER | Set explicit score validity and provenance facts
+      ansible.builtin.set_fact:
+        sandbox_oscap_before_valid: "{{ oscap_present_before | default(false) | bool and sandbox_oscap_supported | default(false) | bool and r_sandbox_oscap_run_before.rc | default(1) == 0 and oscap_before_refreshed | default(false) | bool and r_sandbox_oscap_parsed_before is defined and r_sandbox_oscap_parsed_before.rc | default(1) == 0 }}"
+        sandbox_lynis_before_valid: "{{ lynis_present_before | default(false) | bool and r_sandbox_lynis_run_before.rc | default(1) == 0 and lynis_before_refreshed | default(false) | bool and r_sandbox_lynis_parsed_before is defined }}"
+        sandbox_oscap_after_valid: "{{ oscap_present_after | default(false) | bool and sandbox_oscap_supported | default(false) | bool and r_sandbox_oscap_run_after.rc | default(1) == 0 and oscap_after_refreshed | default(false) | bool and r_sandbox_oscap_parsed_after is defined and r_sandbox_oscap_parsed_after.rc | default(1) == 0 }}"
+        sandbox_lynis_after_valid: "{{ lynis_present_after | default(false) | bool and r_sandbox_lynis_run_after.rc | default(1) == 0 and lynis_after_refreshed | default(false) | bool and r_sandbox_lynis_parsed_after is defined }}"
+        oval_actually_executed: "{{ r_oval_run_after is defined and r_oval_run_after.rc is defined and r_oval_run_after.rc == 0 }}"
+
     - name: Set dynamic or simulated AFTER scores
       ansible.builtin.set_fact:
         parsed_openscap_after:
           stdout: >-
-            {%- if oscap_present_after and
-                   sandbox_oscap_supported and
-                   r_sandbox_oscap_run_after.rc | default(1) == 0 and
-                   oscap_after_refreshed | bool and
-                   r_sandbox_oscap_parsed_after is defined and
-                   r_sandbox_oscap_parsed_after.rc | default(1) == 0 and
-                   r_sandbox_oscap_parsed_after.stdout is defined and
-                   r_sandbox_oscap_parsed_after.stdout | trim | length > 0 and
-                   r_sandbox_oscap_parsed_after.stdout | trim | regex_search('^[0-9.]+$') -%}
+            {%- if sandbox_oscap_after_valid | bool -%}
             {{ r_sandbox_oscap_parsed_after.stdout | trim }}
             {%- else -%}
             91.2
@@ -664,23 +667,16 @@
           rc: 0
         parsed_lynis_after:
           stdout: >-
-            {%- if lynis_present_after and
-                   r_sandbox_lynis_run_after.rc | default(1) == 0 and
-                   lynis_after_refreshed | bool and
-                   r_sandbox_lynis_parsed_after is defined and
-                   r_sandbox_lynis_parsed_after.rc | default(1) == 0 and
-                   r_sandbox_lynis_parsed_after.stdout is defined and
-                   r_sandbox_lynis_parsed_after.stdout | trim | length > 0 and
-                   r_sandbox_lynis_parsed_after.stdout | trim | regex_search('^[0-9]+$') -%}
+            {%- if sandbox_lynis_after_valid | bool -%}
             {{ r_sandbox_lynis_parsed_after.stdout | trim }}
             {%- else -%}
             88
             {%- endif -%}
           rc: 0
         openscap_scan_supported: "{{ sandbox_oscap_supported | bool }}"
-        openscap_success: "{{ oscap_present_after | bool and sandbox_oscap_supported | bool and r_sandbox_oscap_run_after.rc | default(1) == 0 and oscap_after_refreshed | bool }}"
-        lynis_success: "{{ lynis_present_after | bool and r_sandbox_lynis_run_after.rc | default(1) == 0 and lynis_after_refreshed | bool }}"
-        audits_completed: "{{ (oscap_present_after | bool and sandbox_oscap_supported | bool and r_sandbox_oscap_run_after.rc | default(1) == 0 and oscap_after_refreshed | bool) and (lynis_present_after | bool and r_sandbox_lynis_run_after.rc | default(1) == 0 and lynis_after_refreshed | bool) }}"
+        openscap_success: "{{ sandbox_oscap_after_valid | bool }}"
+        lynis_success: "{{ sandbox_lynis_after_valid | bool }}"
+        audits_completed: "{{ sandbox_oscap_after_valid | bool and sandbox_lynis_after_valid | bool }}"
 
     - name: Template mock/real Security Audit Report markdown
       ansible.builtin.copy:
@@ -702,12 +698,12 @@
 
           ## Hardening & Audit Scores
           - **Lynis Hardening Index**:
-            - Baseline: {{ baseline.lynis_before }} / 100 {{ '(Simulated Fallback)' if not lynis_present_before else '' }}
-            - After Hardening: {{ parsed_lynis_after.stdout | trim }} / 100 {{ '(Simulated Fallback)' if not lynis_present_after else '' }}
+            - Baseline: {{ baseline.lynis_before }} / 100 {{ '' if sandbox_lynis_before_valid | bool else '(Simulated Fallback)' }}
+            - After Hardening: {{ parsed_lynis_after.stdout | trim }} / 100 {{ '' if sandbox_lynis_after_valid | bool else '(Simulated Fallback)' }}
             - Target: 85+ (Sovereign Level)
           - **OpenSCAP CIS Level 2 Compliance Score**:
-            - Baseline: {{ baseline.openscap_before }}% {{ '(Simulated Fallback)' if not oscap_present_before or not sandbox_oscap_supported else '' }}
-            - After Hardening: {{ parsed_openscap_after.stdout | trim }}% {{ '(Simulated Fallback)' if not oscap_present_after or not sandbox_oscap_supported else '' }}
+            - Baseline: {{ baseline.openscap_before }}% {{ '' if sandbox_oscap_before_valid | bool else '(Simulated Fallback)' }}
+            - After Hardening: {{ parsed_openscap_after.stdout | trim }}% {{ '' if sandbox_oscap_after_valid | bool else '(Simulated Fallback)' }}
             - Target: 90%+
 
           ## Executed Controls & Remediation
@@ -721,7 +717,7 @@
           - **Remediation Status**: No remediations applied (Skipped in limited/sandboxed privilege environment)
           {% endif %}
 
-          - **OVAL Vulnerability Scan**: {{ 'Non-vulnerable' if (is_ubuntu and not is_sandbox_jules | bool) else 'Not executed (Unsupported in limited/sandboxed environment)' }}
+          - **OVAL Vulnerability Scan**: {{ 'Non-vulnerable' if (oval_actually_executed | bool) else 'Not executed (Unsupported or failed in limited/sandboxed environment)' }}
 
           ---
           *Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | {{ ansible_date_time.date }}*
