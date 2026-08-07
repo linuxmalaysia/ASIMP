@@ -18,23 +18,27 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
+# log_info logs an informational message with a timestamp.
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $(date '+%Y-%m-%d %H:%M:%S') - $1"
 }
 
+# log_success prints a timestamped success message.
 log_success() {
     echo -e "${GREEN}[SUCCESS]${NC} $(date '+%Y-%m-%d %H:%M:%S') - $1"
 }
 
+# log_warn prints a timestamped warning message.
 log_warn() {
     echo -e "${YELLOW}[WARNING]${NC} $(date '+%Y-%m-%d %H:%M:%S') - $1"
 }
 
+# log_error prints a timestamped error message in red.
 log_error() {
     echo -e "${RED}[ERROR]${NC} $(date '+%Y-%m-%d %H:%M:%S') - $1"
 }
 
-# --- Cleanup Traps ---
+# cleanup reports an error when the pipeline exits unsuccessfully.
 cleanup() {
     local exit_code=$?
     if [ "$exit_code" -ne 0 ]; then
