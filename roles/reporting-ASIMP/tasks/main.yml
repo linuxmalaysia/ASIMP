@@ -424,13 +424,13 @@
       when: openscap_scan_supported | default(true)
 
     - name: Run Lynis BEFORE hardening audit
-      ansible.builtin.shell: lynis audit system --quick
+      ansible.builtin.shell: lynis audit system --quick --report-file {{ openscap_report_dir }}/lynis-report-before.dat
       register: lynis_before_run
       failed_when: false
       changed_when: true
 
     - name: Parse Lynis BEFORE hardening index
-      ansible.builtin.shell: grep -E "^hardening_index=" /var/log/lynis-report.dat | cut -d'=' -f2
+      ansible.builtin.shell: grep -E "^hardening_index=" {{ openscap_report_dir }}/lynis-report-before.dat | cut -d'=' -f2
       register: parsed_lynis_before
       changed_when: false
 
@@ -792,13 +792,13 @@
       when: openscap_scan_supported | default(true)
 
     - name: Run Lynis AFTER hardening audit
-      ansible.builtin.shell: lynis audit system --quick
+      ansible.builtin.shell: lynis audit system --quick --report-file {{ openscap_report_dir }}/lynis-report-after.dat
       register: lynis_after_run
       failed_when: false
       changed_when: true
 
     - name: Parse Lynis AFTER hardening index
-      ansible.builtin.shell: grep -E "^hardening_index=" /var/log/lynis-report.dat | cut -d'=' -f2
+      ansible.builtin.shell: grep -E "^hardening_index=" {{ openscap_report_dir }}/lynis-report-after.dat | cut -d'=' -f2
       register: parsed_lynis_after
       changed_when: false
       failed_when: false
