@@ -77,8 +77,7 @@
                   return float(score_elem.text)
 
               results_12 = [elem.text for elem in root.findall('.//xccdf12:result', ns)]
-              results_11 = [elem.text for elem in root.findall('.//xccdf11:result', ns)]
-              results = results_12 if results_12 else results_11
+              results = results_12 if results_12 else [elem.text for elem in root.findall('.//xccdf11:result', ns)]
               if results:
                   passed = results.count('pass')
                   failed = results.count('fail')
