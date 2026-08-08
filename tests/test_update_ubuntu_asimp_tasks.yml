@@ -1,0 +1,200 @@
+---
+# Structural regression tests for update-ubuntu-ASIMP role tasks.
+#
+# These tests parse and assert the tasks, handlers, modules, conditional gates,
+# loop structures, and async parameters inside roles/update-ubuntu-ASIMP/tasks/
+# files, ensuring they remain robust and comply with ASIMP FQCN and testing standards.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_update_ubuntu_asimp_tasks.yml
+- name: Verify update-ubuntu-ASIMP role tasks structure and integrity
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    role_tasks_dir: "{{ repo_root }}/roles/update-ubuntu-ASIMP/tasks"
+    expected_os_when: "ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu'"
+    expected_updaterepo_jid: "{% raw %}{{ updaterepo_sleeper.ansible_job_id }}{% endraw %}"
+    expected_upgrade_jid: "{% raw %}{{ upgrade_sleeper.ansible_job_id }}{% endraw %}"
+    expected_debsums_jid: "{% raw %}{{ debsums_sleeper.ansible_job_id }}{% endraw %}"
+
+  tasks:
+    - name: Load tasks/main.yml
+      ansible.builtin.set_fact:
+        main_tasks: "{{ lookup('file', role_tasks_dir + '/main.yml') | from_yaml }}"
+
+    - name: Load tasks/upgrade-packages.yml
+      ansible.builtin.set_fact:
+        upgrade_tasks: "{{ lookup('file', role_tasks_dir + '/upgrade-packages.yml') | from_yaml }}"
+
+    - name: Load tasks/debsums-check.yml
+      ansible.builtin.set_fact:
+        debsums_tasks: "{{ lookup('file', role_tasks_dir + '/debsums-check.yml') | from_yaml }}"
+
+    - name: Build task-by-name lookups
+      ansible.builtin.set_fact:
+        main_tasks_by_name: "{{ dict(main_tasks | map(attribute='name') | zip(main_tasks)) }}"
+        upgrade_tasks_by_name: "{{ dict(upgrade_tasks | map(attribute='name') | list | zip(upgrade_tasks)) }}"
+        debsums_tasks_by_name: "{{ dict(debsums_tasks | map(attribute='name') | list | zip(debsums_tasks)) }}"
+
+    # --- Verify tasks/main.yml -----------------------------------------
+
+    - name: Assert core tasks exist in main.yml
+      ansible.builtin.assert:
+        that:
+          - "'Update repositories cache' in main_tasks_by_name"
+          - "'Update repositories cache - check on async task' in main_tasks_by_name"
+          - "'Run package upgrades' in main_tasks_by_name"
+          - "'Download apt-transport-https for apt using https' in main_tasks_by_name"
+          - "'Install the package debsums for installed packages verification' in main_tasks_by_name"
+          - "'Remove useless packages from the cache' in main_tasks_by_name"
+          - "'Remove dependencies that are no longer required' in main_tasks_by_name"
+          - "'Run debsums check' in main_tasks_by_name"
+        fail_msg: "One or more expected tasks is missing from roles/update-ubuntu-ASIMP/tasks/main.yml"
+
+    - name: Assert 'Update repositories cache' is fully compliant
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.apt' in main_tasks_by_name['Update repositories cache']"
+          - main_tasks_by_name['Update repositories cache']['ansible.builtin.apt'].update_cache == true
+          - main_tasks_by_name['Update repositories cache'].async == 361
+          - main_tasks_by_name['Update repositories cache'].poll == 0
+          - main_tasks_by_name['Update repositories cache'].register == 'updaterepo_sleeper'
+          - main_tasks_by_name['Update repositories cache'].when == expected_os_when
+          - main_tasks_by_name['Update repositories cache'].tags == 'apt'
+        fail_msg: "'Update repositories cache' task lacks correct module, async parameters, or conditional check."
+
+    - name: Assert 'Update repositories cache - check on async task' is fully compliant
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.async_status' in main_tasks_by_name['Update repositories cache - check on async task']"
+          - main_tasks_by_name['Update repositories cache - check on async task']['ansible.builtin.async_status'].jid == expected_updaterepo_jid
+          - main_tasks_by_name['Update repositories cache - check on async task'].register == 'updaterepo_job_result'
+          - main_tasks_by_name['Update repositories cache - check on async task'].until == 'updaterepo_job_result.finished'
+          - main_tasks_by_name['Update repositories cache - check on async task'].retries == 360
+          - main_tasks_by_name['Update repositories cache - check on async task'].when == expected_os_when
+        fail_msg: "The async status check task for updaterepo has incorrect parameters."
+
+    - name: Assert 'Run package upgrades' task is fully compliant
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.include_tasks' in main_tasks_by_name['Run package upgrades']"
+          - main_tasks_by_name['Run package upgrades']['ansible.builtin.include_tasks'] == 'upgrade-packages.yml'
+          - main_tasks_by_name['Run package upgrades'].loop_control.loop_var == 'upgrade_item'
+          - main_tasks_by_name['Run package upgrades'].tags == 'apt'
+        fail_msg: "'Run package upgrades' task has invalid structure, inclusion, or tags."
+
+    - name: Assert debsums check installation and inclusion tasks are gated
+      ansible.builtin.assert:
+        that:
+          - "'debsums_ubuntu_check' in main_tasks_by_name['Install the package debsums for installed packages verification'].when"
+          - "'debsums_ubuntu_check' in main_tasks_by_name['Run debsums check'].when"
+          - main_tasks_by_name['Install the package debsums for installed packages verification'].ignore_errors == true
+          - main_tasks_by_name['Run debsums check'].ignore_errors == true
+          - main_tasks_by_name['Install the package debsums for installed packages verification'].tags == 'debsums'
+          - main_tasks_by_name['Run debsums check'].tags == 'debsums'
+        fail_msg: "Debsums installation/check tasks must be appropriately gated on debsums_ubuntu_check, carry ignore_errors, and tagged 'debsums'."
+
+    # --- Verify tasks/upgrade-packages.yml -----------------------------
+
+    - name: Assert core tasks exist in upgrade-packages.yml
+      ansible.builtin.assert:
+        that:
+          - upgrade_tasks | length == 2
+        fail_msg: "upgrade-packages.yml must contain exactly two tasks."
+
+    - name: Verify upgrade task parameters inside upgrade-packages.yml
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.apt' in upgrade_tasks[0]"
+          - upgrade_tasks[0]['ansible.builtin.apt'].force_apt_get == true
+          - upgrade_tasks[0].async == 361
+          - upgrade_tasks[0].poll == 0
+          - upgrade_tasks[0].register == 'upgrade_sleeper'
+          - upgrade_tasks[0].tags == 'apt'
+        fail_msg: "The package upgrade task inside upgrade-packages.yml lacks correct FQCN, force_apt_get, async settings, or tags."
+
+    - name: Verify async status check task parameters inside upgrade-packages.yml
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.async_status' in upgrade_tasks[1]"
+          - upgrade_tasks[1]['ansible.builtin.async_status'].jid == expected_upgrade_jid
+          - upgrade_tasks[1].register == 'upgrade_job_result'
+          - upgrade_tasks[1].until == 'upgrade_job_result.finished'
+          - upgrade_tasks[1].retries == 360
+        fail_msg: "The async status check task inside upgrade-packages.yml lacks correct FQCN, job registration, or retry limits."
+
+    # --- Verify tasks/debsums-check.yml --------------------------------
+
+    - name: Assert core tasks exist in debsums-check.yml
+      ansible.builtin.assert:
+        that:
+          - debsums_tasks | length == 2
+        fail_msg: "debsums-check.yml must contain exactly two tasks."
+
+    - name: Verify debsums run task parameters inside debsums-check.yml
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.shell' in debsums_tasks[0]"
+          - "'debsums -c' in debsums_tasks[0]['ansible.builtin.shell']"
+          - debsums_tasks[0].async == 361
+          - debsums_tasks[0].poll == 0
+          - debsums_tasks[0].register == 'debsums_sleeper'
+          - debsums_tasks[0].tags == 'debsums'
+          - debsums_tasks[0].ignore_errors == true
+        fail_msg: "The debsums run task inside debsums-check.yml lacks correct module, async parameters, or ignore_errors."
+
+    - name: Verify debsums status check task parameters inside debsums-check.yml
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.async_status' in debsums_tasks[1]"
+          - debsums_tasks[1]['ansible.builtin.async_status'].jid == expected_debsums_jid
+          - debsums_tasks[1].register == 'debsums_job_result'
+          - debsums_tasks[1].until == 'debsums_job_result.finished'
+          - debsums_tasks[1].retries == 360
+        fail_msg: "The debsums async status task inside debsums-check.yml lacks correct FQCN, job registration, or retry limits."
+
+    - name: Verify debsums shell command redirects output and errors to the expected log paths
+      ansible.builtin.assert:
+        that:
+          - "'1> /var/log/debsums.output' in debsums_tasks[0]['ansible.builtin.shell']"
+          - "'2> /var/log/debsums.err' in debsums_tasks[0]['ansible.builtin.shell']"
+        fail_msg: "The debsums shell command must redirect stdout to /var/log/debsums.output and stderr to /var/log/debsums.err"
+
+    # --- Additional negative/boundary checks -----------------------------
+
+    - name: Assert 'Update repositories cache' does not set ignore_errors (unlike the debsums tasks)
+      ansible.builtin.assert:
+        that:
+          - main_tasks_by_name['Update repositories cache'].ignore_errors is not defined
+        fail_msg: "'Update repositories cache' must not silently ignore errors; only the debsums-tagged tasks are expected to do so"
+
+    - name: Assert 'Download apt-transport-https for apt using https' is fully compliant
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.apt' in main_tasks_by_name['Download apt-transport-https for apt using https']"
+          - main_tasks_by_name['Download apt-transport-https for apt using https']['ansible.builtin.apt'].name == 'apt-transport-https'
+          - main_tasks_by_name['Download apt-transport-https for apt using https']['ansible.builtin.apt'].update_cache == true
+          - main_tasks_by_name['Download apt-transport-https for apt using https'].ignore_errors == true
+          - main_tasks_by_name['Download apt-transport-https for apt using https'].tags == 'apt'
+        fail_msg: "'Download apt-transport-https for apt using https' task lacks correct module, name, update_cache, ignore_errors, or tags."
+
+    - name: Assert cache cleanup tasks use autoclean/autoremove and are not async
+      ansible.builtin.assert:
+        that:
+          - main_tasks_by_name['Remove useless packages from the cache']['ansible.builtin.apt'].autoclean == true
+          - main_tasks_by_name['Remove useless packages from the cache'].async is not defined
+          - main_tasks_by_name['Remove dependencies that are no longer required']['ansible.builtin.apt'].autoremove == true
+          - main_tasks_by_name['Remove dependencies that are no longer required'].async is not defined
+        fail_msg: "The apt cache cleanup tasks must use autoclean/autoremove respectively and must not be run asynchronously."
+
+    - name: Assert the 'Run package upgrades' loop provides exactly three upgrade strategy items
+      ansible.builtin.assert:
+        that:
+          - main_tasks_by_name['Run package upgrades'].loop | length == 3
+          - main_tasks_by_name['Run package upgrades'].loop | map(attribute='name') | list == ['Upgrade all packages', 'Dist Upgrade all packages', 'Safe Upgrade all packages']
+          - "'upgrade_ubuntu_check' in (main_tasks_by_name['Run package upgrades'].loop[0].enabled)"
+          - "'dist_upgrade_ubuntu_check' in (main_tasks_by_name['Run package upgrades'].loop[1].enabled)"
+          - "'safe_upgrade_ubuntu_check' in (main_tasks_by_name['Run package upgrades'].loop[2].enabled)"
+        fail_msg: "'Run package upgrades' must loop over exactly the three expected upgrade strategy items, each gated by its own '*_ubuntu_check' variable."
