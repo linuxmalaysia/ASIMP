@@ -6,7 +6,7 @@
 
 - name: Retrieve and slurp intermediate telemetry files
   ansible.builtin.slurp:
-    src: "/tmp/jules_telemetry_{{ item }}.json"
+    src: "{{ hostvars['localhost']['r_telemetry_tempdir'].path | default('/tmp') }}/jules_telemetry_{{ item }}.json"
   loop: "{{ groups['matrix_hosts'] }}"
   register: r_slurped_telemetry
   ignore_errors: true
@@ -60,17 +60,17 @@
       hosts: "{{ consolidated_hosts }}"
   when: execution_mode == "dev"
 
-- name: Write unified telemetry file to /tmp/jules_telemetry.json
+- name: Write unified telemetry file to private per-run directory
   ansible.builtin.copy:
     content: "{{ final_telemetry | to_nice_json }}"
-    dest: "/tmp/jules_telemetry.json"
+    dest: "{{ hostvars['localhost']['r_telemetry_tempdir'].path | default('/tmp') }}/jules_telemetry.json"
     mode: '0600'
   delegate_to: localhost
   when: execution_mode == "dev"
 
 - name: Clean up temporary intermediate host files
   ansible.builtin.file:
-    path: "/tmp/jules_telemetry_{{ item }}.json"
+    path: "{{ hostvars['localhost']['r_telemetry_tempdir'].path | default('/tmp') }}/jules_telemetry_{{ item }}.json"
     state: absent
   loop: "{{ groups['matrix_hosts'] }}"
   delegate_to: localhost

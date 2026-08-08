@@ -13,3 +13,7 @@ roles/*
 !roles/reporting-ASIMP/
 !roles/update-ubuntu-ASIMP/
 !roles/lynis-ansible/
+
+# Ignore Vault credentials except the encrypted production secrets
+vault/*
+!vault/production_secrets.yml
