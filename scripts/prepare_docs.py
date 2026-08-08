@@ -9,6 +9,9 @@ import os
 import re
 from typing import Optional
 
+# Compiled regular expression to match the first heading line in Markdown documents
+HEADING_PATTERN = re.compile(r'^\s*#+\s+(.+)$', re.MULTILINE)
+
 
 def process_markdown_file(filepath: str) -> None:
     """Read a markdown file, parse its header, and add or update Jekyll front matter.
@@ -31,7 +34,7 @@ def process_markdown_file(filepath: str) -> None:
         # Extract title from the first heading line
         title: Optional[str] = None
         # Look for first # or ## heading
-        heading_match = re.search(r'^\s*#+\s+(.+)$', content, re.MULTILINE)
+        heading_match = HEADING_PATTERN.search(content)
         if heading_match:
             title = heading_match.group(1).strip()
         else:
