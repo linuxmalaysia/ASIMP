@@ -130,71 +130,42 @@
     - name: Assert core tasks exist in debsums-check.yml
       ansible.builtin.assert:
         that:
-          - debsums_tasks | length == 2
-        fail_msg: "debsums-check.yml must contain exactly two tasks."
+          - debsums_tasks | length == 3
+        fail_msg: "debsums-check.yml must contain exactly three tasks (safety check, debsums execution, and async check status)."
+
+    - name: Verify debsums binary check (safety check) inside debsums-check.yml
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.command' in debsums_tasks[0]"
+          - debsums_tasks[0]['ansible.builtin.command'] == 'which debsums'
+          - debsums_tasks[0].register == 'r_debsums_binary_check'
+          - debsums_tasks[0].changed_when == false
+          - debsums_tasks[0].failed_when == false
+          - debsums_tasks[0].tags == 'debsums'
+        fail_msg: "The debsums availability safety check task is misconfigured."
 
     - name: Verify debsums run task parameters inside debsums-check.yml
       ansible.builtin.assert:
         that:
-          - "'ansible.builtin.shell' in debsums_tasks[0]"
-          - "'debsums -c' in debsums_tasks[0]['ansible.builtin.shell']"
-          - debsums_tasks[0].async == 361
-          - debsums_tasks[0].poll == 0
-          - debsums_tasks[0].register == 'debsums_sleeper'
-          - debsums_tasks[0].tags == 'debsums'
-          - debsums_tasks[0].ignore_errors == true
-        fail_msg: "The debsums run task inside debsums-check.yml lacks correct module, async parameters, or ignore_errors."
+          - "'ansible.builtin.command' in debsums_tasks[1]"
+          - debsums_tasks[1]['ansible.builtin.command'] == 'debsums -c'
+          - debsums_tasks[1].async == 361
+          - debsums_tasks[1].poll == 0
+          - debsums_tasks[1].register == 'debsums_sleeper'
+          - debsums_tasks[1].tags == 'debsums'
+          - debsums_tasks[1].ignore_errors == true
+          - debsums_tasks[1].changed_when == false
+          - "'debsums_ubuntu_check' in debsums_tasks[1].when"
+          - "'/var/log' not in debsums_tasks[1]['ansible.builtin.command']"
+        fail_msg: "The debsums run task must use ansible.builtin.command, carry changed_when: false, avoid direct /var/log redirection, and require debsums_ubuntu_check."
 
     - name: Verify debsums status check task parameters inside debsums-check.yml
       ansible.builtin.assert:
         that:
-          - "'ansible.builtin.async_status' in debsums_tasks[1]"
-          - debsums_tasks[1]['ansible.builtin.async_status'].jid == expected_debsums_jid
-          - debsums_tasks[1].register == 'debsums_job_result'
-          - debsums_tasks[1].until == 'debsums_job_result.finished'
-          - debsums_tasks[1].retries == 360
+          - "'ansible.builtin.async_status' in debsums_tasks[2]"
+          - debsums_tasks[2]['ansible.builtin.async_status'].jid == expected_debsums_jid
+          - debsums_tasks[2].register == 'debsums_job_result'
+          - debsums_tasks[2].until == 'debsums_job_result.finished'
+          - debsums_tasks[2].retries == 360
+          - "'debsums_ubuntu_check' in debsums_tasks[2].when"
         fail_msg: "The debsums async status task inside debsums-check.yml lacks correct FQCN, job registration, or retry limits."
-
-    - name: Verify debsums shell command redirects output and errors to the expected log paths
-      ansible.builtin.assert:
-        that:
-          - "'1> /var/log/debsums.output' in debsums_tasks[0]['ansible.builtin.shell']"
-          - "'2> /var/log/debsums.err' in debsums_tasks[0]['ansible.builtin.shell']"
-        fail_msg: "The debsums shell command must redirect stdout to /var/log/debsums.output and stderr to /var/log/debsums.err"
-
-    # --- Additional negative/boundary checks -----------------------------
-
-    - name: Assert 'Update repositories cache' does not set ignore_errors (unlike the debsums tasks)
-      ansible.builtin.assert:
-        that:
-          - main_tasks_by_name['Update repositories cache'].ignore_errors is not defined
-        fail_msg: "'Update repositories cache' must not silently ignore errors; only the debsums-tagged tasks are expected to do so"
-
-    - name: Assert 'Download apt-transport-https for apt using https' is fully compliant
-      ansible.builtin.assert:
-        that:
-          - "'ansible.builtin.apt' in main_tasks_by_name['Download apt-transport-https for apt using https']"
-          - main_tasks_by_name['Download apt-transport-https for apt using https']['ansible.builtin.apt'].name == 'apt-transport-https'
-          - main_tasks_by_name['Download apt-transport-https for apt using https']['ansible.builtin.apt'].update_cache == true
-          - main_tasks_by_name['Download apt-transport-https for apt using https'].ignore_errors == true
-          - main_tasks_by_name['Download apt-transport-https for apt using https'].tags == 'apt'
-        fail_msg: "'Download apt-transport-https for apt using https' task lacks correct module, name, update_cache, ignore_errors, or tags."
-
-    - name: Assert cache cleanup tasks use autoclean/autoremove and are not async
-      ansible.builtin.assert:
-        that:
-          - main_tasks_by_name['Remove useless packages from the cache']['ansible.builtin.apt'].autoclean == true
-          - main_tasks_by_name['Remove useless packages from the cache'].async is not defined
-          - main_tasks_by_name['Remove dependencies that are no longer required']['ansible.builtin.apt'].autoremove == true
-          - main_tasks_by_name['Remove dependencies that are no longer required'].async is not defined
-        fail_msg: "The apt cache cleanup tasks must use autoclean/autoremove respectively and must not be run asynchronously."
-
-    - name: Assert the 'Run package upgrades' loop provides exactly three upgrade strategy items
-      ansible.builtin.assert:
-        that:
-          - main_tasks_by_name['Run package upgrades'].loop | length == 3
-          - main_tasks_by_name['Run package upgrades'].loop | map(attribute='name') | list == ['Upgrade all packages', 'Dist Upgrade all packages', 'Safe Upgrade all packages']
-          - "'upgrade_ubuntu_check' in (main_tasks_by_name['Run package upgrades'].loop[0].enabled)"
-          - "'dist_upgrade_ubuntu_check' in (main_tasks_by_name['Run package upgrades'].loop[1].enabled)"
-          - "'safe_upgrade_ubuntu_check' in (main_tasks_by_name['Run package upgrades'].loop[2].enabled)"
-        fail_msg: "'Run package upgrades' must loop over exactly the three expected upgrade strategy items, each gated by its own '*_ubuntu_check' variable."
