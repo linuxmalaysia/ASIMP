@@ -56,7 +56,20 @@
           - doc_frontmatter.okf_version == "0.1"
           - doc_frontmatter.type == "documentation"
           - doc_frontmatter.title == expected_title
-        fail_msg: "docs/dsom_ansible_review.md frontmatter must declare okf_version '0.1', type 'documentation' and the exact review title"
+          - doc_frontmatter.layout == "default"
+        fail_msg: "docs/dsom_ansible_review.md frontmatter must declare okf_version '0.1', type 'documentation', the exact review title, and layout 'default'"
+
+    - name: Assert there is a blank line between the opening '---' and the first frontmatter key
+      ansible.builtin.assert:
+        that:
+          - doc_content.startswith('---\n\nokf_version:')
+        fail_msg: "docs/dsom_ansible_review.md front matter must open with '---' followed by a blank line before the first 'okf_version:' key"
+
+    - name: Assert there are exactly two blank lines between the closing '---' and the main heading
+      ansible.builtin.assert:
+        that:
+          - doc_content.split('---', 2)[2].startswith('\n\n\n# ' + expected_title)
+        fail_msg: "docs/dsom_ansible_review.md must have exactly two blank lines between the closing front matter '---' and the main heading"
 
     - name: Assert the frontmatter timestamp is the exact, unmodified value
       ansible.builtin.assert:

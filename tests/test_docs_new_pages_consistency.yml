@@ -1,0 +1,104 @@
+---
+# Cross-file consistency/regression tests for the two new documentation
+# pages introduced in this PR (docs/openscap.md and docs/lynis.md). Verifies
+# that both pages are simultaneously wired into the site navbar
+# (docs/_config.yml) and the homepage documentation index (docs/index.md),
+# that the URLs/links used in both places agree with each other and with
+# the actual markdown filenames on disk, and that no unrelated/orphaned
+# navbar or index entries were accidentally introduced.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_docs_new_pages_consistency.yml
+- name: Verify new OpenSCAP/Lynis doc pages are consistently registered across docs/_config.yml and docs/index.md
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    docs_dir: "{{ repo_root }}/docs"
+    new_pages:
+      - markdown: "openscap.md"
+        html: "openscap.html"
+        navbar_title: "OpenSCAP & Playbooks"
+        index_link_text: "[OpenSCAP Integration & Playbooks](openscap.html)"
+      - markdown: "lynis.md"
+        html: "lynis.html"
+        navbar_title: "Lynis & Playbooks"
+        index_link_text: "[Lynis Auditing & Playbooks](lynis.html)"
+
+  tasks:
+    - name: Load and parse docs/_config.yml
+      ansible.builtin.set_fact:
+        config_data: "{{ lookup('file', docs_dir + '/_config.yml') | from_yaml }}"
+
+    - name: Load raw content of docs/index.md
+      ansible.builtin.set_fact:
+        index_content: "{{ lookup('file', docs_dir + '/index.md') }}"
+
+    - name: Assert each new page's markdown source file exists on disk
+      ansible.builtin.stat:
+        path: "{{ docs_dir }}/{{ item.markdown }}"
+      register: page_stat
+      loop: "{{ new_pages }}"
+      loop_control:
+        label: "{{ item.markdown }}"
+
+    - name: Assert every new page's markdown file was found and is a regular file
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isreg
+        fail_msg: "Expected markdown source file for a new documentation page is missing from docs/"
+      loop: "{{ page_stat.results }}"
+      loop_control:
+        label: "{{ item.item.markdown }}"
+
+    - name: Assert every new page has a matching navbar entry with the expected URL
+      ansible.builtin.assert:
+        that:
+          - (config_data.navbar | selectattr('title', 'equalto', item.navbar_title) | list | length) == 1
+          - (config_data.navbar | selectattr('title', 'equalto', item.navbar_title) | first).url == ('/' + item.html)
+        fail_msg: "docs/_config.yml navbar must contain exactly one entry titled '{{ item.navbar_title }}' pointing to /{{ item.html }}"
+      loop: "{{ new_pages }}"
+      loop_control:
+        label: "{{ item.navbar_title }}"
+
+    - name: Assert every new page is also linked from the homepage documentation index
+      ansible.builtin.assert:
+        that:
+          - item.index_link_text in index_content
+        fail_msg: "docs/index.md Technical Documentation Index must link to {{ item.html }} using the text '{{ item.index_link_text }}'"
+      loop: "{{ new_pages }}"
+      loop_control:
+        label: "{{ item.html }}"
+
+    - name: Assert the navbar HTML target basenames match the on-disk markdown basenames
+      ansible.builtin.assert:
+        that:
+          - item.html == (item.markdown | replace('.md', '.html'))
+        fail_msg: "Navbar URL /{{ item.html }} must correspond to docs/{{ item.markdown }} (same basename, Jekyll converts .md to .html)"
+      loop: "{{ new_pages }}"
+      loop_control:
+        label: "{{ item.markdown }}"
+
+    - name: Assert no duplicate navbar titles were introduced
+      ansible.builtin.assert:
+        that:
+          - (config_data.navbar | map(attribute='title') | list) == (config_data.navbar | map(attribute='title') | unique | list)
+        fail_msg: "docs/_config.yml navbar must not contain duplicate title entries"
+
+    - name: Assert the frontmatter title of each new page matches its documentation index description context
+      ansible.builtin.set_fact:
+        page_frontmatter: "{{ page_frontmatter | default({}) | combine({item.markdown: (lookup('file', docs_dir + '/' + item.markdown).split('---', 2)[1] | from_yaml)}) }}"
+      loop: "{{ new_pages }}"
+      loop_control:
+        label: "{{ item.markdown }}"
+
+    - name: Assert each new page declares layout 'default' so it renders inside the site theme
+      ansible.builtin.assert:
+        that:
+          - page_frontmatter[item.markdown].layout == 'default'
+        fail_msg: "{{ item.markdown }} must declare 'layout: default' in its frontmatter to render correctly as a navbar-linked page"
+      loop: "{{ new_pages }}"
+      loop_control:
+        label: "{{ item.markdown }}"

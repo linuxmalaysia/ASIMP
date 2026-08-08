@@ -1,0 +1,96 @@
+---
+# Structural and content-correctness tests for docs/index.md as changed in
+# this PR: the front matter formatting was tightened (no blank line right
+# after the opening '---', and exactly one blank line before the main
+# heading instead of two), and two new "Technical Documentation Index"
+# entries were added linking to the new OpenSCAP and Lynis doc pages.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_index_doc.yml
+- name: Verify docs/index.md frontmatter formatting and new documentation index links
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    doc_path: "{{ repo_root }}/docs/index.md"
+    expected_title: "About ASIMP & Documentation"
+    expected_heading: "# About ASIMP (Ansible System Integrity Management Platform)"
+    expected_topics:
+      - asimp
+      - docs
+      - manual
+      - security
+    expected_openscap_entry: "- **[OpenSCAP Integration & Playbooks](openscap.html)**: Detailed overview of how ASIMP manages OpenSCAP packages, selects dynamic datastreams, parses compliance scores, and handles USN OVAL reviews."
+    expected_lynis_entry: "- **[Lynis Auditing & Playbooks](lynis.html)**: Detailed analysis of how ASIMP conducts host audits, extracts the Hardening Index, and integrates with the `lynis-ansible` hardening role."
+
+  tasks:
+    - name: Load raw content of docs/index.md
+      ansible.builtin.set_fact:
+        doc_content: "{{ lookup('file', doc_path) }}"
+
+    - name: "Assert the front matter opens immediately with 'layout: default', with no leading blank line"
+      ansible.builtin.assert:
+        that:
+          - doc_content.startswith('---\nlayout: default')
+        fail_msg: "docs/index.md front matter must start with '---' immediately followed by 'layout: default' on the very next line, with no blank line in between"
+
+    - name: Assert the front matter block closes immediately before the document's main heading
+      ansible.builtin.assert:
+        that:
+          - (doc_content.split('---', 2) | length) == 3
+          - doc_content.split('---', 2)[2].lstrip().startswith(expected_heading)
+        fail_msg: "docs/index.md front matter must close with a second '---' followed by the main '# About ASIMP...' heading"
+
+    - name: Assert there is exactly one blank line between the closing '---' and the main heading
+      ansible.builtin.assert:
+        that:
+          - doc_content.split('---', 2)[2].startswith('\n\n' + expected_heading)
+          - not doc_content.split('---', 2)[2].startswith('\n\n\n')
+        fail_msg: "docs/index.md must have exactly one blank line between the closing front matter '---' and the '# About ASIMP...' heading, not two"
+
+    - name: Parse the YAML front matter block
+      ansible.builtin.set_fact:
+        doc_frontmatter: "{{ doc_content.split('---', 2)[1] | from_yaml }}"
+
+    - name: Assert the OKF metadata fields are present and correct
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.layout == "default"
+          - doc_frontmatter.title == expected_title
+          - doc_frontmatter.okf_version == "0.1"
+          - doc_frontmatter.type == "documentation"
+        fail_msg: "docs/index.md frontmatter must declare layout 'default', the exact title, okf_version '0.1' and type 'documentation'"
+
+    - name: Assert the frontmatter topics list matches exactly, in order
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.topics == expected_topics
+        fail_msg: "docs/index.md frontmatter 'topics' must list asimp, docs, manual, security in that exact order"
+
+    - name: Assert the new OpenSCAP documentation index entry is present verbatim
+      ansible.builtin.assert:
+        that:
+          - expected_openscap_entry in doc_content
+        fail_msg: "docs/index.md must link to the new OpenSCAP Integration & Playbooks page with the exact expected description"
+
+    - name: Assert the new Lynis documentation index entry is present verbatim
+      ansible.builtin.assert:
+        that:
+          - expected_lynis_entry in doc_content
+        fail_msg: "docs/index.md must link to the new Lynis Auditing & Playbooks page with the exact expected description"
+
+    - name: Assert the documentation index lists the new entries in the correct position
+      ansible.builtin.assert:
+        that:
+          - doc_content.find('[Architecture & Design](architecture.html)') < doc_content.find('[OpenSCAP Integration & Playbooks](openscap.html)')
+          - doc_content.find('[OpenSCAP Integration & Playbooks](openscap.html)') < doc_content.find('[Lynis Auditing & Playbooks](lynis.html)')
+          - doc_content.find('[Lynis Auditing & Playbooks](lynis.html)') < doc_content.find('[Configuration & Variables](configuration.html)')
+          - doc_content.find('[Configuration & Variables](configuration.html)') < doc_content.find('[Troubleshooting & Fallbacks](troubleshooting.html)')
+        fail_msg: "docs/index.md must list Architecture, then OpenSCAP, then Lynis, then Configuration, then Troubleshooting in the Technical Documentation Index, in that exact order"
+
+    - name: Assert the documentation index section heading is unchanged
+      ansible.builtin.assert:
+        that:
+          - "'## 📁 Technical Documentation Index' in doc_content"
+        fail_msg: "docs/index.md must retain the '## 📁 Technical Documentation Index' section heading"
