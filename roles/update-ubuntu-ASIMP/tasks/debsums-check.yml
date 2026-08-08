@@ -1,10 +1,19 @@
 ---
+- name: Check if debsums binary is available
+  ansible.builtin.command: which debsums
+  register: r_debsums_binary_check
+  changed_when: false
+  failed_when: false
+  tags: debsums
+
 - name: Run debsums check
-  ansible.builtin.shell: debsums -c 1> /var/log/debsums.output 2> /var/log/debsums.err
+  ansible.builtin.command: debsums -c
   when:
+    - r_debsums_binary_check.rc == 0
     - (ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu')
     - debsums_ubuntu_check is defined
     - debsums_ubuntu_check
+  changed_when: false
   tags: debsums
   ignore_errors: true
   async: 361
@@ -17,3 +26,8 @@
   register: debsums_job_result
   until: debsums_job_result.finished
   retries: 360
+  when:
+    - r_debsums_binary_check.rc == 0
+    - (ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu')
+    - debsums_ubuntu_check is defined
+    - debsums_ubuntu_check
