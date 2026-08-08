@@ -16,7 +16,7 @@ This document defines the architectural specification and implementation protoco
 
 To ensure a strict boundary between testing telemetry and user execution, ASIMP employs a conditional mode separation protocol controlled by the environment variable `EXECUTION_MODE` and the Ansible inventory variable `execution_mode`.
 
-```
+```text
                         +----------------------------------------+
                         |  Execution Context Init (Ansible/Bash) |
                         +----------------------------------------+
@@ -54,12 +54,14 @@ To ensure a strict boundary between testing telemetry and user execution, ASIMP 
 Execution runs natively inside Windows WSL2 (Ubuntu 26.04 LTS) and manages a multi-distribution Podman 5+ container matrix.
 
 ### Container Grid
+
 - **Ubuntu 24.04 LTS (`ubuntu24`)**: Active baseline testing.
 - **Ubuntu 26.04 LTS (`ubuntu26`)**: Bleeding-edge environment validation.
 - **AlmaLinux 9 (`alma9`)**: RHEL-compatible ecosystem validation.
 - **Debian 12 (`debian12`)**: Pure Debian system compliance validation.
 
 ### Failure Diagnostics & Capture
+
 Inside `playbooks/matrix_test.yml`, task-level error handlers (`block/rescue/always`) capture failure states:
 - **`block`**: Contains the target tests (ASIMP scans, compliance audits, shell commands).
 - **`rescue`**: Activates upon task failure. Registers failure messages, step location, system state, and appends them to host-level telemetry arrays.
@@ -71,7 +73,7 @@ Inside `playbooks/matrix_test.yml`, task-level error handlers (`block/rescue/alw
 
 The bridge script (`scripts/jules_gh_feedback.sh`) acts as an idempotent dispatch courier between the local testing matrix, Google Jules CLI, and the GitHub Pull Request API.
 
-```
+```text
        +----------------------------+
        |   /tmp/jules_telemetry.json|
        +----------------------------+
@@ -89,6 +91,7 @@ The bridge script (`scripts/jules_gh_feedback.sh`) acts as an idempotent dispatc
 ```
 
 ### Integrations and Fallbacks
+
 - **Google Jules CLI**: Automatically feeds markdown-formatted test summaries and detailed bug reports via `jules chat` or local HTTP feedback endpoints if available.
 - **GitHub PR Integration**: Leverages the official `gh` CLI to post rich, sanitized Markdown status boards directly on the active PR (`gh pr comment <PR_ID> --body-file ...`).
 - **Graceful Fallbacks**: If API tokens (`GITHUB_TOKEN`/`GH_TOKEN`) or the Jules environment are absent, the script outputs the exact payload to `/tmp/jules_payload.md` and displays it to stdout, completing successfully without failing the pipeline.
@@ -97,7 +100,7 @@ The bridge script (`scripts/jules_gh_feedback.sh`) acts as an idempotent dispatc
 
 ## 4. Human-in-the-Loop Developer Workflow
 
-```
+```text
  +-----------------------------------------------------------------------------------+
  | 1. Developer asks Jules: "Generate and patch ASIMP OpenSCAP datastream retrieval" |
  +-----------------------------------------------------------------------------------+
@@ -136,7 +139,7 @@ The bridge script (`scripts/jules_gh_feedback.sh`) acts as an idempotent dispatc
 
 The local matrix integration introduces the following files to the codebase:
 
-```
+```text
 ├── ansible.cfg                          # Custom Ansible configuration with local roles path
 ├── inventory/
 │   └── hosts.yml                        # Matrix hosts and execution variables

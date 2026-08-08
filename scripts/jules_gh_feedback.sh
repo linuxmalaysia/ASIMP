@@ -11,37 +11,33 @@
 set -euo pipefail
 
 # --- Color Constants & Logging Helpers ---
-RED='\033[0;31m'
-GREEN='\033[0;32m'
+RED='\033;31m'
+GREEN='\033;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-# log_info logs an informational message with a timestamp.
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $(date '+%Y-%m-%d %H:%M:%S') - $1"
 }
 
-# log_success prints a timestamped success message.
 log_success() {
     echo -e "${GREEN}[SUCCESS]${NC} $(date '+%Y-%m-%d %H:%M:%S') - $1"
 }
 
-# log_warn prints a timestamped warning message.
 log_warn() {
     echo -e "${YELLOW}[WARNING]${NC} $(date '+%Y-%m-%d %H:%M:%S') - $1"
 }
 
-# log_error prints a timestamped error message in red.
 log_error() {
     echo -e "${RED}[ERROR]${NC} $(date '+%Y-%m-%d %H:%M:%S') - $1"
 }
 
-# cleanup reports an error when the pipeline exits unsuccessfully.
+# --- Cleanup Traps ---
 cleanup() {
     local exit_code=$?
-    if [ "$exit_code" -ne 0 ]; then
+    if (( exit_code != 0 )); then
         log_error "Pipeline dispatch was interrupted or encountered an unexpected error."
     fi
 }
@@ -53,12 +49,15 @@ PAYLOAD_FILE="/tmp/jules_payload.md"
 
 log_info "Initialising ASIMP Telemetry Bridge..."
 
-if [ ! -f "$TELEMETRY_FILE" ]; then
+if [[ ! -f "$TELEMETRY_FILE" ]]; then
     log_error "Telemetry data file '$TELEMETRY_FILE' not found. Ensure the test matrix playbook has run successfully."
     exit 1
 fi
 
 log_info "Parsing telemetry and generating Markdown payload..."
+
+# Restrict created files to owner only (umask 077)
+umask 077
 
 # --- Embedded Python JSON Parser & Markdown Formatter ---
 python3 - << 'EOF'
@@ -143,7 +142,7 @@ except Exception as e:
 print("SUCCESS: Markdown payload compiled successfully.")
 EOF
 
-if [ ! -f "$PAYLOAD_FILE" ]; then
+if [[ ! -f "$PAYLOAD_FILE" ]]; then
     log_error "Payload markdown file could not be generated."
     exit 1
 fi
@@ -156,35 +155,73 @@ EXEC_MODE=$(python3 -c 'import json; print(json.load(open("/tmp/jules_telemetry.
 
 # --- Sink 1: Google Jules Session Feed ---
 log_info "Checking Google Jules Session Connection..."
-if command -v jules &>/dev/null; then
-    log_info "Google Jules CLI detected. Dispatched stream feeding chat context..."
-    jules chat --message "Local testing matrix report processed. Injecting payload to session." || log_warn "Jules chat submission encountered a non-fatal error."
-    # Dynamic feed command simulation/invocation if supported
-    if command -v jules-feed &>/dev/null; then
-        jules-feed --payload "$PAYLOAD_FILE" || true
+if [[ "$EXEC_MODE" == "dev" ]]; then
+    if command -v jules &>/dev/null; then
+        log_info "Google Jules CLI detected. Dispatched stream feeding remote new flow..."
+        REPO_NAME=$(git config --get remote.origin.url | sed 's/.*github.com[\/:]//;s/\.git$//' || echo "linuxmalaysia/ASIMP")
+        if jules remote new --repo "$REPO_NAME" --session "${PR_ID:-none}" --report "$PAYLOAD_FILE" &>/dev/null; then
+            log_success "Google Jules remote feed session dispatched successfully."
+        else
+            log_warn "Jules remote new feed submission encountered a non-fatal error."
+        fi
+    else
+        # Fallback to REST API if endpoints are specified
+        if [[ -n "${JULES_API_URL:-}" ]] && [[ -n "${JULES_API_TOKEN:-}" ]]; then
+            log_info "API endpoint defined. Sending REST POST feedback..."
+            curl -sS --connect-timeout 10 --max-time 30 -X POST -H "Authorization: Bearer $JULES_API_TOKEN" \
+                 -H "Content-Type: application/json" \
+                 -d @/tmp/jules_telemetry.json "$JULES_API_URL" > /dev/null || log_warn "REST API POST feedback submission failed."
+        else
+            log_warn "Google Jules CLI or REST credentials unavailable. Bypassing Jules stream socket integration."
+        fi
     fi
 else
-    # Fallback to REST API if endpoints are specified
-    if [ -n "${JULES_API_URL:-}" ] && [ -n "${JULES_API_TOKEN:-}" ]; then
-        log_info "API endpoint defined. Sending REST POST feedback..."
-        curl -sS -X POST -H "Authorization: Bearer $JULES_API_TOKEN" \
-             -H "Content-Type: application/json" \
-             -d @/tmp/jules_telemetry.json "$JULES_API_URL" > /dev/null || log_warn "REST API POST feedback submission failed."
-    else
-        log_warn "Google Jules CLI or REST credentials unavailable. Bypassing Jules stream socket integration."
-    fi
+    log_info "Bypassing Google Jules Session Feed (EXECUTION_MODE is not dev)."
 fi
 
 # --- Sink 2: GitHub PR Feedback Comment ---
-if [ "$EXEC_MODE" = "dev" ] && [ -n "$PR_ID" ] && [ "$PR_ID" != "none" ] && [ "$PR_ID" != "null" ]; then
+if [[ "$EXEC_MODE" == "dev" ]] && [[ -n "$PR_ID" ]] && [[ "$PR_ID" != "none" ]] && [[ "$PR_ID" != "null" ]]; then
     log_info "Preparing Pull Request feedback dispatcher for PR #$PR_ID..."
 
     if command -v gh &>/dev/null; then
         # Check authentication status
-        if gh auth status &>/dev/null || [ -n "${GITHUB_TOKEN:-}" ] || [ -n "${GH_TOKEN:-}" ]; then
+        if gh auth status &>/dev/null || [[ -n "${GITHUB_TOKEN:-}" ]] || [[ -n "${GH_TOKEN:-}" ]]; then
             log_info "GitHub authentication found. Posting feedback to Pull Request..."
-            gh pr comment "$PR_ID" --body-file "$PAYLOAD_FILE" || log_warn "Failed to post comment to PR #$PR_ID via GitHub API."
-            log_success "PR feedback comment dispatched successfully."
+
+            # Fetch existing comments to locate ours idempotently
+            if COMMENTS_JSON=$(gh pr view "$PR_ID" --json comments 2>/dev/null); then
+                export COMMENTS_JSON
+                EXISTING_COMMENT_ID=$(python3 -c "
+import json, os, sys
+try:
+    data = json.loads(os.environ.get('COMMENTS_JSON', '{}'))
+    for c in data.get('comments', []):
+        if '### 📊 ASIMP Local Matrix Test Execution Board' in c.get('body', ''):
+            print(c.get('id', ''))
+            break
+except Exception:
+    pass
+" 2>/dev/null)
+                unset COMMENTS_JSON
+            else
+                EXISTING_COMMENT_ID=""
+            fi
+
+            if [[ -n "$EXISTING_COMMENT_ID" ]]; then
+                log_info "Found existing comment with ID $EXISTING_COMMENT_ID. Updating it..."
+                if gh api -X PATCH "repos/{owner}/{repo}/issues/comments/$EXISTING_COMMENT_ID" -F body=@"$PAYLOAD_FILE" &>/dev/null; then
+                    log_success "PR feedback comment updated successfully."
+                else
+                    log_warn "Failed to update existing comment $EXISTING_COMMENT_ID via GitHub API."
+                fi
+            else
+                log_info "No existing feedback comment found. Creating a new one..."
+                if gh pr comment "$PR_ID" --body-file "$PAYLOAD_FILE" &>/dev/null; then
+                    log_success "PR feedback comment dispatched successfully."
+                else
+                    log_warn "Failed to post comment to PR #$PR_ID via GitHub API."
+                fi
+            fi
         else
             log_warn "GitHub credentials (GITHUB_TOKEN/GH_TOKEN) not set. Skipping GitHub comment dispatch."
         fi

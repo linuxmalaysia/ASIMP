@@ -23,6 +23,25 @@
     - item.content | length > 0
   no_log: true
 
+- name: Insert failure telemetry for missing/failed slurped hosts
+  ansible.builtin.set_fact:
+    consolidated_hosts: "{{ consolidated_hosts | combine({
+      item: {
+        'status': 'failed',
+        'exit_code': 1,
+        'failures': [ {
+          'task': 'Telemetry Collection',
+          'error': 'Host execution interrupted or failed before telemetry could be written.',
+          'timestamp': lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%SZ')
+        } ],
+        'kernel_release': 'Unknown',
+        'os_info': 'Unknown',
+        'timestamp': lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%SZ')
+      }
+    }) }}"
+  loop: "{{ groups['matrix_hosts'] }}"
+  when: consolidated_hosts[item] is not defined
+
 - name: Evaluate overall matrix run status
   ansible.builtin.set_fact:
     overall_status: "failed"
@@ -39,13 +58,15 @@
       timestamp: "{{ lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%SZ') }}"
       overall_status: "{{ overall_status }}"
       hosts: "{{ consolidated_hosts }}"
+  when: execution_mode == "dev"
 
 - name: Write unified telemetry file to /tmp/jules_telemetry.json
   ansible.builtin.copy:
     content: "{{ final_telemetry | to_nice_json }}"
     dest: "/tmp/jules_telemetry.json"
-    mode: '0644'
+    mode: '0600'
   delegate_to: localhost
+  when: execution_mode == "dev"
 
 - name: Clean up temporary intermediate host files
   ansible.builtin.file:

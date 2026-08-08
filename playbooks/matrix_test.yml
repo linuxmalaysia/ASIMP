@@ -25,7 +25,7 @@
 
     - name: Log container provisioning status
       ansible.builtin.debug:
-        msg: "Container provisioning status for {{ item.item }}: {{ 'Success' if item.rc | default(0) == 0 else 'Skipped/Failed (Podman daemon might be missing)' }}"
+        msg: "Container provisioning status for {{ item.item }}: {{ 'Success' if (not (item.failed | default(false) | bool) and (item.container.State.Status | default('') == 'running')) else 'Skipped/Failed' }}"
       loop: "{{ r_podman_provision.results }}"
       when: r_podman_provision.results is defined
 
@@ -34,20 +34,24 @@
       loop: "{{ groups['matrix_hosts'] }}"
       when:
         - hostvars[item].os_distro in ['ubuntu', 'debian']
-        - (r_podman_provision.results | default([]) | selectattr('item', 'equalto', item) | map(attribute='rc') | first | default(1)) == 0
+        - r_podman_provision.results is defined
+        - not ((r_podman_provision.results | selectattr('item', 'equalto', item) | map(attribute='failed') | first | default(true)) | bool)
+        - (r_podman_provision.results | selectattr('item', 'equalto', item) | map(attribute='container') | map(attribute='State') | map(attribute='Status') | first | default('')) == 'running'
       register: r_apt_bootstrap
       failed_when: false
-      changed_when: r_apt_bootstrap.rc | default(1) == 0
+      changed_when: "rc | default(1) == 0 and 'is already the newest version' not in stdout | default('')"
 
     - name: Bootstrap Python on AlmaLinux targets
       ansible.builtin.command: "podman exec {{ hostvars[item].ansible_host }} dnf install -y python3"
       loop: "{{ groups['matrix_hosts'] }}"
       when:
         - hostvars[item].os_distro == 'almalinux'
-        - (r_podman_provision.results | default([]) | selectattr('item', 'equalto', item) | map(attribute='rc') | first | default(1)) == 0
+        - r_podman_provision.results is defined
+        - not ((r_podman_provision.results | selectattr('item', 'equalto', item) | map(attribute='failed') | first | default(true)) | bool)
+        - (r_podman_provision.results | selectattr('item', 'equalto', item) | map(attribute='container') | map(attribute='State') | map(attribute='Status') | first | default('')) == 'running'
       register: r_dnf_bootstrap
       failed_when: false
-      changed_when: r_dnf_bootstrap.rc | default(1) == 0
+      changed_when: "rc | default(1) == 0 and 'Nothing to do' not in stdout | default('')"
 
 - name: Play 2 - Parallel Matrix Verification & Telemetry Collection
   hosts: matrix_hosts
@@ -128,6 +132,7 @@
         - name: Trigger feedback collector role for telemetry persistence
           ansible.builtin.include_role:
             name: feedback_collector
+          when: execution_mode == "dev"
 
 - name: Play 3 - Container Lifecycle Cleanup & Finalisation
   hosts: localhost
@@ -140,6 +145,12 @@
       ansible.builtin.include_role:
         name: feedback_collector
         tasks_from: consolidate.yml
+      when: execution_mode == "dev"
+
+    - name: Invoke the bidirectional feedback bridge script
+      ansible.builtin.command: scripts/jules_gh_feedback.sh
+      changed_when: false
+      when: execution_mode == "dev"
 
     - name: Stop and clean up Podman matrix containers
       containers.podman.podman_container:
