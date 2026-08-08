@@ -144,6 +144,80 @@ class TestPrepareDocs(unittest.TestCase):
             except Exception as exc:
                 self.fail(f"prepare_docs.main() raised unexpectedly: {exc}")
 
+    def test_main_error_docs_not_exists_prints_message(self):
+        # The error message should mention the missing docs path and must not
+        # attempt to walk/process any files.
+        import io
+        from contextlib import redirect_stdout
+
+        captured = io.StringIO()
+        with patch("os.path.exists", return_value=False), \
+                patch("os.walk") as mock_walk, \
+                redirect_stdout(captured):
+            prepare_docs.main()
+
+        self.assertIn("does not exist", captured.getvalue())
+        mock_walk.assert_not_called()
+
+    def test_process_markdown_file_first_heading_wins_with_leading_text(self):
+        # The first '#'-style heading anywhere in the content (in reading order)
+        # should be used as the title, even if preceded by non-heading text.
+        path = "docs/multi_heading.md"
+        content = "Some intro text.\n## Second Level Heading\nMore text\n# Another Heading"
+        self._write(path, content)
+
+        prepare_docs.process_markdown_file(path)
+
+        result = self._read(path)
+        self.assertIn('title: "Second Level Heading"', result)
+
+    def test_process_markdown_file_skips_when_leading_blank_lines_precede_front_matter(self):
+        # Leading whitespace before an existing '---' front matter block must still
+        # be recognized as "has front matter" (content is stripped before the check),
+        # and the file must be left completely untouched.
+        path = "docs/leading_blank.md"
+        original = "\n\n---\ntitle: \"Existing\"\n---\n# Heading\nBody"
+        self._write(path, original)
+
+        prepare_docs.process_markdown_file(path)
+
+        self.assertEqual(self._read(path), original)
+
+    def test_process_markdown_file_fallback_title_formatting(self):
+        # Underscores and hyphens in the filename should become spaces, and the
+        # result should be title-cased, including alphanumeric tokens like 'v2'.
+        path = "docs/2024-report_v2.md"
+        content = "Just body text, no heading."
+        self._write(path, content)
+
+        prepare_docs.process_markdown_file(path)
+
+        result = self._read(path)
+        self.assertIn('title: "2024 Report V2"', result)
+
+    def test_main_recurses_into_nested_subdirectories(self):
+        # os.walk should traverse arbitrarily nested subdirectories under docs/.
+        os.makedirs("docs/a/b/c", exist_ok=True)
+        self._write("docs/a/b/c/deep.md", "# Deep Doc\nContent")
+
+        real_docs_path = os.path.abspath(os.path.join(REPO_ROOT, "docs"))
+        temp_docs_path = os.path.abspath("docs")
+        orig_abspath = os.path.abspath
+
+        def mock_abspath(path):
+            """Redirect the repository docs path to the temporary test directory."""
+            abs_path = orig_abspath(path)
+            if abs_path == real_docs_path:
+                return temp_docs_path
+            return abs_path
+
+        with patch("os.path.abspath", side_effect=mock_abspath):
+            prepare_docs.main()
+
+        deep_content = self._read("docs/a/b/c/deep.md")
+        self.assertTrue(deep_content.startswith("---"))
+        self.assertIn('title: "Deep Doc"', deep_content)
+
 
 if __name__ == "__main__":
     unittest.main()

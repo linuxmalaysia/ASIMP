@@ -154,3 +154,47 @@
           - debsums_tasks[1].until == 'debsums_job_result.finished'
           - debsums_tasks[1].retries == 360
         fail_msg: "The debsums async status task inside debsums-check.yml lacks correct FQCN, job registration, or retry limits."
+
+    - name: Verify debsums shell command redirects output and errors to the expected log paths
+      ansible.builtin.assert:
+        that:
+          - "'1> /var/log/debsums.output' in debsums_tasks[0]['ansible.builtin.shell']"
+          - "'2> /var/log/debsums.err' in debsums_tasks[0]['ansible.builtin.shell']"
+        fail_msg: "The debsums shell command must redirect stdout to /var/log/debsums.output and stderr to /var/log/debsums.err"
+
+    # --- Additional negative/boundary checks -----------------------------
+
+    - name: Assert 'Update repositories cache' does not set ignore_errors (unlike the debsums tasks)
+      ansible.builtin.assert:
+        that:
+          - main_tasks_by_name['Update repositories cache'].ignore_errors is not defined
+        fail_msg: "'Update repositories cache' must not silently ignore errors; only the debsums-tagged tasks are expected to do so"
+
+    - name: Assert 'Download apt-transport-https for apt using https' is fully compliant
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.apt' in main_tasks_by_name['Download apt-transport-https for apt using https']"
+          - main_tasks_by_name['Download apt-transport-https for apt using https']['ansible.builtin.apt'].name == 'apt-transport-https'
+          - main_tasks_by_name['Download apt-transport-https for apt using https']['ansible.builtin.apt'].update_cache == true
+          - main_tasks_by_name['Download apt-transport-https for apt using https'].ignore_errors == true
+          - main_tasks_by_name['Download apt-transport-https for apt using https'].tags == 'apt'
+        fail_msg: "'Download apt-transport-https for apt using https' task lacks correct module, name, update_cache, ignore_errors, or tags."
+
+    - name: Assert cache cleanup tasks use autoclean/autoremove and are not async
+      ansible.builtin.assert:
+        that:
+          - main_tasks_by_name['Remove useless packages from the cache']['ansible.builtin.apt'].autoclean == true
+          - main_tasks_by_name['Remove useless packages from the cache'].async is not defined
+          - main_tasks_by_name['Remove dependencies that are no longer required']['ansible.builtin.apt'].autoremove == true
+          - main_tasks_by_name['Remove dependencies that are no longer required'].async is not defined
+        fail_msg: "The apt cache cleanup tasks must use autoclean/autoremove respectively and must not be run asynchronously."
+
+    - name: Assert the 'Run package upgrades' loop provides exactly three upgrade strategy items
+      ansible.builtin.assert:
+        that:
+          - main_tasks_by_name['Run package upgrades'].loop | length == 3
+          - main_tasks_by_name['Run package upgrades'].loop | map(attribute='name') | list == ['Upgrade all packages', 'Dist Upgrade all packages', 'Safe Upgrade all packages']
+          - "'upgrade_ubuntu_check' in (main_tasks_by_name['Run package upgrades'].loop[0].enabled)"
+          - "'dist_upgrade_ubuntu_check' in (main_tasks_by_name['Run package upgrades'].loop[1].enabled)"
+          - "'safe_upgrade_ubuntu_check' in (main_tasks_by_name['Run package upgrades'].loop[2].enabled)"
+        fail_msg: "'Run package upgrades' must loop over exactly the three expected upgrade strategy items, each gated by its own '*_ubuntu_check' variable."
