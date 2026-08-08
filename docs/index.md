@@ -1,5 +1,4 @@
 ---
-
 layout: default
 title: "About ASIMP & Documentation"
 okf_version: "0.1"
@@ -7,7 +6,6 @@ type: documentation
 timestamp: "2026-08-05T12:00:00Z"
 topics: [asimp, docs, manual, security]
 ---
-
 
 # About ASIMP (Ansible System Integrity Management Platform)
 
@@ -42,6 +40,8 @@ The platform implements a strict **"Measure, Harden, Re-Measure"** paradigm, off
 Explore the different sections of our system design, setup guides, and troubleshooting:
 
 - **[Architecture & Design](architecture.html)**: Learn about the internal components, dual auditing flow, three-phase security pipeline, and our package integrity monitoring engines.
+- **[OpenSCAP Integration & Playbooks](openscap.html)**: Detailed overview of how ASIMP manages OpenSCAP packages, selects dynamic datastreams, parses compliance scores, and handles USN OVAL reviews.
+- **[Lynis Auditing & Playbooks](lynis.html)**: Detailed analysis of how ASIMP conducts host audits, extracts the Hardening Index, and integrates with the `lynis-ansible` hardening role.
 - **[Configuration & Variables](configuration.html)**: Discover customizable variables for our roles (`reporting-ASIMP`, `update-ubuntu-ASIMP`, `lynis-ansible`) and sample inventories.
 - **[Troubleshooting & Fallbacks](troubleshooting.html)**: Read detailed instructions on addressing DataStream resolution errors, connection elevation failures, and timeout behaviors.
 

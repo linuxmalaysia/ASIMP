@@ -1,10 +1,13 @@
 ---
+
 okf_version: "0.1"
 type: "documentation"
 title: "Review & Adoption of DSOM Ansible Configuration Guide (v3.6.2)"
 timestamp: "2026-08-05T12:00:00Z"
 topics: ["ansible", "dsom", "asimp", "compatibility", "review"]
+layout: default
 ---
+
 
 # Review & Adoption of DSOM Ansible Configuration Guide (v3.6.2)
 
