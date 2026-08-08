@@ -159,7 +159,7 @@
           # Sandbox BEFORE
           - "'ansible.builtin.command' in before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox']"
           - before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox']['ansible.builtin.command'].argv == ['python3', "{% raw %}{{ openscap_report_dir }}{% endraw %}/parse_openscap_score.py", "{% raw %}{{ openscap_report_dir }}{% endraw %}/ssg-results-before.xml"]
-          - "'parse_openscap_score.py' in before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox']['ansible.builtin.command']"
+          - "'parse_openscap_score.py' in (before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox']['ansible.builtin.command'] | string)"
           - before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox'].register == 'r_sandbox_oscap_parsed_before'
           - before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox'].changed_when == false
           - before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox'].failed_when == false
@@ -307,7 +307,7 @@
     - name: Assert the real AFTER OpenSCAP score parser (sandbox) now uses ansible.builtin.command
       ansible.builtin.assert:
         that:
-          - "'parse_openscap_score.py' in after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox']['ansible.builtin.command']"
+          - "'parse_openscap_score.py' in (after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox']['ansible.builtin.command'] | string)"
           - "'ansible.builtin.shell' not in after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox']"
           - after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox'].register == 'r_sandbox_oscap_parsed_after'
           - after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox'].changed_when == false
@@ -327,8 +327,8 @@
       ansible.builtin.assert:
         that:
           - "'Parse OpenSCAP BEFORE compliance score' in real_before_tasks_by_name"
-          - "'parse_openscap_score.py' in real_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score']['ansible.builtin.command']"
-          - "'/var/log/openscap-before-results.xml' in real_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score']['ansible.builtin.command']"
+          - "'parse_openscap_score.py' in (real_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score']['ansible.builtin.command'] | string)"
+          - "'/var/log/openscap-before-results.xml' in (real_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score']['ansible.builtin.command'] | string)"
           - "'ansible.builtin.shell' not in real_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score']"
           - real_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score'].register == 'parsed_openscap_before'
           - real_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score'].changed_when == false
@@ -340,8 +340,8 @@
       ansible.builtin.assert:
         that:
           - "'Parse OpenSCAP AFTER compliance score' in real_after_tasks_by_name"
-          - "'parse_openscap_score.py' in real_after_tasks_by_name['Parse OpenSCAP AFTER compliance score']['ansible.builtin.command']"
-          - "'/var/log/openscap-after-results.xml' in real_after_tasks_by_name['Parse OpenSCAP AFTER compliance score']['ansible.builtin.command']"
+          - "'parse_openscap_score.py' in (real_after_tasks_by_name['Parse OpenSCAP AFTER compliance score']['ansible.builtin.command'] | string)"
+          - "'/var/log/openscap-after-results.xml' in (real_after_tasks_by_name['Parse OpenSCAP AFTER compliance score']['ansible.builtin.command'] | string)"
           - "'ansible.builtin.shell' not in real_after_tasks_by_name['Parse OpenSCAP AFTER compliance score']"
           - real_after_tasks_by_name['Parse OpenSCAP AFTER compliance score'].register == 'parsed_openscap_after'
           - real_after_tasks_by_name['Parse OpenSCAP AFTER compliance score'].changed_when == false
@@ -352,10 +352,10 @@
     - name: Assert none of the four converted OpenSCAP score-parsing commands rely on shell metacharacters
       ansible.builtin.assert:
         that:
-          - item not in before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox']['ansible.builtin.command']
-          - item not in after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox']['ansible.builtin.command']
-          - item not in real_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score']['ansible.builtin.command']
-          - item not in real_after_tasks_by_name['Parse OpenSCAP AFTER compliance score']['ansible.builtin.command']
+          - item not in (before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox']['ansible.builtin.command'] | string)
+          - item not in (after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox']['ansible.builtin.command'] | string)
+          - item not in (real_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score']['ansible.builtin.command'] | string)
+          - item not in (real_after_tasks_by_name['Parse OpenSCAP AFTER compliance score']['ansible.builtin.command'] | string)
         fail_msg: >-
           One of the converted OpenSCAP score-parsing tasks contains the shell metacharacter '{{ item }}' in
           its command string; since ansible.builtin.command does not invoke a shell, this would fail or
