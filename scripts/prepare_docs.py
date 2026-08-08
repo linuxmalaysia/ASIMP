@@ -40,28 +40,16 @@ def process_markdown_file(filepath: str) -> None:
             name_without_ext, _ = os.path.splitext(filename)
             title = name_without_ext.replace('_', ' ').replace('-', ' ').title()
 
-        # Build the front matter block
-        front_matter: str = f"---\nlayout: default\ntitle: \"{title}\"\n---\n\n"
+        # Build the front matter block (relying on centrally configured Jekyll default layout)
+        front_matter: str = f"---\ntitle: \"{title}\"\n---\n\n"
         new_content: str = front_matter + content
 
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(new_content)
         print(f"  -> Added front matter with title: '{title}'")
     else:
-        # Even if it has front matter, make sure 'layout:' is defined
-        # Find the front matter boundaries
-        parts = stripped_content.split('---', 2)
-        if len(parts) >= 3:
-            fm_content: str = parts[1]
-            if 'layout:' not in fm_content:
-                # Add layout: default inside front matter
-                new_fm: str = fm_content.rstrip('\n') + "\nlayout: default\n"
-                new_content: str = f"---\n{new_fm}---\n" + parts[2]
-                with open(filepath, 'w', encoding='utf-8') as f:
-                    f.write(new_content)
-                print("  -> Injected 'layout: default' to existing front matter")
-            else:
-                print("  -> Already has layout configured")
+        # Front matter is present. Rely on centrally configured Jekyll default layout.
+        print("  -> Already has front matter, skipping layout injection as Jekyll defaults are configured centrally.")
 
 
 def main() -> None:

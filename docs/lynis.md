@@ -1,13 +1,10 @@
 ---
-
 okf_version: "0.1"
 type: documentation
 title: "Lynis Auditing & Playbook Analysis"
 timestamp: "2026-08-05T12:00:00Z"
 topics: [lynis, security, compliance, audit, playbooks, ansible]
-layout: default
 ---
-
 
 # Lynis Auditing & Playbook Analysis
 
@@ -30,6 +27,7 @@ Lynis is coordinated through two primary roles:
 The Lynis task definitions in ASIMP are structured across `roles/reporting-ASIMP/tasks/main.yml`, `play-localhost.yml`, and the `lynis-ansible` role folder. Let's analyze the execution flow:
 
 ### 1. Installation of Lynis
+
 Before running audits or applying configurations, ASIMP ensures that Lynis is available on the target host. For privileged production environments, this is completed via the standard package manager:
 
 ```yaml
@@ -46,6 +44,7 @@ For unprivileged sandboxes, package installation is skipped to prevent connectio
 ---
 
 ### 2. Execution of System Audit (`--quick` mode)
+
 To establish a baseline and verify improvements, the playbook invokes the Lynis command-line utility. The `--quick` option prevents the scanner from blocking or waiting for user inputs during automated execution:
 
 ```yaml
@@ -61,12 +60,14 @@ The scan saves a detailed machine-readable audit report to `lynis-report-before.
 ---
 
 ### 3. Parsing and Extracting the Hardening Index
+
 The overall system score calculated by Lynis is stored in the `.dat` report file under the variable key `hardening_index`. ASIMP extracts this score using a standard shell utility:
 
 ```yaml
 - name: Parse Lynis BEFORE hardening index
   ansible.builtin.shell: grep -E "^hardening_index=" {{ openscap_report_dir }}/lynis-report-before.dat | cut -d'=' -f2
   register: parsed_lynis_before
+  changed_when: false
   failed_when: false
 ```
 
@@ -76,6 +77,7 @@ The overall system score calculated by Lynis is stored in the `.dat` report file
 ---
 
 ### 4. Applying Hardening Configuration Remediations
+
 ASIMP implements standard configuration-level mitigations mapped from Lynis's best practices. In Phase 2, the `lynis-ansible` role is loaded to lock down common risk surfaces:
 
 ```yaml
@@ -107,7 +109,9 @@ In restricted execution contexts (such as the containerized Google Jules sandbox
 To bypass these limitations gracefully:
 1. **Tool Check**: ASIMP tests if the `lynis` binary is pre-installed in the environment using `which lynis`.
 2. **Execution Gate**: If present, it executes the scan. If not present or restricted, it falls back to a simulated score.
-3. **Simulated Hardening Progress**: If running in sandbox fallback, ASIMP simulates realistic, compliant scoring data:
+3. **Simulated Hardening Progress (NON-AUTHORITATIVE & TEST-ONLY)**: If running in sandbox fallback, ASIMP simulates realistic, compliant scoring data:
    - Baseline Hardening Index: `62` / 100
    - Post-Hardening Index: `88` / 100
-4. **Unified Scorecard Storage**: The parsed or simulated score is saved into `data/asimp_mock/var/log/asimp-baseline-scores.json` and printed on the final terminal report. This ensures that CI/CD and sandbox environments remain green while verifying overall playbook logical consistency.
+   - **Important Note**: These simulated/mock fallback scores and any derived "Compliant" or "Non-vulnerable" reports are strictly **non-authoritative and test-only data**. They are preserved strictly for sandbox test verification and CI/CD logical consistency.
+4. **Downstream Compliance Gate Behavior**: To prevent any security bypasses, downstream compliance-gate verification explicitly **rejects** simulated/mock results. Simulated executions will fail to satisfy any actual compliance checkpoints (i.e. `lynis_success` and `audits_completed` are set to `false` when simulated fallbacks are used), ensuring only real, verified audits can validate a system's true security baseline.
+5. **Unified Scorecard Storage**: The parsed or simulated score is saved into `data/asimp_mock/var/log/asimp-baseline-scores.json` and printed on the final terminal report. This ensures that CI/CD and sandbox environments remain green while verifying overall playbook logical consistency.

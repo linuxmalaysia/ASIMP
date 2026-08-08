@@ -17,3 +17,10 @@ navbar:
     url: "/configuration.html"
   - title: "Troubleshooting"
     url: "/troubleshooting.html"
+
+# Central default settings
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: "default"
