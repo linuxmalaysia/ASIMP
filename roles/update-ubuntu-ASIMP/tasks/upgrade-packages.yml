@@ -1,0 +1,18 @@
+---
+- name: "Upgrade packages to the latest version - {{ upgrade_item.name }}"
+  ansible.builtin.apt:
+    name: "{{ upgrade_item.apt_name | default(omit) }}"
+    state: "{{ upgrade_item.state | default(omit) }}"
+    upgrade: "{{ upgrade_item.upgrade | default(omit) }}"
+    force_apt_get: true
+  tags: apt
+  async: 361
+  poll: 0
+  register: upgrade_sleeper
+
+- name: "Check async task status for package upgrade - {{ upgrade_item.name }}"
+  ansible.builtin.async_status:
+    jid: "{{ upgrade_sleeper.ansible_job_id }}"
+  register: upgrade_job_result
+  until: upgrade_job_result.finished
+  retries: 360
