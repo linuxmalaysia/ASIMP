@@ -40,6 +40,15 @@
     expected_openscap_success_expr: "{% raw %}{{ sandbox_oscap_after_valid | bool }}{% endraw %}"
     expected_lynis_success_expr: "{% raw %}{{ sandbox_lynis_after_valid | bool }}{% endraw %}"
     expected_audits_completed_expr: "{% raw %}{{ sandbox_oscap_after_valid | bool and sandbox_lynis_after_valid | bool }}{% endraw %}"
+    shell_metacharacters:
+      - "|"
+      - ">"
+      - "<"
+      - ";"
+      - "&&"
+      - "||"
+      - "`"
+      - "$("
 
   tasks:
     - name: Load reporting-ASIMP tasks/main.yml
@@ -139,7 +148,7 @@
     - name: Assert the real BEFORE OpenSCAP score parser is gated on oscap presence
       ansible.builtin.assert:
         that:
-          - "'parse_openscap_score.py' in before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox']['ansible.builtin.shell']"
+          - "'parse_openscap_score.py' in before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox']['ansible.builtin.command']"
           - before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox'].register == 'r_sandbox_oscap_parsed_before'
           - "'oscap_present_before' in before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox'].when"
         fail_msg: "'Parse real BEFORE OpenSCAP compliance score inside sandbox' must invoke parse_openscap_score.py and register r_sandbox_oscap_parsed_before"
@@ -250,3 +259,78 @@
           - "'Run AFTER hardening evaluation' in reporting_tasks_by_name"
           - reporting_tasks_by_name['Run AFTER hardening evaluation'].when == ["reporting_phase == 'after'", "not (is_sandbox_jules | default(false) | bool)"]
         fail_msg: "The real-OS (non-sandbox) BEFORE/AFTER evaluation blocks must remain unchanged by the sandbox dynamic-scoring feature"
+
+    # --- shell -> command conversion for the OpenSCAP score parsers (this PR) ---------
+    # This PR converts every "python3 parse_openscap_score.py <path>" invocation from
+    # ansible.builtin.shell to ansible.builtin.command, since the parser is invoked with a
+    # single fixed argument and needs no shell features (pipes, redirects, globbing, etc.).
+    # The BEFORE-sandbox instance is already covered above; the following tasks cover the
+    # remaining three converted instances: the AFTER-sandbox parser and the two real-OS
+    # (non-sandbox) BEFORE/AFTER parsers.
+    - name: Assert the real AFTER OpenSCAP score parser (sandbox) now uses ansible.builtin.command
+      ansible.builtin.assert:
+        that:
+          - "'parse_openscap_score.py' in after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox']['ansible.builtin.command']"
+          - "'ansible.builtin.shell' not in after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox']"
+          - after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox'].register == 'r_sandbox_oscap_parsed_after'
+          - after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox'].changed_when == false
+          - after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox'].failed_when == false
+          - "'oscap_present_after' in after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox'].when"
+        fail_msg: "'Parse real AFTER OpenSCAP compliance score inside sandbox' must invoke parse_openscap_score.py via ansible.builtin.command (not ansible.builtin.shell) and register r_sandbox_oscap_parsed_after"
+
+    - name: Build a name-to-task lookup for tasks nested inside the real-OS 'Run BEFORE hardening evaluation' block
+      ansible.builtin.set_fact:
+        real_before_tasks_by_name: "{{ dict(reporting_tasks_by_name['Run BEFORE hardening evaluation'].block | map(attribute='name') | zip(reporting_tasks_by_name['Run BEFORE hardening evaluation'].block)) }}"
+
+    - name: Build a name-to-task lookup for tasks nested inside the real-OS 'Run AFTER hardening evaluation' block
+      ansible.builtin.set_fact:
+        real_after_tasks_by_name: "{{ dict(reporting_tasks_by_name['Run AFTER hardening evaluation'].block | map(attribute='name') | zip(reporting_tasks_by_name['Run AFTER hardening evaluation'].block)) }}"
+
+    - name: Assert the real-OS 'Parse OpenSCAP BEFORE compliance score' task now uses ansible.builtin.command
+      ansible.builtin.assert:
+        that:
+          - "'Parse OpenSCAP BEFORE compliance score' in real_before_tasks_by_name"
+          - "'parse_openscap_score.py' in real_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score']['ansible.builtin.command']"
+          - "'/var/log/openscap-before-results.xml' in real_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score']['ansible.builtin.command']"
+          - "'ansible.builtin.shell' not in real_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score']"
+          - real_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score'].register == 'parsed_openscap_before'
+          - real_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score'].changed_when == false
+          - real_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score'].failed_when == false
+          - real_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score'].when == "openscap_scan_supported | default(true)"
+        fail_msg: "'Parse OpenSCAP BEFORE compliance score' must invoke parse_openscap_score.py via ansible.builtin.command (not ansible.builtin.shell), registering parsed_openscap_before, gated on 'openscap_scan_supported | default(true)'"
+
+    - name: Assert the real-OS 'Parse OpenSCAP AFTER compliance score' task now uses ansible.builtin.command
+      ansible.builtin.assert:
+        that:
+          - "'Parse OpenSCAP AFTER compliance score' in real_after_tasks_by_name"
+          - "'parse_openscap_score.py' in real_after_tasks_by_name['Parse OpenSCAP AFTER compliance score']['ansible.builtin.command']"
+          - "'/var/log/openscap-after-results.xml' in real_after_tasks_by_name['Parse OpenSCAP AFTER compliance score']['ansible.builtin.command']"
+          - "'ansible.builtin.shell' not in real_after_tasks_by_name['Parse OpenSCAP AFTER compliance score']"
+          - real_after_tasks_by_name['Parse OpenSCAP AFTER compliance score'].register == 'parsed_openscap_after'
+          - real_after_tasks_by_name['Parse OpenSCAP AFTER compliance score'].changed_when == false
+          - real_after_tasks_by_name['Parse OpenSCAP AFTER compliance score'].failed_when == false
+          - real_after_tasks_by_name['Parse OpenSCAP AFTER compliance score'].when == "openscap_scan_supported | default(true)"
+        fail_msg: "'Parse OpenSCAP AFTER compliance score' must invoke parse_openscap_score.py via ansible.builtin.command (not ansible.builtin.shell), registering parsed_openscap_after, gated on 'openscap_scan_supported | default(true)'"
+
+    - name: Assert none of the four converted OpenSCAP score-parsing commands rely on shell metacharacters
+      ansible.builtin.assert:
+        that:
+          - item not in before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox']['ansible.builtin.command']
+          - item not in after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox']['ansible.builtin.command']
+          - item not in real_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score']['ansible.builtin.command']
+          - item not in real_after_tasks_by_name['Parse OpenSCAP AFTER compliance score']['ansible.builtin.command']
+        fail_msg: >-
+          One of the converted OpenSCAP score-parsing tasks contains the shell metacharacter '{{ item }}' in
+          its command string; since ansible.builtin.command does not invoke a shell, this would fail or
+          behave incorrectly at runtime.
+      loop: "{{ shell_metacharacters }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert the sibling Lynis parsing tasks are unaffected by this change (regression guard)
+      ansible.builtin.assert:
+        that:
+          - "'grep' in before_tasks_by_name['Parse real BEFORE Lynis index inside sandbox']['ansible.builtin.shell']"
+          - "'grep' in after_tasks_by_name['Parse real AFTER Lynis index inside sandbox']['ansible.builtin.shell']"
+          - "'grep' in real_before_tasks_by_name['Parse Lynis BEFORE hardening index']['ansible.builtin.shell']"
+        fail_msg: "The Lynis hardening-index parsers must remain ansible.builtin.shell tasks (they rely on a pipe), unaffected by the OpenSCAP parser's shell->command conversion"
