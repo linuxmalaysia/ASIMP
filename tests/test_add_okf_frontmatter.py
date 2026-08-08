@@ -35,6 +35,13 @@ class TestAddOkfFrontmatter(unittest.TestCase):
         self._tmp_dir.cleanup()
 
     def _write(self, filepath, content):
+        """
+        Write UTF-8 text content to a file, creating its parent directory when needed.
+        
+        Parameters:
+        	filepath (str): Path of the file to write.
+        	content (str): Text to write to the file.
+        """
         parent = os.path.dirname(filepath)
         if parent:
             os.makedirs(parent, exist_ok=True)
@@ -42,6 +49,14 @@ class TestAddOkfFrontmatter(unittest.TestCase):
             f.write(content)
 
     def _read(self, filepath):
+        """Read and return the UTF-8 text content of a file.
+        
+        Parameters:
+        	filepath: Path to the file to read.
+        
+        Returns:
+        	str: The file's text content.
+        """
         with open(filepath, "r", encoding="utf-8") as f:
             return f.read()
 

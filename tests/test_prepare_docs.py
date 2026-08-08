@@ -31,10 +31,18 @@ class TestPrepareDocs(unittest.TestCase):
         os.chdir(self._tmp_dir.name)
 
     def tearDown(self):
+        """Restore the original working directory and clean up the temporary test directory."""
         os.chdir(self._orig_cwd)
         self._tmp_dir.cleanup()
 
     def _write(self, filepath, content):
+        """
+        Write text content to a UTF-8-encoded file, creating its parent directory when needed.
+        
+        Parameters:
+            filepath: The path of the file to write.
+            content: The text to write to the file.
+        """
         parent = os.path.dirname(filepath)
         if parent:
             os.makedirs(parent, exist_ok=True)
@@ -42,6 +50,14 @@ class TestPrepareDocs(unittest.TestCase):
             f.write(content)
 
     def _read(self, filepath):
+        """Read and return the UTF-8 text content of a file.
+        
+        Parameters:
+        	filepath: Path to the file to read.
+        
+        Returns:
+        	str: The file's text content.
+        """
         with open(filepath, "r", encoding="utf-8") as f:
             return f.read()
 
@@ -96,6 +112,9 @@ class TestPrepareDocs(unittest.TestCase):
         orig_abspath = os.path.abspath
 
         def mock_abspath(path):
+            """
+            Redirect the repository docs path to the temporary test directory.
+            """
             abs_path = orig_abspath(path)
             if abs_path == real_docs_path:
                 return temp_docs_path
