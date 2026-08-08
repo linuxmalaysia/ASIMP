@@ -1,0 +1,90 @@
+---
+# Structural regression tests for the two new navbar entries added to
+# docs/_config.yml ("OpenSCAP & Playbooks" -> /openscap.html and
+# "Lynis & Playbooks" -> /lynis.html), inserted between the existing
+# "Architecture & Design" and "Configuration & Variables" entries.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_docs_config_navbar.yml
+- name: Verify docs/_config.yml navbar contains the new OpenSCAP/Lynis entries
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    config_path: "{{ repo_root }}/docs/_config.yml"
+    docs_dir: "{{ repo_root }}/docs"
+    expected_navbar:
+      - title: "Home"
+        url: "/"
+      - title: "Architecture & Design"
+        url: "/architecture.html"
+      - title: "OpenSCAP & Playbooks"
+        url: "/openscap.html"
+      - title: "Lynis & Playbooks"
+        url: "/lynis.html"
+      - title: "Configuration & Variables"
+        url: "/configuration.html"
+      - title: "Troubleshooting"
+        url: "/troubleshooting.html"
+
+  tasks:
+    - name: Load and parse docs/_config.yml
+      ansible.builtin.set_fact:
+        config_data: "{{ lookup('file', config_path) | from_yaml }}"
+
+    - name: Assert the navbar key exists and is a list
+      ansible.builtin.assert:
+        that:
+          - config_data.navbar is sequence
+        fail_msg: "docs/_config.yml must define a 'navbar' list"
+
+    - name: Assert the navbar contains exactly six entries
+      ansible.builtin.assert:
+        that:
+          - config_data.navbar | length == 6
+        fail_msg: "docs/_config.yml navbar must contain exactly 6 entries (Home, Architecture, OpenSCAP, Lynis, Configuration, Troubleshooting)"
+
+    - name: Assert the navbar entries match the expected title/url pairs, in exact order
+      ansible.builtin.assert:
+        that:
+          - config_data.navbar == expected_navbar
+        fail_msg: "docs/_config.yml navbar must list Home, Architecture & Design, OpenSCAP & Playbooks (/openscap.html), Lynis & Playbooks (/lynis.html), Configuration & Variables, then Troubleshooting, in that exact order"
+
+    - name: Assert the new OpenSCAP navbar entry is positioned directly after Architecture & Design
+      ansible.builtin.assert:
+        that:
+          - (config_data.navbar | map(attribute='title') | list).index('OpenSCAP & Playbooks') == (config_data.navbar | map(attribute='title') | list).index('Architecture & Design') + 1
+        fail_msg: "The 'OpenSCAP & Playbooks' navbar entry must be inserted immediately after 'Architecture & Design'"
+
+    - name: Assert the new Lynis navbar entry is positioned directly after OpenSCAP and before Configuration & Variables
+      ansible.builtin.assert:
+        that:
+          - (config_data.navbar | map(attribute='title') | list).index('Lynis & Playbooks') == (config_data.navbar | map(attribute='title') | list).index('OpenSCAP & Playbooks') + 1
+          - (config_data.navbar | map(attribute='title') | list).index('Lynis & Playbooks') == (config_data.navbar | map(attribute='title') | list).index('Configuration & Variables') - 1
+        fail_msg: "The 'Lynis & Playbooks' navbar entry must sit directly between 'OpenSCAP & Playbooks' and 'Configuration & Variables'"
+
+    - name: Assert the pre-existing site metadata keys are still present and unmodified
+      ansible.builtin.assert:
+        that:
+          - config_data.title == "ASIMP Documentation"
+          - config_data.show_downloads == false
+        fail_msg: "docs/_config.yml must retain its pre-existing site 'title' and 'show_downloads' settings"
+
+    - name: Assert the markdown source files backing the new navbar entries exist on disk
+      ansible.builtin.stat:
+        path: "{{ docs_dir }}/{{ item }}"
+      register: navbar_doc_stat
+      loop:
+        - openscap.md
+        - lynis.md
+
+    - name: Assert both new navbar-linked markdown files were found
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isreg
+        fail_msg: "The markdown source file backing a new navbar entry is missing from docs/"
+      loop: "{{ navbar_doc_stat.results }}"
+      loop_control:
+        label: "{{ item.item }}"

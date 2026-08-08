@@ -1,0 +1,79 @@
+---
+# Structural regression tests for the front matter formatting changes made
+# to docs/local_testing_matrix_spec.md in this PR: a blank line was added
+# between the opening '---' and the first frontmatter key, a 'layout:
+# default' field was added, and a second blank line was added before the
+# main heading. The document body itself was not modified by this PR and is
+# therefore intentionally out of scope for this test.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_local_testing_matrix_spec_doc.yml
+- name: Verify docs/local_testing_matrix_spec.md frontmatter formatting and metadata
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    doc_path: "{{ repo_root }}/docs/local_testing_matrix_spec.md"
+    expected_title: "ASIMP Local Testing Matrix & Telemetry Spec"
+    expected_topics:
+      - asimp
+      - architecture
+      - testing
+      - telemetry
+      - pipeline
+
+  tasks:
+    - name: Load raw content of docs/local_testing_matrix_spec.md
+      ansible.builtin.set_fact:
+        doc_content: "{{ lookup('file', doc_path) }}"
+
+    - name: Assert the document begins with a '---' front matter delimiter
+      ansible.builtin.assert:
+        that:
+          - doc_content.startswith('---')
+        fail_msg: "docs/local_testing_matrix_spec.md must start with a YAML front matter block delimited by '---' on the very first line"
+
+    - name: Assert there is a blank line between the opening '---' and the first frontmatter key
+      ansible.builtin.assert:
+        that:
+          - doc_content.startswith('---\n\nokf_version:')
+        fail_msg: "docs/local_testing_matrix_spec.md front matter must open with '---' followed by a blank line before the first 'okf_version:' key"
+
+    - name: Assert the front matter block closes with a second '---' before the main heading
+      ansible.builtin.assert:
+        that:
+          - (doc_content.split('---', 2) | length) == 3
+          - doc_content.split('---', 2)[2].lstrip().startswith('# ' + expected_title.replace('Spec', 'Specification'))
+        fail_msg: "docs/local_testing_matrix_spec.md front matter must close with a second '---' immediately followed by the main heading"
+
+    - name: Assert there are exactly two blank lines between the closing '---' and the main heading
+      ansible.builtin.assert:
+        that:
+          - doc_content.split('---', 2)[2].startswith('\n\n\n# ASIMP Local Testing Matrix & Telemetry Specification')
+        fail_msg: "docs/local_testing_matrix_spec.md must have exactly two blank lines between the closing front matter '---' and the main heading"
+
+    - name: Parse the YAML front matter block
+      ansible.builtin.set_fact:
+        doc_frontmatter: "{{ doc_content.split('---', 2)[1] | from_yaml }}"
+
+    - name: Assert the OKF metadata fields are present and correct, including the new layout field
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.okf_version == "0.1"
+          - doc_frontmatter.type == "documentation"
+          - doc_frontmatter.title == expected_title
+          - doc_frontmatter.layout == "default"
+        fail_msg: "docs/local_testing_matrix_spec.md frontmatter must declare okf_version '0.1', type 'documentation', the exact title, and the new layout 'default' field"
+
+    - name: Assert the frontmatter timestamp is the exact, unmodified value
+      ansible.builtin.assert:
+        that:
+          - "'timestamp: \"2026-08-05T12:00:00Z\"' in doc_content"
+        fail_msg: "docs/local_testing_matrix_spec.md frontmatter 'timestamp' must be exactly 2026-08-05T12:00:00Z"
+
+    - name: Assert the frontmatter topics list matches exactly, in order
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.topics == expected_topics
+        fail_msg: "docs/local_testing_matrix_spec.md frontmatter 'topics' must list asimp, architecture, testing, telemetry, pipeline in that exact order"

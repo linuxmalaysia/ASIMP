@@ -1,0 +1,194 @@
+---
+# Structural and content-correctness tests for the new OpenSCAP Integration &
+# Playbook Analysis documentation page (docs/openscap.md), which documents
+# how ASIMP installs OpenSCAP/SSG packages, resolves the CIS Level 2 Server
+# datastream per-OS, runs before/after compliance scans, parses scores,
+# generates bash remediation scripts, performs USN OVAL evaluation, and
+# falls back to simulated scoring inside unprivileged sandboxes.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_openscap_doc.yml
+- name: Verify docs/openscap.md frontmatter and content
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    doc_path: "{{ repo_root }}/docs/openscap.md"
+    expected_title: "OpenSCAP Integration & Playbook Analysis"
+    expected_topics:
+      - openscap
+      - security
+      - compliance
+      - audit
+      - playbooks
+      - ansible
+    required_headings:
+      - "## 🧭 Role and Profile Configuration"
+      - "## ⚙️ Ansible Playbook Analysis: Step-by-Step"
+      - "### 1. Package Installation"
+      - "### 2. Dynamic XML DataStream Selection & Fetching"
+      - "### 3. Execution of Scan (Before / After Hardening)"
+      - "### 4. OpenSCAP Score Parsing Helper Script"
+      - "### 5. Dynamic Bash Remediation Script Generation"
+      - "### 6. Ubuntu USN OVAL Vulnerability Assessment"
+      - "## 🐳 Unprivileged Sandbox & Mock Execution Mode"
+    # Built via a raw block so the literal Jinja delimiters are preserved
+    # verbatim instead of being (incorrectly) templated by Ansible itself.
+    expected_oval_url_template: "{% raw %}https://security-metadata.canonical.com/oval/com.ubuntu.{{ ansible_distribution_release }}.usn.oval.xml.bz2{% endraw %}"
+
+  tasks:
+    - name: Load raw content of docs/openscap.md
+      ansible.builtin.set_fact:
+        doc_content: "{{ lookup('file', doc_path) }}"
+
+    - name: Assert the document begins with a '---' front matter delimiter
+      ansible.builtin.assert:
+        that:
+          - doc_content.startswith('---')
+        fail_msg: "docs/openscap.md must start with a YAML front matter block delimited by '---' on the very first line"
+
+    - name: Assert the front matter block closes immediately before the document's main heading
+      ansible.builtin.assert:
+        that:
+          - (doc_content.split('---', 2) | length) == 3
+          - doc_content.split('---', 2)[2].lstrip().startswith('# ' + expected_title)
+        fail_msg: "docs/openscap.md front matter must close with a second '---' immediately followed by the '# {{ expected_title }}' heading"
+
+    - name: Parse the YAML front matter block
+      ansible.builtin.set_fact:
+        doc_frontmatter: "{{ doc_content.split('---', 2)[1] | from_yaml }}"
+
+    - name: Assert the OKF metadata fields are present and correct
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.okf_version == "0.1"
+          - doc_frontmatter.type == "documentation"
+          - doc_frontmatter.title == expected_title
+          - doc_frontmatter.layout == "default"
+        fail_msg: "docs/openscap.md frontmatter must declare okf_version '0.1', type 'documentation', the exact title, and layout 'default'"
+
+    - name: Assert the frontmatter timestamp is the exact, unmodified value
+      ansible.builtin.assert:
+        that:
+          - "'timestamp: \"2026-08-05T12:00:00Z\"' in doc_content"
+        fail_msg: "docs/openscap.md frontmatter 'timestamp' must be exactly 2026-08-05T12:00:00Z"
+
+    - name: Assert the frontmatter topics list matches exactly, in order
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.topics == expected_topics
+        fail_msg: "docs/openscap.md frontmatter 'topics' must list openscap, security, compliance, audit, playbooks, ansible in that exact order"
+
+    - name: Assert the document title heading matches the frontmatter title
+      ansible.builtin.assert:
+        that:
+          - ("# " + expected_title) in doc_content
+        fail_msg: "docs/openscap.md must contain a top-level heading matching its frontmatter title"
+
+    - name: Assert every required section/subsection heading is present
+      ansible.builtin.assert:
+        that:
+          - heading in doc_content
+        fail_msg: "docs/openscap.md is missing required section heading: {{ heading }}"
+      loop: "{{ required_headings }}"
+      loop_control:
+        loop_var: heading
+
+    - name: Assert the numbered subsections appear in ascending order
+      ansible.builtin.assert:
+        that:
+          - doc_content.find('### 1. Package Installation') < doc_content.find('### 2. Dynamic XML DataStream Selection & Fetching')
+          - doc_content.find('### 2. Dynamic XML DataStream Selection & Fetching') < doc_content.find('### 3. Execution of Scan (Before / After Hardening)')
+          - doc_content.find('### 3. Execution of Scan (Before / After Hardening)') < doc_content.find('### 4. OpenSCAP Score Parsing Helper Script')
+          - doc_content.find('### 4. OpenSCAP Score Parsing Helper Script') < doc_content.find('### 5. Dynamic Bash Remediation Script Generation')
+          - doc_content.find('### 5. Dynamic Bash Remediation Script Generation') < doc_content.find('### 6. Ubuntu USN OVAL Vulnerability Assessment')
+          - doc_content.find('### 6. Ubuntu USN OVAL Vulnerability Assessment') < doc_content.find('## 🐳 Unprivileged Sandbox & Mock Execution Mode')
+        fail_msg: "docs/openscap.md must document the playbook analysis steps in ascending numeric order, ending with the sandbox fallback section"
+
+    - name: Assert the CIS Level 2 Server profile identifier is documented verbatim
+      ansible.builtin.assert:
+        that:
+          - "'openscap_profile: \"xccdf_org.ssgproject.content_profile_cis_level2_server\"' in doc_content"
+        fail_msg: "docs/openscap.md must document the exact openscap_profile value used by ASIMP"
+
+    - name: Assert Ubuntu/Debian package installation details are documented
+      ansible.builtin.assert:
+        that:
+          - "'openscap-scanner' in doc_content"
+          - "'ssg-debian' in doc_content"
+          - "'ssg-debderived' in doc_content"
+          - "'is_sandbox_jules' in doc_content"
+        fail_msg: "docs/openscap.md must document the Ubuntu/Debian OpenSCAP package installation task and its sandbox guard"
+
+    - name: Assert RHEL-family package installation is documented
+      ansible.builtin.assert:
+        that:
+          - "'scap-security-guide' in doc_content"
+          - "'dnf' in doc_content"
+        fail_msg: "docs/openscap.md must document that RHEL/CentOS/Rocky systems install openscap-scanner and scap-security-guide via dnf"
+
+    - name: Assert the GitHub ComplianceAsCode release lookup is documented verbatim
+      ansible.builtin.assert:
+        that:
+          - "'https://api.github.com/repos/ComplianceAsCode/content/releases/latest' in doc_content"
+          - "'scap-security-guide-' in doc_content"
+        fail_msg: "docs/openscap.md must document the exact GitHub API URL used to fetch the latest SCAP Security Guide release for Ubuntu"
+
+    - name: Assert the RHEL-family datastream fact resolution paths are documented
+      ansible.builtin.assert:
+        that:
+          - "'/usr/share/xml/scap/ssg/content/' in doc_content"
+          - "'openscap_scan_supported' in doc_content"
+        fail_msg: "docs/openscap.md must document the pre-installed RHEL/CentOS/Rocky datastream directory and the openscap_scan_supported fallback fact"
+
+    - name: Assert the before/after scan execution commands are documented
+      ansible.builtin.assert:
+        that:
+          - "'oscap xccdf eval' in doc_content"
+          - "'--fetch-remote-resources' in doc_content"
+          - "'ssg-results-ubuntu' in doc_content"
+          - "'/var/log/openscap-before-results.xml' in doc_content"
+          - "'/var/log/openscap-after-results.xml' in doc_content"
+        fail_msg: "docs/openscap.md must document the oscap xccdf eval command and the unified before/after results storage paths"
+
+    - name: Assert the score parsing helper script is documented
+      ansible.builtin.assert:
+        that:
+          - "'parse_openscap_score.py' in doc_content"
+          - "'def get_score(xml_path):' in doc_content"
+          - "'xml.etree.ElementTree' in doc_content"
+          - "\"root.find('.//xccdf12:score', ns)\" in doc_content"
+        fail_msg: "docs/openscap.md must document the parse_openscap_score.py helper script and its XCCDF score lookup logic"
+
+    - name: Assert the bash remediation script generation is documented
+      ansible.builtin.assert:
+        that:
+          - "'oscap xccdf generate fix' in doc_content"
+          - "'--fix-type bash' in doc_content"
+          - "'remediate-' in doc_content"
+        fail_msg: "docs/openscap.md must document how ASIMP generates a bash remediation script via oscap xccdf generate fix"
+
+    - name: Assert the USN OVAL evaluation flow is documented
+      ansible.builtin.assert:
+        that:
+          - "'bunzip2 -f -k' in doc_content"
+          - "'oscap oval eval' in doc_content"
+          - expected_oval_url_template in doc_content
+        fail_msg: "docs/openscap.md must document the OVAL definition download/decompress/evaluate flow with the exact Canonical OVAL URL"
+
+    - name: Assert the unprivileged sandbox fallback and simulated scoring are documented
+      ansible.builtin.assert:
+        that:
+          - "'/home/jules' in doc_content"
+          - "'58.4%' in doc_content"
+          - "'91.2%' in doc_content"
+          - "'data/asimp_mock/var/log/asimp-baseline-scores.json' in doc_content"
+          - "'data/asimp_mock/opt/report/openscap/SECURITY_AUDIT_REPORT.md' in doc_content"
+        fail_msg: "docs/openscap.md must document the Jules sandbox detection, simulated fallback scores, and mock scorecard/report output paths"
+
+    - name: Assert the simulated baseline score is documented before the post-hardening score
+      ansible.builtin.assert:
+        that:
+          - doc_content.find('58.4%') < doc_content.find('91.2%')
+        fail_msg: "docs/openscap.md must present the simulated baseline score (58.4%) before the post-hardening score (91.2%)"

@@ -1,0 +1,172 @@
+---
+# Structural and content-correctness tests for the new Lynis Auditing &
+# Playbook Analysis documentation page (docs/lynis.md), which documents how
+# ASIMP installs Lynis, runs the before/after '--quick' audit, parses the
+# hardening_index score, applies the lynis-ansible hardening role, and falls
+# back to simulated hardening scores inside unprivileged sandboxes.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_lynis_doc.yml
+- name: Verify docs/lynis.md frontmatter and content
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    doc_path: "{{ repo_root }}/docs/lynis.md"
+    expected_title: "Lynis Auditing & Playbook Analysis"
+    expected_topics:
+      - lynis
+      - security
+      - compliance
+      - audit
+      - playbooks
+      - ansible
+    required_headings:
+      - "## 🧭 Integration Flow in ASIMP"
+      - "## ⚙️ Ansible Playbook Analysis: Step-by-Step"
+      - "### 1. Installation of Lynis"
+      - "### 2. Execution of System Audit (`--quick` mode)"
+      - "### 3. Parsing and Extracting the Hardening Index"
+      - "### 4. Applying Hardening Configuration Remediations"
+      - "## 🐳 Unprivileged Sandbox & Mock Execution Mode"
+    # Built via a raw block so the literal Jinja delimiters are preserved
+    # verbatim instead of being (incorrectly) templated by Ansible itself.
+    expected_audit_cmd: "{% raw %}lynis audit system --quick --report-file {{ openscap_report_dir }}/lynis-report-before.dat{% endraw %}"
+    expected_parse_cmd: "{% raw %}grep -E \"^hardening_index=\" {{ openscap_report_dir }}/lynis-report-before.dat | cut -d'=' -f2{% endraw %}"
+
+  tasks:
+    - name: Load raw content of docs/lynis.md
+      ansible.builtin.set_fact:
+        doc_content: "{{ lookup('file', doc_path) }}"
+
+    - name: Assert the document begins with a '---' front matter delimiter
+      ansible.builtin.assert:
+        that:
+          - doc_content.startswith('---')
+        fail_msg: "docs/lynis.md must start with a YAML front matter block delimited by '---' on the very first line"
+
+    - name: Assert the front matter block closes immediately before the document's main heading
+      ansible.builtin.assert:
+        that:
+          - (doc_content.split('---', 2) | length) == 3
+          - doc_content.split('---', 2)[2].lstrip().startswith('# ' + expected_title)
+        fail_msg: "docs/lynis.md front matter must close with a second '---' immediately followed by the '# {{ expected_title }}' heading"
+
+    - name: Parse the YAML front matter block
+      ansible.builtin.set_fact:
+        doc_frontmatter: "{{ doc_content.split('---', 2)[1] | from_yaml }}"
+
+    - name: Assert the OKF metadata fields are present and correct
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.okf_version == "0.1"
+          - doc_frontmatter.type == "documentation"
+          - doc_frontmatter.title == expected_title
+          - doc_frontmatter.layout == "default"
+        fail_msg: "docs/lynis.md frontmatter must declare okf_version '0.1', type 'documentation', the exact title, and layout 'default'"
+
+    - name: Assert the frontmatter timestamp is the exact, unmodified value
+      ansible.builtin.assert:
+        that:
+          - "'timestamp: \"2026-08-05T12:00:00Z\"' in doc_content"
+        fail_msg: "docs/lynis.md frontmatter 'timestamp' must be exactly 2026-08-05T12:00:00Z"
+
+    - name: Assert the frontmatter topics list matches exactly, in order
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.topics == expected_topics
+        fail_msg: "docs/lynis.md frontmatter 'topics' must list lynis, security, compliance, audit, playbooks, ansible in that exact order"
+
+    - name: Assert the document title heading matches the frontmatter title
+      ansible.builtin.assert:
+        that:
+          - ("# " + expected_title) in doc_content
+        fail_msg: "docs/lynis.md must contain a top-level heading matching its frontmatter title"
+
+    - name: Assert every required section/subsection heading is present
+      ansible.builtin.assert:
+        that:
+          - heading in doc_content
+        fail_msg: "docs/lynis.md is missing required section heading: {{ heading }}"
+      loop: "{{ required_headings }}"
+      loop_control:
+        loop_var: heading
+
+    - name: Assert the two coordinating ASIMP roles are documented
+      ansible.builtin.assert:
+        that:
+          - "'reporting-ASIMP' in doc_content"
+          - "'lynis-ansible' in doc_content"
+        fail_msg: "docs/lynis.md must document that Lynis is coordinated through the reporting-ASIMP and lynis-ansible roles"
+
+    - name: Assert the Lynis installation task is documented with its sandbox guard
+      ansible.builtin.assert:
+        that:
+          - "'Ensure lynis is installed' in doc_content"
+          - "'is_sandbox_jules' in doc_content"
+        fail_msg: "docs/lynis.md must document the conditional Lynis installation task and its is_sandbox_jules guard"
+
+    - name: Assert the before-hardening audit command is documented verbatim
+      ansible.builtin.assert:
+        that:
+          - expected_audit_cmd in doc_content
+        fail_msg: "docs/lynis.md must document the exact 'lynis audit system --quick --report-file ...' command"
+
+    - name: Assert the hardening index parsing command is documented verbatim
+      ansible.builtin.assert:
+        that:
+          - expected_parse_cmd in doc_content
+          - "'hardening_index' in doc_content"
+        fail_msg: "docs/lynis.md must document the exact grep/cut command used to extract the hardening_index score"
+
+    - name: Assert the baseline score persistence path is documented
+      ansible.builtin.assert:
+        that:
+          - "'/var/log/asimp-baseline-scores.json' in doc_content"
+        fail_msg: "docs/lynis.md must document that the baseline hardening index is written to /var/log/asimp-baseline-scores.json"
+
+    - name: Assert the lynis-ansible hardening role inclusion is documented
+      ansible.builtin.assert:
+        that:
+          - "'Apply Lynis Hardening Configuration' in doc_content"
+          - "'lynis_use_packages: true' in doc_content"
+          - "'lynis_audit_system_linux: true' in doc_content"
+          - "\"asimp_privilege_level == 'full'\" in doc_content"
+        fail_msg: "docs/lynis.md must document the Phase 2 lynis-ansible role inclusion, its vars, and the full-privilege gating condition"
+
+    - name: Assert the fine-grained hardening remediations are documented
+      ansible.builtin.assert:
+        that:
+          - "'shadow files' in doc_content"
+          - "'IP forwarding' in doc_content"
+          - "'SYN flood protection' in doc_content"
+          - "'USB storage' in doc_content"
+          - "'DCCP' in doc_content"
+        fail_msg: "docs/lynis.md must document the fine-grained hardening remediations applied by the lynis-ansible role"
+
+    - name: Assert the sandbox tool-check and fallback gating are documented
+      ansible.builtin.assert:
+        that:
+          - "'which lynis' in doc_content"
+          - "'Google Jules sandbox' in doc_content"
+        fail_msg: "docs/lynis.md must document the 'which lynis' tool check and the Google Jules sandbox fallback rationale"
+
+    - name: Assert the simulated hardening progress scores are documented
+      ansible.builtin.assert:
+        that:
+          - "'Baseline Hardening Index: `62` / 100' in doc_content"
+          - "'Post-Hardening Index: `88` / 100' in doc_content"
+        fail_msg: "docs/lynis.md must document the exact simulated baseline (62) and post-hardening (88) index values"
+
+    - name: Assert the simulated baseline score is documented before the post-hardening score
+      ansible.builtin.assert:
+        that:
+          - "doc_content.find('Baseline Hardening Index: `62` / 100') < doc_content.find('Post-Hardening Index: `88` / 100')"
+        fail_msg: "docs/lynis.md must present the simulated baseline hardening index before the post-hardening index"
+
+    - name: Assert the unified mock scorecard storage path is documented
+      ansible.builtin.assert:
+        that:
+          - "'data/asimp_mock/var/log/asimp-baseline-scores.json' in doc_content"
+        fail_msg: "docs/lynis.md must document that the parsed or simulated score is saved into data/asimp_mock/var/log/asimp-baseline-scores.json"
