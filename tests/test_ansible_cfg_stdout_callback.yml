@@ -1,0 +1,99 @@
+---
+# Regression tests for the DSOM-aligned Ansible output configuration added
+# to ansible.cfg: the `stdout_callback = yaml` and
+# `bin_ansible_callbacks = True` settings that standardize the console
+# output format for high-fidelity human audit of deployment/auditing runs
+# (see docs/dsom_ansible_review.md).
+#
+# These tests parse the real ansible.cfg file from the repository and
+# assert that the new callback settings are present, exactly valued,
+# correctly scoped to the [defaults] section, and that no pre-existing
+# configuration was disturbed by the change.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_ansible_cfg_stdout_callback.yml
+- name: Verify ansible.cfg DSOM-aligned stdout callback configuration
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    cfg_path: "{{ repo_root }}/ansible.cfg"
+    stdout_callback_regex: '^stdout_callback\s*=\s*yaml\s*$'
+    bin_ansible_callbacks_regex: '^bin_ansible_callbacks\s*=\s*True\s*$'
+
+  tasks:
+    - name: Load raw content of ansible.cfg
+      ansible.builtin.set_fact:
+        cfg_content: "{{ lookup('file', cfg_path) }}"
+
+    - name: Assert the [defaults], [ssh_connection] and [local] sections each exist exactly once, in order
+      ansible.builtin.assert:
+        that:
+          - (cfg_content.split('[defaults]') | length) == 2
+          - (cfg_content.split('[ssh_connection]') | length) == 2
+          - (cfg_content.split('[local]') | length) == 2
+          - cfg_content.find('[defaults]') < cfg_content.find('[ssh_connection]')
+          - cfg_content.find('[ssh_connection]') < cfg_content.find('[local]')
+        fail_msg: "ansible.cfg must contain exactly one [defaults], [ssh_connection] and [local] section header, in that order"
+
+    - name: Assert the new stdout_callback and bin_ansible_callbacks settings are present
+      ansible.builtin.assert:
+        that:
+          - "'stdout_callback = yaml' in cfg_content"
+          - "'bin_ansible_callbacks = True' in cfg_content"
+        fail_msg: "ansible.cfg must set stdout_callback = yaml and bin_ansible_callbacks = True to standardize the DSOM-aligned audit output"
+
+    - name: Assert both settings are exact, uncommented whole-line key = value pairs
+      ansible.builtin.assert:
+        that:
+          - cfg_content | regex_search(stdout_callback_regex, multiline=True)
+          - cfg_content | regex_search(bin_ansible_callbacks_regex, multiline=True)
+        fail_msg: "stdout_callback and bin_ansible_callbacks must be set as exact, uncommented key = value lines (not partial matches or comments) in ansible.cfg"
+
+    - name: Assert both new settings live inside the [defaults] section, before [ssh_connection]
+      ansible.builtin.assert:
+        that:
+          - cfg_content.find('stdout_callback = yaml') > cfg_content.find('[defaults]')
+          - cfg_content.find('stdout_callback = yaml') < cfg_content.find('[ssh_connection]')
+          - cfg_content.find('bin_ansible_callbacks = True') > cfg_content.find('[defaults]')
+          - cfg_content.find('bin_ansible_callbacks = True') < cfg_content.find('[ssh_connection]')
+        fail_msg: "stdout_callback and bin_ansible_callbacks must be defined inside the [defaults] section, not [ssh_connection] or [local]"
+
+    - name: Assert stdout_callback is declared immediately before bin_ansible_callbacks
+      ansible.builtin.assert:
+        that:
+          - cfg_content.find('stdout_callback = yaml') < cfg_content.find('bin_ansible_callbacks = True')
+        fail_msg: "stdout_callback = yaml must be declared before bin_ansible_callbacks = True, matching the documented adoption order"
+
+    - name: Assert each new setting key appears exactly once (no accidental duplicates)
+      ansible.builtin.assert:
+        that:
+          - (cfg_content.split('stdout_callback') | length) == 2
+          - (cfg_content.split('bin_ansible_callbacks') | length) == 2
+        fail_msg: "stdout_callback and bin_ansible_callbacks must each appear exactly once in ansible.cfg"
+
+    - name: Assert the explanatory comment for the new callback settings is present
+      ansible.builtin.assert:
+        that:
+          - "'# Standardize output callback for high-fidelity human audit of deployment/auditing steps' in cfg_content"
+        fail_msg: "ansible.cfg must document why the yaml stdout callback was standardized"
+
+    - name: Assert pre-existing [defaults] settings were not disturbed by the change
+      ansible.builtin.assert:
+        that:
+          - "'host_key_checking = False' in cfg_content"
+          - "'retry_files_enabled = False' in cfg_content"
+          - "'roles_path = roles:common_roles:playbooks/roles' in cfg_content"
+          - "'filter_plugins = common_roles/filter_plugins' in cfg_content"
+          - "'lookup_plugins = common_roles/lookup_plugins' in cfg_content"
+          - "'transport = ssh' in cfg_content"
+          - "'gathering = smart' in cfg_content"
+        fail_msg: "Adding the stdout_callback/bin_ansible_callbacks settings must not remove or alter any pre-existing [defaults] setting"
+
+    - name: Assert the [ssh_connection] and [local] sections still follow [defaults] unmodified
+      ansible.builtin.assert:
+        that:
+          - "'pipelining = True' in cfg_content"
+          - "'localhost ansible_connection=local' in cfg_content"
+        fail_msg: "The [ssh_connection] and [local] sections must remain intact after the [defaults] section changes"

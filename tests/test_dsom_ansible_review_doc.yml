@@ -1,0 +1,112 @@
+---
+# Structural and content-correctness tests for the new DSOM Ansible
+# Configuration review document (docs/dsom_ansible_review.md), which
+# documents ASIMP's alignment with, and adoption of, the DSOM Ansible
+# Configuration Guide (v3.6.2) -- most notably the
+# stdout_callback = yaml / bin_ansible_callbacks = True change applied to
+# ansible.cfg in this same change set.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_dsom_ansible_review_doc.yml
+- name: Verify docs/dsom_ansible_review.md frontmatter and content
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    doc_path: "{{ repo_root }}/docs/dsom_ansible_review.md"
+    expected_title: "Review & Adoption of DSOM Ansible Configuration Guide (v3.6.2)"
+    expected_topics:
+      - ansible
+      - dsom
+      - asimp
+      - compatibility
+      - review
+    required_headings:
+      - "## 🔍 Structural & Architectural Alignment"
+      - "## 🛡️ Privilege Model: \"Rootful Control, Rootless Application\""
+      - "## 🔐 Sovereign Secrets Injection Protocol"
+      - "## 🔄 Proposed Alignment & Adoption Path"
+
+  tasks:
+    - name: Load raw content of docs/dsom_ansible_review.md
+      ansible.builtin.set_fact:
+        doc_content: "{{ lookup('file', doc_path) }}"
+
+    - name: Assert the document begins with a '---' front matter delimiter
+      ansible.builtin.assert:
+        that:
+          - doc_content.startswith('---')
+        fail_msg: "docs/dsom_ansible_review.md must start with a YAML front matter block delimited by '---' on the very first line"
+
+    - name: Assert the front matter block closes immediately before the document's main heading
+      ansible.builtin.assert:
+        that:
+          - (doc_content.split('---', 2) | length) == 3
+          - doc_content.split('---', 2)[2].lstrip().startswith('# ' + expected_title)
+        fail_msg: "docs/dsom_ansible_review.md front matter must close with a second '---' immediately followed by the '# {{ expected_title }}' heading"
+
+    - name: Parse the YAML front matter block
+      ansible.builtin.set_fact:
+        doc_frontmatter: "{{ doc_content.split('---', 2)[1] | from_yaml }}"
+
+    - name: Assert the OKF metadata fields are present and correct
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.okf_version == "0.1"
+          - doc_frontmatter.type == "documentation"
+          - doc_frontmatter.title == expected_title
+        fail_msg: "docs/dsom_ansible_review.md frontmatter must declare okf_version '0.1', type 'documentation' and the exact review title"
+
+    - name: Assert the frontmatter timestamp is the exact, unmodified value
+      ansible.builtin.assert:
+        that:
+          - "'timestamp: \"2026-08-05T12:00:00Z\"' in doc_content"
+        fail_msg: "docs/dsom_ansible_review.md frontmatter 'timestamp' must be exactly 2026-08-05T12:00:00Z"
+
+    - name: Assert the frontmatter topics list matches exactly, in order
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.topics == expected_topics
+        fail_msg: "docs/dsom_ansible_review.md frontmatter 'topics' must list ansible, dsom, asimp, compatibility, review in that exact order"
+
+    - name: Assert the document title heading matches the frontmatter title
+      ansible.builtin.assert:
+        that:
+          - ("# " + expected_title) in doc_content
+        fail_msg: "docs/dsom_ansible_review.md must contain a top-level heading matching its frontmatter title"
+
+    - name: Assert every required section heading is present
+      ansible.builtin.assert:
+        that:
+          - heading in doc_content
+        fail_msg: "docs/dsom_ansible_review.md is missing required section heading: {{ heading }}"
+      loop: "{{ required_headings }}"
+      loop_control:
+        loop_var: heading
+
+    - name: Assert the document accurately records the ansible.cfg adoption decision
+      ansible.builtin.assert:
+        that:
+          - "'Added `stdout_callback = yaml` to `ansible.cfg`' in doc_content"
+          - "'==> COMPLETED (Added YAML stdout callback)' in doc_content"
+        fail_msg: "docs/dsom_ansible_review.md must accurately document that stdout_callback = yaml was added to ansible.cfg and mark that step COMPLETED"
+
+    - name: Assert the sovereign secrets injection command example is documented verbatim
+      ansible.builtin.assert:
+        that:
+          - 'ansible-playbook -i inventory/hosts.yml playbooks/deploy.yml --extra-vars "@vault/production_secrets.yml"' in doc_content
+        fail_msg: "docs/dsom_ansible_review.md must document the exact runtime secrets injection command"
+
+    - name: Assert the privilege model references the ASIMP fact and DSOM UID
+      ansible.builtin.assert:
+        that:
+          - "'asimp_privilege_level' in doc_content"
+          - "'UID 2001' in doc_content"
+        fail_msg: "docs/dsom_ansible_review.md must document the asimp_privilege_level fact and the DSOM UID 2001 rootless application user"
+
+    - name: Assert the document ends with the expected authorship footer
+      ansible.builtin.assert:
+        that:
+          - doc_content.rstrip().endswith('*Created by the ASIMP Architecture Team | OKF v0.1 Compliant | 2026-08-05*')
+        fail_msg: "docs/dsom_ansible_review.md must end with the ASIMP Architecture Team authorship footer"
