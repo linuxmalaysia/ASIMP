@@ -318,7 +318,11 @@
       register: r_post_scan_oscap_before
 
     - name: Parse real BEFORE OpenSCAP compliance score inside sandbox
-      ansible.builtin.shell: python3 {{ openscap_report_dir }}/parse_openscap_score.py {{ openscap_report_dir }}/ssg-results-before.xml
+      ansible.builtin.command:
+        argv:
+          - python3
+          - "{{ openscap_report_dir }}/parse_openscap_score.py"
+          - "{{ openscap_report_dir }}/ssg-results-before.xml"
       register: r_sandbox_oscap_parsed_before
       changed_when: false
       failed_when: false
@@ -430,7 +434,11 @@
       when: openscap_scan_supported | default(true)
 
     - name: Parse OpenSCAP BEFORE compliance score
-      ansible.builtin.shell: python3 {{ openscap_report_dir }}/parse_openscap_score.py /var/log/openscap-before-results.xml
+      ansible.builtin.command:
+        argv:
+          - python3
+          - "{{ openscap_report_dir }}/parse_openscap_score.py"
+          - /var/log/openscap-before-results.xml
       register: parsed_openscap_before
       changed_when: false
       failed_when: false
@@ -614,7 +622,11 @@
       register: r_post_scan_oscap_after
 
     - name: Parse real AFTER OpenSCAP compliance score inside sandbox
-      ansible.builtin.shell: python3 {{ openscap_report_dir }}/parse_openscap_score.py {{ openscap_report_dir }}/ssg-results-after.xml
+      ansible.builtin.command:
+        argv:
+          - python3
+          - "{{ openscap_report_dir }}/parse_openscap_score.py"
+          - "{{ openscap_report_dir }}/ssg-results-after.xml"
       register: r_sandbox_oscap_parsed_after
       changed_when: false
       failed_when: false
@@ -804,7 +816,11 @@
       when: is_ubuntu and openscap_scan_supported | default(true)
 
     - name: Parse OpenSCAP AFTER compliance score
-      ansible.builtin.shell: python3 {{ openscap_report_dir }}/parse_openscap_score.py /var/log/openscap-after-results.xml
+      ansible.builtin.command:
+        argv:
+          - python3
+          - "{{ openscap_report_dir }}/parse_openscap_score.py"
+          - /var/log/openscap-after-results.xml
       register: parsed_openscap_after
       changed_when: false
       failed_when: false
