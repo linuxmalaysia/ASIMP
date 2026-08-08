@@ -9,7 +9,18 @@ navbar:
     url: "/"
   - title: "Architecture & Design"
     url: "/architecture.html"
+  - title: "OpenSCAP & Playbooks"
+    url: "/openscap.html"
+  - title: "Lynis & Playbooks"
+    url: "/lynis.html"
   - title: "Configuration & Variables"
     url: "/configuration.html"
   - title: "Troubleshooting"
     url: "/troubleshooting.html"
+
+# Central default settings
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: "default"
