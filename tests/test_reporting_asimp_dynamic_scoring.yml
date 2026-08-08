@@ -67,6 +67,14 @@
       ansible.builtin.set_fact:
         after_tasks_by_name: "{{ dict(reporting_tasks_by_name[after_block_name].block | map(attribute='name') | zip(reporting_tasks_by_name[after_block_name].block)) }}"
 
+    - name: Build a name-to-task lookup for tasks nested inside the full BEFORE block
+      ansible.builtin.set_fact:
+        full_before_tasks_by_name: "{{ dict(reporting_tasks_by_name['Run BEFORE hardening evaluation'].block | map(attribute='name') | zip(reporting_tasks_by_name['Run BEFORE hardening evaluation'].block)) }}"
+
+    - name: Build a name-to-task lookup for tasks nested inside the full AFTER block
+      ansible.builtin.set_fact:
+        full_after_tasks_by_name: "{{ dict(reporting_tasks_by_name['Run AFTER hardening evaluation'].block | map(attribute='name') | zip(reporting_tasks_by_name['Run AFTER hardening evaluation'].block)) }}"
+
     - name: Assert all expected new BEFORE sub-tasks are present
       ansible.builtin.assert:
         that:
@@ -136,13 +144,41 @@
           - "'oscap_present_before' in before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox'].when"
         fail_msg: "'Execute real BEFORE OpenSCAP scan inside sandbox' must be gated on oscap_present_before and tolerate a non-zero exit code"
 
-    - name: Assert the real BEFORE OpenSCAP score parser is gated on oscap presence
+    - name: Assert the four changed OpenSCAP score parser tasks use command with structured argv and expected registration/gating
       ansible.builtin.assert:
         that:
-          - "'parse_openscap_score.py' in before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox']['ansible.builtin.command']"
+          # Sandbox BEFORE
+          - "'ansible.builtin.command' in before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox']"
+          - before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox']['ansible.builtin.command'].argv == ['python3', "{% raw %}{{ openscap_report_dir }}{% endraw %}/parse_openscap_score.py", "{% raw %}{{ openscap_report_dir }}{% endraw %}/ssg-results-before.xml"]
           - before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox'].register == 'r_sandbox_oscap_parsed_before'
+          - before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox'].changed_when == false
+          - before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox'].failed_when == false
           - "'oscap_present_before' in before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox'].when"
-        fail_msg: "'Parse real BEFORE OpenSCAP compliance score inside sandbox' must invoke parse_openscap_score.py and register r_sandbox_oscap_parsed_before"
+
+          # Sandbox AFTER
+          - "'ansible.builtin.command' in after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox']"
+          - after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox']['ansible.builtin.command'].argv == ['python3', "{% raw %}{{ openscap_report_dir }}{% endraw %}/parse_openscap_score.py", "{% raw %}{{ openscap_report_dir }}{% endraw %}/ssg-results-after.xml"]
+          - after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox'].register == 'r_sandbox_oscap_parsed_after'
+          - after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox'].changed_when == false
+          - after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox'].failed_when == false
+          - "'oscap_present_after' in after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox'].when"
+
+          # Full BEFORE
+          - "'ansible.builtin.command' in full_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score']"
+          - full_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score']['ansible.builtin.command'].argv == ['python3', "{% raw %}{{ openscap_report_dir }}{% endraw %}/parse_openscap_score.py", "/var/log/openscap-before-results.xml"]
+          - full_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score'].register == 'parsed_openscap_before'
+          - full_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score'].changed_when == false
+          - full_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score'].failed_when == false
+          - full_before_tasks_by_name['Parse OpenSCAP BEFORE compliance score'].when == "openscap_scan_supported | default(true)"
+
+          # Full AFTER
+          - "'ansible.builtin.command' in full_after_tasks_by_name['Parse OpenSCAP AFTER compliance score']"
+          - full_after_tasks_by_name['Parse OpenSCAP AFTER compliance score']['ansible.builtin.command'].argv == ['python3', "{% raw %}{{ openscap_report_dir }}{% endraw %}/parse_openscap_score.py", "/var/log/openscap-after-results.xml"]
+          - full_after_tasks_by_name['Parse OpenSCAP AFTER compliance score'].register == 'parsed_openscap_after'
+          - full_after_tasks_by_name['Parse OpenSCAP AFTER compliance score'].changed_when == false
+          - full_after_tasks_by_name['Parse OpenSCAP AFTER compliance score'].failed_when == false
+          - full_after_tasks_by_name['Parse OpenSCAP AFTER compliance score'].when == "openscap_scan_supported | default(true)"
+        fail_msg: "All four OpenSCAP compliance score parser tasks must invoke parse_openscap_score.py via ansible.builtin.command using structured argv and register expected variables with proper gating"
 
     - name: Assert the real BEFORE Lynis audit and parser are gated on lynis presence
       ansible.builtin.assert:
