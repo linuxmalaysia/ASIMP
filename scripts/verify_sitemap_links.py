@@ -14,8 +14,22 @@ import urllib.request
 import urllib.error
 from urllib.parse import urlparse
 
+# Strict set of allowed hostnames to prevent SSRF and arbitrary redirection (satisfies CodeQL requirements)
+ALLOWED_HOSTS = {
+    "linuxmalaysia.github.io",
+    "malaysia-open-source-community.gitbook.io"
+}
+
 def check_url(url: str) -> bool:
     """Sends a request to verify the URL exists and is not broken."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        print(f"[-] Invalid URL scheme: {url}")
+        return False
+    if parsed.netloc not in ALLOWED_HOSTS:
+        print(f"[-] Disallowed URL host: {url}")
+        return False
+
     req = urllib.request.Request(
         url,
         method="GET",
@@ -34,22 +48,14 @@ def check_url(url: str) -> bool:
         print(f"[-] Unexpected Error {e} for URL: {url}")
         return False
 
-def host_matches_domain(url: str, domain: str) -> bool:
-    """Returns True when URL hostname is exactly domain or a subdomain of it."""
-    try:
-        host = urlparse(url).hostname
-    except ValueError:
-        return False
-
-    if not host:
-        return False
-
-    host = host.lower()
-    domain = domain.lower()
-    return host == domain or host.endswith(f".{domain}")
-
 def verify_github_pages_url(url: str) -> bool:
     """Checks if a GitHub Pages URL is live, or if its source exists in docs/."""
+    # Strict URL validation before checking
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https") or parsed.netloc != "linuxmalaysia.github.io":
+        print(f"[-] Invalid GitHub Pages URL: {url}")
+        return False
+
     if check_url(url):
         print(f"[+] GitHub Pages URL OK (Live): {url}")
         return True
@@ -108,9 +114,15 @@ def main() -> None:
         sys.exit(1)
     print("[+] Structural check passed: sitemap.txt and sitemap.xml URL lists match perfectly.")
 
-    # 4. Check GitHub Pages and representative sample of GitBook
-    gh_pages_urls = [u for u in txt_urls if host_matches_domain(u, "github.io")]
-    gitbook_urls = [u for u in txt_urls if host_matches_domain(u, "gitbook.io")]
+    # 4. Check GitHub Pages and representative sample of GitBook with strict domain parsing
+    gh_pages_urls = []
+    gitbook_urls = []
+    for u in txt_urls:
+        parsed = urlparse(u)
+        if parsed.netloc == "linuxmalaysia.github.io":
+            gh_pages_urls.append(u)
+        elif parsed.netloc == "malaysia-open-source-community.gitbook.io":
+            gitbook_urls.append(u)
 
     success = True
     print(f"[*] Verifying all {len(gh_pages_urls)} GitHub Pages URLs...")
