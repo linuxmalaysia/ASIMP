@@ -139,7 +139,7 @@
     - name: Assert the real BEFORE OpenSCAP score parser is gated on oscap presence
       ansible.builtin.assert:
         that:
-          - "'parse_openscap_score.py' in before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox']['ansible.builtin.shell']"
+          - "'parse_openscap_score.py' in before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox']['ansible.builtin.command']"
           - before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox'].register == 'r_sandbox_oscap_parsed_before'
           - "'oscap_present_before' in before_tasks_by_name['Parse real BEFORE OpenSCAP compliance score inside sandbox'].when"
         fail_msg: "'Parse real BEFORE OpenSCAP compliance score inside sandbox' must invoke parse_openscap_score.py and register r_sandbox_oscap_parsed_before"
