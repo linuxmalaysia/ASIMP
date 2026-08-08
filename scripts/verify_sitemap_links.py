@@ -12,6 +12,7 @@ import sys
 import xml.etree.ElementTree as ET
 import urllib.request
 import urllib.error
+from urllib.parse import urlparse
 
 def check_url(url: str) -> bool:
     """Sends a request to verify the URL exists and is not broken."""
@@ -32,6 +33,20 @@ def check_url(url: str) -> bool:
     except Exception as e:
         print(f"[-] Unexpected Error {e} for URL: {url}")
         return False
+
+def host_matches_domain(url: str, domain: str) -> bool:
+    """Returns True when URL hostname is exactly domain or a subdomain of it."""
+    try:
+        host = urlparse(url).hostname
+    except ValueError:
+        return False
+
+    if not host:
+        return False
+
+    host = host.lower()
+    domain = domain.lower()
+    return host == domain or host.endswith(f".{domain}")
 
 def verify_github_pages_url(url: str) -> bool:
     """Checks if a GitHub Pages URL is live, or if its source exists in docs/."""
@@ -94,8 +109,8 @@ def main() -> None:
     print("[+] Structural check passed: sitemap.txt and sitemap.xml URL lists match perfectly.")
 
     # 4. Check GitHub Pages and representative sample of GitBook
-    gh_pages_urls = [u for u in txt_urls if "github.io" in u]
-    gitbook_urls = [u for u in txt_urls if "gitbook.io" in u]
+    gh_pages_urls = [u for u in txt_urls if host_matches_domain(u, "github.io")]
+    gitbook_urls = [u for u in txt_urls if host_matches_domain(u, "gitbook.io")]
 
     success = True
     print(f"[*] Verifying all {len(gh_pages_urls)} GitHub Pages URLs...")
