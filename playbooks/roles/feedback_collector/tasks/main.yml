@@ -2,7 +2,7 @@
 - name: Save individual host telemetry locally
   ansible.builtin.copy:
     content: "{{ host_telemetry | to_nice_json }}"
-    dest: "/tmp/jules_telemetry_{{ inventory_hostname }}.json"
+    dest: "{{ hostvars['localhost']['r_telemetry_tempdir'].path | default('/tmp') }}/jules_telemetry_{{ inventory_hostname }}.json"
     mode: '0600'
   delegate_to: localhost
   when: execution_mode == "dev"

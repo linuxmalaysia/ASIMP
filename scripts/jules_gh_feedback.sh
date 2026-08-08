@@ -44,10 +44,11 @@ cleanup() {
 trap cleanup EXIT
 
 # --- Verification & Setup ---
-TELEMETRY_FILE="/tmp/jules_telemetry.json"
-PAYLOAD_FILE="/tmp/jules_payload.md"
+TELEMETRY_DIR="${TELEMETRY_DIR:-/tmp}"
+TELEMETRY_FILE="${TELEMETRY_DIR}/jules_telemetry.json"
+PAYLOAD_FILE="${TELEMETRY_DIR}/jules_payload.md"
 
-log_info "Initialising ASIMP Telemetry Bridge..."
+log_info "Initialising ASIMP Telemetry Bridge with path: $TELEMETRY_DIR"
 
 if [[ ! -f "$TELEMETRY_FILE" ]]; then
     log_error "Telemetry data file '$TELEMETRY_FILE' not found. Ensure the test matrix playbook has run successfully."
@@ -60,13 +61,15 @@ log_info "Parsing telemetry and generating Markdown payload..."
 umask 077
 
 # --- Embedded Python JSON Parser & Markdown Formatter ---
+export TELEMETRY_DIR
 python3 - << 'EOF'
 import json
 import os
 import sys
 
-filepath = "/tmp/jules_telemetry.json"
-outpath = "/tmp/jules_payload.md"
+telemetry_dir = os.environ.get("TELEMETRY_DIR", "/tmp")
+filepath = os.path.join(telemetry_dir, "jules_telemetry.json")
+outpath = os.path.join(telemetry_dir, "jules_payload.md")
 
 try:
     with open(filepath, "r", encoding="utf-8") as f:
@@ -139,6 +142,28 @@ except Exception as e:
     print(f"CRITICAL: Failed to write {outpath}. Error: {str(e)}")
     sys.exit(1)
 
+# Create a redacted copy of the json data for external API submission
+redacted_filepath = os.path.join(telemetry_dir, "jules_telemetry_redacted.json")
+try:
+    redacted_data = data.copy()
+    if "pr_id" in redacted_data:
+        redacted_data["pr_id"] = "[REDACTED_PR_ID]"
+    # Redact hosts inventory names if they contain sensitive system keys
+    if "hosts" in redacted_data:
+        redacted_hosts = {}
+        for h, hinfo in redacted_data["hosts"].items():
+            h_clean = hinfo.copy()
+            # Redact sensitive identifiers
+            if "ansible_host" in h_clean:
+                h_clean["ansible_host"] = "[REDACTED]"
+            redacted_hosts[h] = h_clean
+        redacted_data["hosts"] = redacted_hosts
+
+    with open(redacted_filepath, "w", encoding="utf-8") as rf:
+        json.dump(redacted_data, rf, indent=2)
+except Exception as e:
+    sys.stderr.write(f"WARNING: Failed to compile redacted payload: {str(e)}\n")
+
 print("SUCCESS: Markdown payload compiled successfully.")
 EOF
 
@@ -149,9 +174,9 @@ fi
 
 log_success "Markdown feedback report successfully generated at $PAYLOAD_FILE"
 
-# Extract metadata for dispatching
-PR_ID=$(python3 -c 'import json; print(json.load(open("/tmp/jules_telemetry.json")).get("pr_id", "none"))')
-EXEC_MODE=$(python3 -c 'import json; print(json.load(open("/tmp/jules_telemetry.json")).get("execution_mode", "user"))')
+# Extract metadata for dispatching (using secure, restrictive per-run directory path)
+PR_ID=$(python3 -c "import json, os; print(json.load(open(os.path.join(os.environ.get('TELEMETRY_DIR', '/tmp'), 'jules_telemetry.json'))).get('pr_id', 'none'))")
+EXEC_MODE=$(python3 -c "import json, os; print(json.load(open(os.path.join(os.environ.get('TELEMETRY_DIR', '/tmp'), 'jules_telemetry.json'))).get('execution_mode', 'user'))")
 
 # --- Sink 1: Google Jules Session Feed ---
 log_info "Checking Google Jules Session Connection..."
@@ -170,7 +195,7 @@ if [[ "$EXEC_MODE" == "dev" ]]; then
             log_info "API endpoint defined. Sending REST POST feedback..."
             curl -sS --connect-timeout 10 --max-time 30 -X POST -H "Authorization: Bearer $JULES_API_TOKEN" \
                  -H "Content-Type: application/json" \
-                 -d @/tmp/jules_telemetry.json "$JULES_API_URL" > /dev/null || log_warn "REST API POST feedback submission failed."
+                 -d @"${TELEMETRY_DIR}/jules_telemetry_redacted.json" "$JULES_API_URL" > /dev/null || log_warn "REST API POST feedback submission failed."
         else
             log_warn "Google Jules CLI or REST credentials unavailable. Bypassing Jules stream socket integration."
         fi

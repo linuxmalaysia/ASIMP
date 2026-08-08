@@ -6,6 +6,13 @@
     # Option to recreate or keep containers
     recreate_containers: true
   tasks:
+    - name: Create private per-run telemetry directory with restrictive permissions (0700)
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: _asimp_telemetry
+      register: r_telemetry_tempdir
+      when: execution_mode == "dev"
+
     - name: Ensure playbooks directory exists (safety backup)
       ansible.builtin.file:
         path: playbooks
@@ -149,8 +156,18 @@
 
     - name: Invoke the bidirectional feedback bridge script
       ansible.builtin.command: scripts/jules_gh_feedback.sh
+      environment:
+        TELEMETRY_DIR: "{{ hostvars['localhost']['r_telemetry_tempdir'].path | default('/tmp') }}"
       changed_when: false
       when: execution_mode == "dev"
+
+    - name: Securely clean up private telemetry directory on exit
+      ansible.builtin.file:
+        path: "{{ hostvars['localhost']['r_telemetry_tempdir'].path }}"
+        state: absent
+      when:
+        - execution_mode == "dev"
+        - hostvars['localhost']['r_telemetry_tempdir'].path is defined
 
     - name: Stop and clean up Podman matrix containers
       containers.podman.podman_container:
