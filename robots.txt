@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://linuxmalaysia.github.io/ASIMP/sitemap.xml
+Sitemap: https://linuxmalaysia.github.io/ASIMP/sitemap.txt
