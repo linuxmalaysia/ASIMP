@@ -4,7 +4,7 @@ Sitemap URL and Link Integrity Verification Script
 Parses the generated sitemap.txt and sitemap.xml and ensures that:
 1. Root sitemaps and deployed (docs/) sitemaps match perfectly.
 2. All URLs are fully qualified and correctly structured.
-3. Every GitBook URL (loaded from a separate validation inventory) exists and returns HTTP 200.
+3. A deterministic sample of five GitBook URLs (loaded from a separate validation inventory) exist and return HTTP 200.
 4. Every GitHub Pages URL exists on the live site (returns HTTP 200) OR matches an on-disk markdown source file in the docs/ folder (pre-merge validation).
 """
 
@@ -134,6 +134,14 @@ GITBOOK_URLS = [
     "https://malaysia-open-source-community.gitbook.io/deep-state-of-mind-dsom-protocol-for-my-ai/table-of-contents/start-here.md"
 ]
 
+class ValidatingRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Intercepts redirects and validates each target against ALLOWED_HOSTS before following."""
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        parsed = urlparse(newurl)
+        if parsed.scheme not in ("http", "https") or parsed.netloc not in ALLOWED_HOSTS:
+            raise urllib.error.HTTPError(req.full_url, code, f"Redirect to disallowed host/scheme: {newurl}", headers, fp)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
 def check_url(url: str) -> tuple:
     """Sends a request to verify the URL exists and is not broken.
 
@@ -151,8 +159,9 @@ def check_url(url: str) -> tuple:
         method="GET",
         headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
     )
+    opener = urllib.request.build_opener(ValidatingRedirectHandler())
     try:
-        with urllib.request.urlopen(req, timeout=10) as response:
+        with opener.open(req, timeout=10) as response:
             if response.status == 200:
                 return True, "OK"
             return False, f"HTTPStatus:{response.status}"
@@ -194,10 +203,11 @@ def verify_github_pages_url(url: str) -> bool:
         relative_path = relative_path.replace(".html", ".md")
 
     # Prevent directory traversal and ensure candidate is inside docs/ folder
-    docs_dir = os.path.abspath("docs")
-    candidate_path = os.path.abspath(os.path.join(docs_dir, relative_path))
+    docs_dir = os.path.realpath("docs")
+    candidate_path = os.path.realpath(os.path.join(docs_dir, relative_path))
 
-    if not candidate_path.startswith(docs_dir + os.sep) and candidate_path != docs_dir:
+    # Strict commonpath checks using fully resolved absolute paths
+    if os.path.commonpath([docs_dir, candidate_path]) != docs_dir:
         print(f"[-] Directory traversal blocked or path outside docs/: {url} -> {candidate_path}")
         return False
 
@@ -213,9 +223,9 @@ def compare_file_contents(filepath_a: str, filepath_b: str, file_type: str) -> N
     """Compares the exact text contents of two sitemap files and fails on mismatch."""
     try:
         with open(filepath_a, "r", encoding="utf-8") as fa:
-            content_a = f_a_text = fa.read()
+            content_a = fa.read()
         with open(filepath_b, "r", encoding="utf-8") as fb:
-            content_b = f_b_text = fb.read()
+            content_b = fb.read()
     except FileNotFoundError as e:
         print(f"[-] Sitemap comparison failed: file missing {e.filename}")
         sys.exit(1)
