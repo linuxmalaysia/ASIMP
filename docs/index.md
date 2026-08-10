@@ -1,5 +1,4 @@
 ---
-layout: default
 title: "About ASIMP & Documentation"
 okf_version: "0.1"
 type: documentation

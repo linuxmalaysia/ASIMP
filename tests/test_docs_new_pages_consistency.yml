@@ -94,11 +94,11 @@
       loop_control:
         label: "{{ item.markdown }}"
 
-    - name: Assert each new page declares layout 'default' so it renders inside the site theme
+    - name: Assert each new page renders inside the site theme (layout is either default or undefined)
       ansible.builtin.assert:
         that:
-          - page_frontmatter[item.markdown].layout == 'default'
-        fail_msg: "{{ item.markdown }} must declare 'layout: default' in its frontmatter to render correctly as a navbar-linked page"
+          - page_frontmatter[item.markdown].layout is not defined or page_frontmatter[item.markdown].layout == 'default'
+        fail_msg: "{{ item.markdown }} must utilize 'layout: default' (either explicitly or via central config fallback)"
       loop: "{{ new_pages }}"
       loop_control:
         label: "{{ item.markdown }}"

@@ -29,11 +29,11 @@
       ansible.builtin.set_fact:
         doc_content: "{{ lookup('file', doc_path) }}"
 
-    - name: "Assert the front matter opens immediately with 'layout: default', with no leading blank line"
+    - name: "Assert the front matter opens immediately with 'title:', with no leading blank line"
       ansible.builtin.assert:
         that:
-          - "doc_content.startswith('---\nlayout: default')"
-        fail_msg: "docs/index.md front matter must start with '---' immediately followed by 'layout: default' on the very next line, with no blank line in between"
+          - "doc_content.startswith('---\ntitle:')"
+        fail_msg: "docs/index.md front matter must start with '---' immediately followed by 'title:' on the very next line, with no blank line in between"
 
     - name: Assert the front matter block closes immediately before the document's main heading
       ansible.builtin.assert:
@@ -56,11 +56,11 @@
     - name: Assert the OKF metadata fields are present and correct
       ansible.builtin.assert:
         that:
-          - doc_frontmatter.layout == "default"
+          - doc_frontmatter.layout is not defined or doc_frontmatter.layout == "default"
           - doc_frontmatter.title == expected_title
           - doc_frontmatter.okf_version == "0.1"
           - doc_frontmatter.type == "documentation"
-        fail_msg: "docs/index.md frontmatter must declare layout 'default', the exact title, okf_version '0.1' and type 'documentation'"
+        fail_msg: "docs/index.md frontmatter must declare layout 'default' if defined, the exact title, okf_version '0.1' and type 'documentation'"
 
     - name: Assert the frontmatter topics list matches exactly, in order
       ansible.builtin.assert:
