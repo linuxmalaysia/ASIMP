@@ -56,8 +56,8 @@
           - doc_frontmatter.okf_version == "0.1"
           - doc_frontmatter.type == "documentation"
           - doc_frontmatter.title == expected_title
-          - doc_frontmatter.layout is not defined or doc_frontmatter.layout == "default"
-        fail_msg: "docs/dsom_ansible_review.md frontmatter must declare okf_version '0.1', type 'documentation', the exact review title, and layout 'default' if defined"
+          - doc_frontmatter.layout == "default"
+        fail_msg: "docs/dsom_ansible_review.md frontmatter must declare okf_version '0.1', type 'documentation', the exact review title, and layout 'default'"
 
     - name: Assert there is a blank line between the opening '---' and the first frontmatter key
       ansible.builtin.assert:

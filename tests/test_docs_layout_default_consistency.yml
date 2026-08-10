@@ -1,0 +1,98 @@
+---
+# Regression tests for the 'layout: default' Jekyll front matter field added
+# to four pre-existing documentation pages in this PR (docs/dsom_ansible_review.md,
+# docs/local_testing_matrix_spec.md, docs/lynis.md, docs/openscap.md). Unlike
+# the per-page structural tests, this file specifically pins the exact
+# position of the new 'layout' key relative to its neighboring front matter
+# keys on each page, and confirms it parses to the literal value 'default'.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_docs_layout_default_consistency.yml
+- name: "Verify 'layout: default' front matter placement across changed documentation pages"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    docs_dir: "{{ repo_root }}/docs"
+    layout_checks:
+      - path: dsom_ansible_review.md
+        snippet: |-
+          okf_version: "0.1"
+          layout: default
+          type: "documentation"
+      - path: local_testing_matrix_spec.md
+        snippet: |-
+          okf_version: "0.1"
+          layout: default
+          type: documentation
+      - path: lynis.md
+        snippet: |-
+          layout: default
+          okf_version: "0.1"
+      - path: openscap.md
+        snippet: |-
+          layout: default
+          okf_version: "0.1"
+
+  tasks:
+    - name: Assert every changed documentation page still exists on disk
+      ansible.builtin.stat:
+        path: "{{ docs_dir }}/{{ item.path }}"
+      register: doc_stat
+      loop: "{{ layout_checks }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: Assert every changed documentation page was found and is a regular file
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isreg
+        fail_msg: "Expected documentation page is missing from docs/: {{ item.item.path }}"
+      loop: "{{ doc_stat.results }}"
+      loop_control:
+        label: "{{ item.item.path }}"
+
+    - name: Load raw content of each changed documentation page
+      ansible.builtin.set_fact:
+        doc_contents: "{{ doc_contents | default({}) | combine({item.path: lookup('file', docs_dir + '/' + item.path)}) }}"
+      loop: "{{ layout_checks }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: "Assert the 'layout: default' field appears at the exact expected position in each page's front matter"
+      ansible.builtin.assert:
+        that:
+          - item.snippet in doc_contents[item.path]
+        fail_msg: "docs/{{ item.path }} must declare 'layout: default' at the exact expected position within its front matter block"
+      loop: "{{ layout_checks }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: Assert every page's front matter still opens and closes with well-formed '---' delimiters
+      ansible.builtin.assert:
+        that:
+          - (doc_contents[item.path].split('---', 2) | length) == 3
+        fail_msg: "docs/{{ item.path }} must retain a well-formed '---' delimited front matter block after the layout field was added"
+      loop: "{{ layout_checks }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: Assert the parsed front matter of each page resolves 'layout' to exactly 'default'
+      ansible.builtin.assert:
+        that:
+          - (doc_contents[item.path].split('---', 2)[1] | from_yaml).layout == 'default'
+        fail_msg: "docs/{{ item.path }} front matter must parse with layout == 'default'"
+      loop: "{{ layout_checks }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: Assert no page declares the 'layout' key more than once
+      ansible.builtin.assert:
+        that:
+          - (doc_contents[item.path].split('---', 2)[1] | regex_findall('^layout:', multiline=True) | length) == 1
+        fail_msg: "docs/{{ item.path }} front matter must declare the 'layout' key exactly once"
+      loop: "{{ layout_checks }}"
+      loop_control:
+        label: "{{ item.path }}"
