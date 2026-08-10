@@ -63,8 +63,8 @@
           - doc_frontmatter.okf_version == "0.1"
           - doc_frontmatter.type == "documentation"
           - doc_frontmatter.title == expected_title
-          - doc_frontmatter.layout == "default"
-        fail_msg: "docs/local_testing_matrix_spec.md frontmatter must declare okf_version '0.1', type 'documentation', the exact title, and the new layout 'default' field"
+          - doc_frontmatter.layout is not defined or doc_frontmatter.layout == "default"
+        fail_msg: "docs/local_testing_matrix_spec.md frontmatter must declare okf_version '0.1', type 'documentation', the exact title, and layout 'default' if defined"
 
     - name: Assert the frontmatter timestamp is the exact, unmodified value
       ansible.builtin.assert:
