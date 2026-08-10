@@ -1,4 +1,5 @@
 ---
+layout: default
 okf_version: "0.1"
 type: documentation
 title: "OpenSCAP Integration & Playbook Analysis"

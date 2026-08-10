@@ -1,10 +1,13 @@
 ---
+
 okf_version: "0.1"
+layout: default
 type: documentation
 title: "ASIMP Local Testing Matrix & Telemetry Spec"
 timestamp: "2026-08-05T12:00:00Z"
 topics: [asimp, architecture, testing, telemetry, pipeline]
 ---
+
 
 # ASIMP Local Testing Matrix & Telemetry Specification
 

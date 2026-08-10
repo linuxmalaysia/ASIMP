@@ -32,7 +32,7 @@
     - name: "Assert the front matter opens immediately with 'layout: default', with no leading blank line"
       ansible.builtin.assert:
         that:
-          - doc_content.startswith('---\nlayout: default')
+          - "doc_content.startswith('---\nlayout: default')"
         fail_msg: "docs/index.md front matter must start with '---' immediately followed by 'layout: default' on the very next line, with no blank line in between"
 
     - name: Assert the front matter block closes immediately before the document's main heading
