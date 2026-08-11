@@ -47,6 +47,7 @@ For unprivileged sandboxes, package installation is skipped to prevent connectio
 
 To establish a baseline and verify improvements, the playbook invokes the Lynis command-line utility. The `--quick` option prevents the scanner from blocking or waiting for user inputs during automated execution:
 
+{% raw %}
 ```yaml
 - name: Run Lynis BEFORE hardening audit
   ansible.builtin.shell: lynis audit system --quick --report-file {{ openscap_report_dir }}/lynis-report-before.dat
@@ -54,6 +55,7 @@ To establish a baseline and verify improvements, the playbook invokes the Lynis 
   failed_when: false
   changed_when: true
 ```
+{% endraw %}
 
 The scan saves a detailed machine-readable audit report to `lynis-report-before.dat` (or `lynis-report-after.dat` post-hardening).
 
@@ -63,6 +65,7 @@ The scan saves a detailed machine-readable audit report to `lynis-report-before.
 
 The overall system score calculated by Lynis is stored in the `.dat` report file under the variable key `hardening_index`. ASIMP extracts this score using a standard shell utility:
 
+{% raw %}
 ```yaml
 - name: Parse Lynis BEFORE hardening index
   ansible.builtin.shell: grep -E "^hardening_index=" {{ openscap_report_dir }}/lynis-report-before.dat | cut -d'=' -f2
@@ -70,6 +73,7 @@ The overall system score calculated by Lynis is stored in the `.dat` report file
   changed_when: false
   failed_when: false
 ```
+{% endraw %}
 
 - If successful, the index number is extracted and structured.
 - For the baseline phase, this score is written to the `/var/log/asimp-baseline-scores.json` metadata file so it can be slurped and compared during Phase 3.
@@ -80,6 +84,7 @@ The overall system score calculated by Lynis is stored in the `.dat` report file
 
 ASIMP implements standard configuration-level mitigations mapped from Lynis's best practices. In Phase 2, the `lynis-ansible` role is loaded to lock down common risk surfaces:
 
+{% raw %}
 ```yaml
 - name: Apply Lynis Hardening Configuration
   block:
@@ -93,6 +98,7 @@ ASIMP implements standard configuration-level mitigations mapped from Lynis's be
   when: asimp_privilege_level == 'full'
   become: true
 ```
+{% endraw %}
 
 These tasks apply fine-grained parameters:
 - Hardening permissions on shadow files and directories.
