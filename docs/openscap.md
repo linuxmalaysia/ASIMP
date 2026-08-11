@@ -109,7 +109,6 @@ For **RHEL/CentOS/Rocky Linux**, ASIMP searches for pre-installed datastreams lo
       /usr/share/xml/scap/ssg/content/ssg-rhel{{ ansible_distribution_major_version }}-ds.xml
       {%- endif -%}
 ```
-{% endraw %}
 
 {% endraw %}
 
