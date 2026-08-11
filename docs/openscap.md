@@ -67,6 +67,7 @@ To ensure the scanning rules perfectly match the OS, ASIMP dynamically resolves 
 For **Ubuntu**, ASIMP reaches out to the official `ComplianceAsCode/content` repository on GitHub to fetch the latest SCAP Security Guide zip, extract it, and locate the version-specific DataStream XML:
 
 {% raw %}
+
 ```yaml
 - name: OpenSCAP | Fetch latest SCAP Security Guide release from GitHub (Ubuntu)
   block:
@@ -89,11 +90,13 @@ For **Ubuntu**, ASIMP reaches out to the official `ComplianceAsCode/content` rep
         recurse: yes
       register: found_downloaded_ds
 ```
+
 {% endraw %}
 
 For **RHEL/CentOS/Rocky Linux**, ASIMP searches for pre-installed datastreams located under `/usr/share/xml/scap/ssg/content/` and selects the appropriate version:
 
 {% raw %}
+
 ```yaml
 - name: OpenSCAP | Set datastream fact
   ansible.builtin.set_fact:
@@ -106,6 +109,7 @@ For **RHEL/CentOS/Rocky Linux**, ASIMP searches for pre-installed datastreams lo
       /usr/share/xml/scap/ssg/content/ssg-rhel{{ ansible_distribution_major_version }}-ds.xml
       {%- endif -%}
 ```
+
 {% endraw %}
 
 If no compatible datastream XML file exists, the task registers `openscap_scan_supported: false` and gracefully skips the scan.
@@ -117,6 +121,7 @@ If no compatible datastream XML file exists, the task registers `openscap_scan_s
 The OpenSCAP evaluation command is executed using the `ansible.builtin.shell` module. To measure compliance improvement, separate scans are run during Phase 1 (`before`) and Phase 3 (`after`):
 
 {% raw %}
+
 ```yaml
 - name: Run OpenSCAP BEFORE hardening scan
   ansible.builtin.shell: >
@@ -130,6 +135,7 @@ The OpenSCAP evaluation command is executed using the `ansible.builtin.shell` mo
   failed_when: false
   changed_when: true
 ```
+
 {% endraw %}
 
 The output XML results and HTML reports are written to `ssg-results-ubuntu<version>.xml` / `ssg-results-ubuntu<version>.html`, and then copied to `/var/log/openscap-before-results.xml` (or `/var/log/openscap-after-results.xml`) for unified storage.
@@ -162,6 +168,7 @@ def get_score(xml_path):
 The playbook executes this helper script to read the parsed score directly into an Ansible variable:
 
 {% raw %}
+
 ```yaml
 - name: Parse OpenSCAP BEFORE compliance score
   ansible.builtin.command:
@@ -173,6 +180,7 @@ The playbook executes this helper script to read the parsed score directly into 
   changed_when: false
   failed_when: false
 ```
+
 {% endraw %}
 
 ---
@@ -182,6 +190,7 @@ The playbook executes this helper script to read the parsed score directly into 
 A major feature of ASIMP's OpenSCAP integration is generating a tailor-made remediation script for the target operating system. On Ubuntu systems with full privileges, ASIMP commands OpenSCAP to output a shell script containing the exact remediation configurations needed to align with the CIS Level 2 profile:
 
 {% raw %}
+
 ```yaml
 - name: OpenSCAP | Generate BEFORE Remediation Script (Ubuntu)
   ansible.builtin.shell: >
@@ -193,6 +202,7 @@ A major feature of ASIMP's OpenSCAP integration is generating a tailor-made reme
   changed_when: true
   failed_when: false
 ```
+
 {% endraw %}
 
 This shell script can then be inspected or executed manually by administrators seeking a transparent, audited mitigation path.
@@ -204,6 +214,7 @@ This shell script can then be inspected or executed manually by administrators s
 To check for unpatched Ubuntu Security Notices (USNs), the playbook downloads Canonical's official OVAL definition file and performs an OVAL evaluation:
 
 {% raw %}
+
 ```yaml
 - name: OpenSCAP | Download OVAL definitions
   ansible.builtin.get_url:
@@ -219,6 +230,7 @@ To check for unpatched Ubuntu Security Notices (USNs), the playbook downloads Ca
     --report {{ openscap_report_dir }}/oval-{{ ansible_distribution_release }}.html
     {{ openscap_report_dir }}/com.ubuntu.{{ ansible_distribution_release }}.usn.oval.xml
 ```
+
 {% endraw %}
 
 ---
