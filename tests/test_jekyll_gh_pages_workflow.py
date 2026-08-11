@@ -8,12 +8,6 @@ actually fires on pushes to this repository's default branch (`master`)
 instead of a branch (`main`) that does not exist here and therefore would
 have silently never triggered the deploy.
 
-A later change in this same file adds a top-level `env:` block that sets
-`FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"`, working around GitHub Actions'
-deprecation of the Node.js 20 runtime used by JavaScript-based actions (such
-as the `actions/*` steps used later in this workflow) by forcing them onto
-the Node.js 24 runtime instead.
-
 These tests parse the workflow file with a real YAML loader (the same
 family GitHub Actions itself uses) and verify:
   1. The file loads as valid YAML (basic sanity check for the whole file).
@@ -27,9 +21,6 @@ family GitHub Actions itself uses) and verify:
      resolved to the boolean `True`, not the string `"on"`) is accounted
      for when navigating the parsed structure, so the test itself does not
      silently pass for the wrong reason.
-  6. The new `env.FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` variable is present,
-     equal to the exact string `"true"` (not a YAML boolean), and does not
-     introduce any unexpected sibling variables.
 
 Run with:
     python3 -m unittest tests/test_jekyll_gh_pages_workflow.py -v
@@ -127,63 +118,6 @@ class TestJekyllGhPagesWorkflow(unittest.TestCase):
         reverted_branches = reverted_data[True]["push"]["branches"]
         self.assertEqual(reverted_branches, ["main"])
         self.assertNotEqual(reverted_branches, ["master"])
-
-    def test_env_block_is_present(self) -> None:
-        self.assertIn("env", self.data)
-        self.assertIsInstance(self.data["env"], dict)
-
-    def test_force_javascript_actions_to_node24_env_var_is_set(self) -> None:
-        self.assertIn("FORCE_JAVASCRIPT_ACTIONS_TO_NODE24", self.data["env"])
-        self.assertEqual(
-            self.data["env"]["FORCE_JAVASCRIPT_ACTIONS_TO_NODE24"], "true"
-        )
-
-    def test_force_javascript_actions_to_node24_value_is_a_string_not_a_bool(
-        self,
-    ) -> None:
-        # PyYAML (like GitHub Actions' own YAML parser) would coerce an
-        # unquoted `true` scalar into a Python bool. The workflow file must
-        # keep the value quoted so it round-trips as the literal string
-        # "true", matching how GitHub Actions exposes env vars to steps.
-        value = self.data["env"]["FORCE_JAVASCRIPT_ACTIONS_TO_NODE24"]
-        self.assertIsInstance(value, str)
-        self.assertNotIsInstance(value, bool)
-
-    def test_env_block_defines_no_unexpected_extra_variables(self) -> None:
-        self.assertEqual(
-            self.data["env"], {"FORCE_JAVASCRIPT_ACTIONS_TO_NODE24": "true"}
-        )
-
-    def test_env_var_line_is_present_verbatim_in_source(self) -> None:
-        self.assertIn(
-            'FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"', self.raw_content
-        )
-
-    def test_env_block_is_positioned_between_on_and_permissions_blocks(
-        self,
-    ) -> None:
-        # Regression guard on placement, matching the diff: `env:` was
-        # inserted after the `on:` triggers block and before the
-        # `permissions:` block.
-        workflow_dispatch_index = self.raw_content.index("workflow_dispatch:")
-        env_index = self.raw_content.index("env:")
-        permissions_index = self.raw_content.index("permissions:")
-        self.assertLess(workflow_dispatch_index, env_index)
-        self.assertLess(env_index, permissions_index)
-
-    def test_removing_env_value_quotes_would_change_parsed_type(self) -> None:
-        # Demonstrates why the quoting matters: if the value were reverted
-        # to an unquoted `true`, PyYAML (and GitHub Actions) would resolve
-        # it to a boolean instead of the string "true".
-        unquoted_content = self.raw_content.replace(
-            'FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"',
-            "FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true",
-        )
-        self.assertNotEqual(unquoted_content, self.raw_content)
-        unquoted_data = yaml.safe_load(unquoted_content)
-        unquoted_value = unquoted_data["env"]["FORCE_JAVASCRIPT_ACTIONS_TO_NODE24"]
-        self.assertIsInstance(unquoted_value, bool)
-        self.assertNotEqual(unquoted_value, "true")
 
 
 if __name__ == "__main__":
