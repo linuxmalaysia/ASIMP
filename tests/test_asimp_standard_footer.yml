@@ -1,0 +1,133 @@
+---
+# Content/regression tests for the new standard ASIMP/DSOM footer line that
+# this PR appended to every top-level and documentation Markdown file (and
+# updated inside docs/_layouts/default.html), plus the new
+# scripts/add_asimp_footer.py patcher that enforces it. These tests guard
+# against the footer text drifting, being duplicated, or being silently
+# dropped from any of the files it was added to in this PR.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_asimp_standard_footer.yml
+- name: Verify the standard ASIMP/DSOM footer is present and consistent across changed files
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    footer_text: >-
+      ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol
+      | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu
+      Malaysia (Piawai) | GNU General Public License v3.0
+    # Files this PR appended the standard footer to (relative to repo root).
+    footer_files:
+      - .agents/skills/ai-agent-instructions/SKILL.md
+      - .agents/skills/ansible-boolean-conditionals/SKILL.md
+      - .agents/skills/ansible-fqcn-idempotency/SKILL.md
+      - .agents/skills/ansible-galaxy-roles/SKILL.md
+      - .agents/skills/ansible-testing-linting/SKILL.md
+      - .agents/skills/asimp-core-workflow/SKILL.md
+      - .agents/skills/jekyll-docs-deployment/SKILL.md
+      - .agents/skills/jinja2-template-overrides/SKILL.md
+      - .agents/skills/jules-sandbox-mode/SKILL.md
+      - .agents/skills/ubuntu-scap-auditing/SKILL.md
+      - .github/copilot-instructions.md
+      - AGENTS.md
+      - CHANGELOG.md
+      - CLAUDE.md
+      - HISTORY.md
+      - README.md
+      - SECURITY_AUDIT_REPORT.md
+      - SUMMARY.md
+      - data/asimp_mock/opt/report/openscap/SECURITY_AUDIT_REPORT.md
+      - docs/architecture.md
+      - docs/configuration.md
+      - docs/dsom_ansible_review.md
+      - docs/index.md
+      - docs/local_testing_matrix_spec.md
+      - roles/reporting-ASIMP/README.md
+      - roles/update-ubuntu-ASIMP/README.md
+
+  tasks:
+    - name: Assert every footer-carrying file still exists on disk
+      ansible.builtin.stat:
+        path: "{{ repo_root }}/{{ item }}"
+      register: footer_file_stat
+      loop: "{{ footer_files }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert every footer-carrying file was found and is a regular file
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isreg
+        fail_msg: "Expected file with the standard ASIMP footer is missing: {{ item.item }}"
+      loop: "{{ footer_file_stat.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Load raw content of every footer-carrying file
+      ansible.builtin.set_fact:
+        footer_file_contents: "{{ footer_file_contents | default({}) | combine({item: lookup('file', repo_root + '/' + item)}) }}"
+      loop: "{{ footer_files }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert the exact standard footer text is present verbatim in every file
+      ansible.builtin.assert:
+        that:
+          - footer_text in footer_file_contents[item]
+        fail_msg: "{{ item }} must contain the exact standard ASIMP/DSOM footer text"
+      loop: "{{ footer_files }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert the footer text appears exactly once in every file (no accidental duplication)
+      ansible.builtin.assert:
+        that:
+          - (footer_file_contents[item] | regex_findall(footer_text | regex_escape)) | length == 1
+        fail_msg: "{{ item }} must contain the standard ASIMP/DSOM footer exactly once"
+      loop: "{{ footer_files }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert the footer is the trailing content of every file, preceded by a horizontal rule
+      ansible.builtin.assert:
+        that:
+          - footer_file_contents[item].rstrip() is search('\\n\\n---\\n\\n' + (footer_text | regex_escape) + '$')
+        fail_msg: "{{ item }} must end with a '---' separated standard footer block"
+      loop: "{{ footer_files }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Load raw content of docs/_layouts/default.html
+      ansible.builtin.set_fact:
+        default_layout_content: "{{ lookup('file', repo_root + '/docs/_layouts/default.html') }}"
+
+    - name: Assert the site-wide footer partial embeds the exact standard footer text
+      ansible.builtin.assert:
+        that:
+          - footer_text in default_layout_content
+        fail_msg: "docs/_layouts/default.html footer div must contain the exact standard ASIMP/DSOM footer text"
+
+    - name: Assert the previous ad-hoc footer copy was fully replaced
+      ansible.builtin.assert:
+        that:
+          - "'Statically Compiled at Build-time' not in default_layout_content"
+          - "'Zero-runtime database-free' not in default_layout_content"
+        fail_msg: "docs/_layouts/default.html must no longer contain the old ad-hoc footer copy"
+
+    - name: Assert scripts/add_asimp_footer.py declares the FOOTER_TEXT constant
+      ansible.builtin.set_fact:
+        footer_script_content: "{{ lookup('file', repo_root + '/scripts/add_asimp_footer.py') }}"
+
+    - name: Assert the footer patcher script's literal fragments match the standard footer text
+      ansible.builtin.assert:
+        that:
+          - "'ASIMP (Ansible System Integrity Management Platform) | \"' in footer_script_content"
+          - "'Deep State of Mind (DSOM) For My AI Protocol | \"' in footer_script_content"
+          - "'Harisfazillah Jamel (LinuxMalaysia) | \"' in footer_script_content"
+          - "'2026-07-12 Standard: UK English | \"' in footer_script_content"
+          - "'DBP-standard Bahasa Melayu Malaysia (Piawai) | \"' in footer_script_content"
+          - "'GNU General Public License v3.0'  in footer_script_content"
+        fail_msg: "scripts/add_asimp_footer.py FOOTER_TEXT must be built from the exact standard footer fragments"
