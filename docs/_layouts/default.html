@@ -57,11 +57,22 @@
           <a href="{{ '/' | relative_url }}">Home</a>
           {% assign sorted_pages = site.pages | sort: "path" %}
           {% for p in sorted_pages %}
-            {% if p.path != "index.md" and p.path contains ".md" and p.path != "README.md" %}
+            {% if p.path != "index.md" and p.path contains ".md" and p.path != "README.md" and p.path != "output_asimp.md" and p.path != "output_lynis.md" and p.path != "output_openscap.md" and p.path != "security_posture_assessment.md" %}
               {% assign page_title = p.title | default: p.name | replace: ".md", "" | capitalize | replace: "_", " " | replace: "-", " " %}
               <a href="{{ p.url | relative_url }}">{{ page_title }}</a>
             {% endif %}
           {% endfor %}
+        </div>
+      </div>
+
+      <br>
+      <div class="buttonscontainer">
+        <h3>Reports & SPA</h3>
+        <div class="buttons">
+          <a href="{{ '/output_asimp.html' | relative_url }}">Output of ASIMP</a>
+          <a href="{{ '/output_lynis.html' | relative_url }}">Output of Lynis</a>
+          <a href="{{ '/output_openscap.html' | relative_url }}">Output of OpenSCAP</a>
+          <a href="{{ '/security_posture_assessment.html' | relative_url }}">SPA Requirement Checklist</a>
         </div>
       </div>
 

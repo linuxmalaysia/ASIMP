@@ -5,4 +5,8 @@ https://linuxmalaysia.github.io/ASIMP/dsom_ansible_review.html
 https://linuxmalaysia.github.io/ASIMP/local_testing_matrix_spec.html
 https://linuxmalaysia.github.io/ASIMP/lynis.html
 https://linuxmalaysia.github.io/ASIMP/openscap.html
+https://linuxmalaysia.github.io/ASIMP/output_asimp.html
+https://linuxmalaysia.github.io/ASIMP/output_lynis.html
+https://linuxmalaysia.github.io/ASIMP/output_openscap.html
+https://linuxmalaysia.github.io/ASIMP/security_posture_assessment.html
 https://linuxmalaysia.github.io/ASIMP/troubleshooting.html

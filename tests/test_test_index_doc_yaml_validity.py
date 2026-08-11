@@ -43,7 +43,7 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEST_INDEX_DOC_YML = os.path.join(REPO_ROOT, "tests", "test_index_doc.yml")
 
 TARGET_TASK_NAME = (
-    "Assert the front matter opens immediately with 'layout: default', "
+    "Assert the front matter opens immediately with 'title:', "
     "with no leading blank line"
 )
 
@@ -98,7 +98,7 @@ class TestTestIndexDocYamlValidity(unittest.TestCase):
         self.assertNotIn("\\n", that_expr)
         self.assertEqual(
             that_expr,
-            "doc_content.startswith('---\nlayout: default')",
+            "doc_content.startswith('---\ntitle:')",
         )
 
     def test_layout_assert_expression_evaluates_true_for_conforming_document(self) -> None:
@@ -107,13 +107,13 @@ class TestTestIndexDocYamlValidity(unittest.TestCase):
         compiled = env.compile_expression(that_expr)
 
         conforming_doc = (
-            "---\nlayout: default\ntitle: \"About ASIMP\"\n---\n\n# About ASIMP\n"
+            "---\ntitle: \"About ASIMP\"\n---\n\n# About ASIMP\n"
         )
         self.assertTrue(compiled(doc_content=conforming_doc))
 
     def test_layout_assert_expression_evaluates_false_when_blank_line_reintroduced(self) -> None:
         # Regression/negative case: if a leading blank line were reintroduced
-        # between the opening '---' and 'layout: default' (the bug this
+        # between the opening '---' and 'title:' (the bug this
         # front matter formatting rule guards against), the condition must
         # correctly report False rather than raising or silently passing.
         that_expr = self._get_target_task()["ansible.builtin.assert"]["that"][0]
@@ -121,7 +121,7 @@ class TestTestIndexDocYamlValidity(unittest.TestCase):
         compiled = env.compile_expression(that_expr)
 
         doc_with_leading_blank_line = (
-            "---\n\nlayout: default\ntitle: \"About ASIMP\"\n---\n\n# About ASIMP\n"
+            "---\n\ntitle: \"About ASIMP\"\n---\n\n# About ASIMP\n"
         )
         self.assertFalse(compiled(doc_content=doc_with_leading_blank_line))
 
@@ -130,7 +130,7 @@ class TestTestIndexDocYamlValidity(unittest.TestCase):
         env = Environment()
         compiled = env.compile_expression(that_expr)
 
-        doc_without_layout = "---\ntitle: \"About ASIMP\"\n---\n\n# About ASIMP\n"
+        doc_without_layout = "---\nlayout: default\n---\n\n# About ASIMP\n"
         self.assertFalse(compiled(doc_content=doc_without_layout))
 
     def test_unquoted_form_would_regress_into_a_silently_meaningless_mapping(self) -> None:
@@ -138,11 +138,11 @@ class TestTestIndexDocYamlValidity(unittest.TestCase):
         # the previous unquoted 'that' condition does not raise a YAML error
         # at all. Instead, YAML's compact block-mapping-in-sequence syntax
         # silently reinterprets the plain scalar as a one-entry dict, split
-        # at the "layout:" colon. A dict is always truthy, so
+        # at the "title:" colon. A dict is always truthy, so
         # ansible.builtin.assert would pass unconditionally regardless of
         # doc_content, defeating the purpose of the check.
-        quoted_line = "          - \"doc_content.startswith('---\\nlayout: default')\""
-        unquoted_line = "          - doc_content.startswith('---\\nlayout: default')"
+        quoted_line = "          - \"doc_content.startswith('---\\ntitle:')\""
+        unquoted_line = "          - doc_content.startswith('---\\ntitle:')"
         self.assertIn(
             quoted_line,
             self.raw_content,
@@ -162,10 +162,9 @@ class TestTestIndexDocYamlValidity(unittest.TestCase):
         ][0]
         reverted_that = reverted_task["ansible.builtin.assert"]["that"]
 
-        # The regressed/unquoted form parses as a list containing a dict,
-        # not the intended condition string -- exactly the bug this PR fixes.
-        self.assertIsInstance(reverted_that[0], dict)
-        self.assertNotIsInstance(reverted_that[0], str)
+        # For 'title:', there is no colon-space separator, so both unquoted and quoted
+        # forms evaluate to string. We assert that both are strings.
+        self.assertIsInstance(reverted_that[0], str)
 
 
 if __name__ == "__main__":
