@@ -7,7 +7,7 @@ topics: [asimp, readme, security, baseline, hardening]
 ---
 # ASIMP (Ansible System Integrity Management Platform)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Ansible](https://img.shields.io/badge/Ansible-%3E%3D9.0.0-red.svg)](https://www.ansible.com/)
 [![OpenSCAP](https://img.shields.io/badge/Security-OpenSCAP-green.svg)](https://www.open-scap.org/)
 [![Lynis](https://img.shields.io/badge/Audit-Lynis-orange.svg)](https://cisofy.com/lynis/)
@@ -180,7 +180,7 @@ For visual inspection and historical tracking of playbook execution, check out *
 
 ## 📜 License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU General Public License v3.0. See the [LICENSE](LICENSE) file for details.
 
 ---
 

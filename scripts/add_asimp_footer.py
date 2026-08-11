@@ -3,10 +3,11 @@
 ASIMP Standard Footer Patcher
 Scans workspace markdown (.md) documents and enforces compliance with the
 project footer standard, auto-appending the standard ASIMP/DSOM footer
-if it is not already present.
+if it is not already present, while removing older legacy attributions.
 """
 
 import os
+import tempfile
 from typing import Set
 
 FOOTER_TEXT = (
@@ -20,27 +21,83 @@ FOOTER_TEXT = (
 
 
 def patch_markdown_file(filepath: str) -> None:
-    """Check a markdown file and append the standard ASIMP footer if absent.
+    """Check a markdown file and append the standard ASIMP footer if absent,
+
+    while removing any older legacy or standard footers.
 
     Args:
         filepath: The path of the markdown file to process.
     """
-    with open(filepath, "r", encoding="utf-8") as f:
-        content = f.read()
-
-    # Check if the footer text is already present in any form
-    if FOOTER_TEXT in content:
-        print(f"No update needed (already has footer): {filepath}")
+    # 1. File path safety validation guards
+    if os.path.islink(filepath):
+        print(f"Skipping symlink file: {filepath}")
         return
 
-    # To keep formatting clean, strip trailing whitespace and append the footer
-    # separated by a markdown horizontal rule (---) and clean spacing.
-    cleaned_content = content.rstrip()
-    new_content = cleaned_content + "\n\n---\n\n" + FOOTER_TEXT + "\n"
+    resolved_path = os.path.realpath(filepath)
+    if not os.path.isfile(resolved_path):
+        print(f"Skipping non-regular file: {filepath}")
+        return
 
-    with open(filepath, "w", encoding="utf-8") as f:
-        f.write(new_content)
-    print(f"Successfully appended standard footer to: {filepath}")
+    repo_root = os.path.realpath(os.getcwd())
+    if not resolved_path.startswith(repo_root):
+        print(f"Skipping file outside repository root: {filepath}")
+        return
+
+    with open(resolved_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # 2. Split front matter and body to prevent touch of front matter delimiters
+    front_matter = ""
+    body = content
+
+    if content.startswith("---"):
+        parts = content.split("---", 2)
+        if len(parts) >= 3:
+            front_matter = "---" + parts[1] + "---"
+            body = parts[2]
+
+    # 3. Clean legacy / existing standard footers from the body
+    # Loop recursively to clean multiple duplicate footer/attribution blocks from the end
+    while True:
+        lines = body.splitlines()
+        footer_start_idx = -1
+        for i in range(len(lines) - 1, -1, -1):
+            line = lines[i].strip()
+            if line == "---":
+                subsequent_text = "\n".join(lines[i+1:])
+                # Use stable markers to identify legacy or existing standardized footers
+                if "Deep State of Mind (DSOM)" in subsequent_text or "ASIMP (Ansible System" in subsequent_text:
+                    footer_start_idx = i
+                    break
+        if footer_start_idx != -1:
+            body = "\n".join(lines[:footer_start_idx])
+        else:
+            break
+
+    # Strip any trailing whitespace from the body
+    cleaned_body = body.rstrip()
+    new_body = cleaned_body + "\n\n---\n\n" + FOOTER_TEXT + "\n"
+    new_content = front_matter + new_body
+
+    # 4. Atomic file-writing flow using NamedTemporaryFile and os.replace
+    target_dir = os.path.dirname(resolved_path)
+    temp_file = tempfile.NamedTemporaryFile(
+        mode="w",
+        dir=target_dir,
+        delete=False,
+        encoding="utf-8",
+        suffix=".tmp"
+    )
+    temp_filepath = temp_file.name
+    try:
+        temp_file.write(new_content)
+        temp_file.close()
+        os.replace(temp_filepath, resolved_path)
+        print(f"Successfully patched footer in: {filepath}")
+    except Exception as e:
+        if os.path.exists(temp_filepath):
+            os.remove(temp_filepath)
+        raise e
 
 
 def main() -> None:
@@ -50,7 +107,8 @@ def main() -> None:
         "node_modules",
         "venv",
         ".venv",
-        "lynis-ansible",  # Also exclude any folder named lynis-ansible to be safe
+        "lynis-ansible",
+        "asimp_mock",  # Prune asimp_mock folder entirely from walking
     }
 
     # Walk repository from the root directory
@@ -62,10 +120,11 @@ def main() -> None:
             if file.endswith(".md"):
                 filepath = os.path.join(root, file)
 
-                # Skip files inside the third-party submodule 'roles/lynis-ansible'
+                # Prune and filter path components to exclude generated report paths or submodules
                 norm_path = os.path.normpath(filepath)
                 if "roles/lynis-ansible" in norm_path:
-                    print(f"Skipping third-party submodule file: {filepath}")
+                    continue
+                if "data/asimp_mock" in norm_path:
                     continue
 
                 patch_markdown_file(filepath)
