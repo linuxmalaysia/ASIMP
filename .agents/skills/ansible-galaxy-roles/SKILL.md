@@ -58,3 +58,7 @@ ansible-galaxy role install -r requirements.yml --ignore-errors
   "signature": "dsom_protocol_jules_antigravity_sync_active"
 }
 ```
+
+---
+
+ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu Malaysia (Piawai) | GNU General Public License v3.0

@@ -54,3 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [1.1.0]: https://github.com/linuxmalaysia/ASIMP/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/linuxmalaysia/ASIMP/releases/tag/v1.0.0
+
+---
+
+ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu Malaysia (Piawai) | GNU General Public License v3.0

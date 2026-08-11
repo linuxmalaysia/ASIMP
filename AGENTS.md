@@ -185,3 +185,7 @@ To provide consistent guidelines across different editors and execution tools, t
 1. **Implicit Localhost Warnings**: When testing locally, Ansible might output warnings about an empty hosts list. This is normal for `play-localhost.yml`.
 2. **Missing SCAP DataStreams**: Different distributions have different default datastream files. `reporting-ASIMP` dynamically determines which XML datastream to use. Ensure your modifications preserve this dynamic OS-detection logic.
 3. **Overwriting Logs**: Always use different output file paths for "before" and "after" scans (e.g., `/var/log/openscap-before-results.xml` vs `/var/log/openscap-after-results.xml`).
+
+---
+
+ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu Malaysia (Piawai) | GNU General Public License v3.0

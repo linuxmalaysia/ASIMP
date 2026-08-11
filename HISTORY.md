@@ -45,3 +45,7 @@ ASIMP was built to **close this loop**. By wrapping the auditing engine (OpenSCA
 * **Immediate Verification**: Systems are verified immediately after configurations change.
 * **Safety & Rollback Confidence**: By having a before-and-after log, operators can instantly pinpoint which exact hardening policy caused a service disruption or triggered an unexpected compliance drop.
 * **Audit-as-Code**: Entire compliance benchmarks (such as CIS Level 2) are codified, automatically tested, and continuously verified.
+
+---
+
+ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu Malaysia (Piawai) | GNU General Public License v3.0

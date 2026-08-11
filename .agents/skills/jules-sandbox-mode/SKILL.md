@@ -163,3 +163,7 @@ Always append `ignore_errors: "{{ is_sandbox_jules | bool }}"` or skip service t
   "signature": "dsom_protocol_jules_antigravity_sync_active"
 }
 ```
+
+---
+
+ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu Malaysia (Piawai) | GNU General Public License v3.0
