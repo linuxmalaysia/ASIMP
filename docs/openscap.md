@@ -91,6 +91,7 @@ For **Ubuntu**, ASIMP reaches out to the official `ComplianceAsCode/content` rep
 
 For **RHEL/CentOS/Rocky Linux**, ASIMP searches for pre-installed datastreams located under `/usr/share/xml/scap/ssg/content/` and selects the appropriate version:
 
+{% raw %}
 ```yaml
 - name: OpenSCAP | Set datastream fact
   ansible.builtin.set_fact:
@@ -103,6 +104,7 @@ For **RHEL/CentOS/Rocky Linux**, ASIMP searches for pre-installed datastreams lo
       /usr/share/xml/scap/ssg/content/ssg-rhel{{ ansible_distribution_major_version }}-ds.xml
       {%- endif -%}
 ```
+{% endraw %}
 
 If no compatible datastream XML file exists, the task registers `openscap_scan_supported: false` and gracefully skips the scan.
 
