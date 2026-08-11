@@ -2,73 +2,73 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://linuxmalaysia.github.io/ASIMP/</loc>
-    <lastmod>2026-08-11</lastmod>
+    <lastmod>2026-08-08</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://linuxmalaysia.github.io/ASIMP/architecture.html</loc>
-    <lastmod>2026-08-11</lastmod>
+    <lastmod>2026-08-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://linuxmalaysia.github.io/ASIMP/configuration.html</loc>
-    <lastmod>2026-08-11</lastmod>
+    <lastmod>2026-08-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://linuxmalaysia.github.io/ASIMP/dsom_ansible_review.html</loc>
-    <lastmod>2026-08-11</lastmod>
+    <lastmod>2026-08-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://linuxmalaysia.github.io/ASIMP/local_testing_matrix_spec.html</loc>
-    <lastmod>2026-08-11</lastmod>
+    <lastmod>2026-08-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://linuxmalaysia.github.io/ASIMP/lynis.html</loc>
-    <lastmod>2026-08-11</lastmod>
+    <lastmod>2026-08-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://linuxmalaysia.github.io/ASIMP/openscap.html</loc>
-    <lastmod>2026-08-11</lastmod>
+    <lastmod>2026-08-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://linuxmalaysia.github.io/ASIMP/output_asimp.html</loc>
-    <lastmod>2026-08-11</lastmod>
+    <lastmod>2026-08-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://linuxmalaysia.github.io/ASIMP/output_lynis.html</loc>
-    <lastmod>2026-08-11</lastmod>
+    <lastmod>2026-08-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://linuxmalaysia.github.io/ASIMP/output_openscap.html</loc>
-    <lastmod>2026-08-11</lastmod>
+    <lastmod>2026-08-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://linuxmalaysia.github.io/ASIMP/security_posture_assessment.html</loc>
-    <lastmod>2026-08-11</lastmod>
+    <lastmod>2026-08-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://linuxmalaysia.github.io/ASIMP/troubleshooting.html</loc>
-    <lastmod>2026-08-11</lastmod>
+    <lastmod>2026-08-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>

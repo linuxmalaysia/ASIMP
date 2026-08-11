@@ -2,7 +2,7 @@
 okf_version: "0.1"
 type: report
 title: "Output of Lynis Auditing Report"
-timestamp: "2026-08-11T12:00:00Z"
+timestamp: "2026-08-05T23:54:50Z"
 topics: [lynis, auditing, output, report]
 ---
 
@@ -57,21 +57,24 @@ When ASIMP invokes Lynis, the console log captures category-by-category checks:
 
 ---
 
-## ⚠️ Suggestions & Warnings Resolved by ASIMP
+## ⚠️ Suggestions & Warnings (Expected Privileged Output / Simulated Fallback)
 
-During Phase 2 (Hardening), ASIMP parses Lynis suggestions from `/var/log/lynis-report.dat` and applies targeted remediations.
+In a fully privileged production run, ASIMP parses Lynis suggestions from `/var/log/lynis-report.dat` and applies targeted remediations. Under the unprivileged sandbox environment, these resolutions are simulated as follows:
 
-### 1. SSH Server Security
+### 1. SSH Server Security (Expected Privileged Output)
+
 * **Lynis Suggestion**: `Disable SSH root login and restrict password logins.`
-* **ASIMP Mitigation**: Configured via `ssh-hardening` role, disabling direct root authentication.
+* **ASIMP Mitigation**: Simulated fallback (applied via `ssh-hardening` role in production, disabling direct root authentication).
 
-### 2. File Integrity Checking
+### 2. File Integrity Checking (Expected Privileged Output)
+
 * **Lynis Suggestion**: `Install a file integrity checker to detect modifications to system binaries.`
-* **ASIMP Mitigation**: Executed system-wide package verification with `debsums`.
+* **ASIMP Mitigation**: Simulated fallback (executed system-wide package verification with `debsums` in production).
 
-### 3. Compiler Restriction
+### 3. Compiler Restriction (Expected Privileged Output)
+
 * **Lynis Suggestion**: `Restrict compilers like gcc to root-only to prevent on-box privilege escalation exploits.`
-* **ASIMP Mitigation**: Modified file permissions on `gcc`, `as`, and `make`.
+* **ASIMP Mitigation**: Simulated fallback (modified file permissions on `gcc`, `as`, and `make` in production).
 
 ---
 
@@ -82,4 +85,4 @@ The detailed report and findings database are saved to:
 - **Findings Database**: `/var/log/lynis-report.dat`
 
 ---
-*Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-08-11*
+*Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-08-05*

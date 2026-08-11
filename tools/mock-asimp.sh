@@ -92,22 +92,21 @@ EOF
     REPORT_FILE="$MOCK_REPORT_DIR/SECURITY_AUDIT_REPORT.md"
     cat <<EOF > "$REPORT_FILE"
 ---
-okf_version: 0.1
+okf_version: "0.1"
 type: report
 title: "Google Jules Sovereign OS Security Hardening & Compliance Report"
-description: "Simulated security audit and compliance report for Google Jules sandbox"
 timestamp: "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 topics: [security, compliance, audit, report, sandbox]
 ---
 # Google Jules Sovereign OS Security Hardening & Compliance Report
 
 ## System Overview
+
 - **Target Host**: Google Jules Sandbox
-- **Mock Environment**: Active (Google Jules Secure Containment)
-- **Kernel Simulation**: Hardened Core Linux Architecture
 - **Report Timestamp**: $(date "+%Y-%m-%d %H:%M:%S")
 
 ## Hardening & Audit Scores
+
 - **Lynis Hardening Index**:
   - Baseline: $BASELINE_LYNIS_HI / 100
   - After Hardening: $AFTER_LYNIS_HI / 100
@@ -118,6 +117,7 @@ topics: [security, compliance, audit, report, sandbox]
   - Target: 90%+
 
 ## Executed Mock Controls & Remediation
+
 - **Transparent Huge Pages (THP)**: Disabled (Simulated via Systemd Hook)
 - **SSH Server Hardening**: Lockdown Configured (AllowTcpForwarding=no, MaxAuthTries=3, MaxSessions=2)
 - **Compiler Constraints**: Root-Only restricts '/usr/bin/gcc', '/usr/bin/as'

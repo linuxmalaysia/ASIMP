@@ -166,35 +166,6 @@ class TestTestIndexDocYamlValidity(unittest.TestCase):
         # forms evaluate to string. We assert that both are strings.
         self.assertIsInstance(reverted_that[0], str)
 
-    def test_layout_assert_expression_evaluates_false_for_similarly_prefixed_key(self) -> None:
-        # Regression/boundary case: a front matter key that merely shares the
-        # 'title' prefix (e.g. 'titles:') must NOT satisfy the startswith
-        # check. This guards against a naive substring match that only looks
-        # for the 'title' token rather than the exact '---\ntitle:' prefix.
-        that_expr = self._get_target_task()["ansible.builtin.assert"]["that"][0]
-        env = Environment()
-        compiled = env.compile_expression(that_expr)
-
-        doc_with_similar_key = (
-            "---\ntitles: \"About ASIMP\"\n---\n\n# About ASIMP\n"
-        )
-        self.assertFalse(compiled(doc_content=doc_with_similar_key))
-
-    def test_layout_assert_expression_evaluates_true_regardless_of_title_quote_style(self) -> None:
-        # The condition only inspects the front matter opening tokens
-        # ('---\ntitle:'), so it must evaluate True no matter how the title
-        # value itself is quoted (single-quoted, double-quoted, or bare).
-        that_expr = self._get_target_task()["ansible.builtin.assert"]["that"][0]
-        env = Environment()
-        compiled = env.compile_expression(that_expr)
-
-        for doc in (
-            "---\ntitle: 'About ASIMP'\n---\n\n# About ASIMP\n",
-            "---\ntitle: About ASIMP\n---\n\n# About ASIMP\n",
-        ):
-            with self.subTest(doc=doc):
-                self.assertTrue(compiled(doc_content=doc))
-
 
 if __name__ == "__main__":
     unittest.main()

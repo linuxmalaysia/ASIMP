@@ -2,7 +2,7 @@
 okf_version: "0.1"
 type: report
 title: "Output of OpenSCAP Evaluation Report"
-timestamp: "2026-08-11T12:00:00Z"
+timestamp: "2026-08-05T23:54:50Z"
 topics: [openscap, compliance, cis, output, report]
 ---
 
@@ -22,9 +22,9 @@ ASIMP utilizes OpenSCAP with dynamic OS-detection logic to verify compliance par
 
 ---
 
-## 🔬 Rule Compliance Details
+## 🔬 Rule Compliance Details (Simulated Fallback)
 
-The table below showcases typical rules checked during an OpenSCAP evaluation, indicating their baseline state vs. post-remediation state.
+The table below showcases typical rules checked during an OpenSCAP evaluation, indicating their baseline state vs. post-remediation state as simulated fallback data under the unprivileged sandbox environment:
 
 | Policy Rule ID | Description | Before Hardening | After Hardening | Remediation Status |
 |----------------|-------------|------------------|-----------------|--------------------|
@@ -63,11 +63,13 @@ Result  pass
 
 ## 📂 Report Artifacts
 
-OpenSCAP generates interactive HTML reports containing detailed explanations and remediation scripts for each failed rule:
-- **Before Hardening HTML Report**: `/var/log/openscap-before-report.html`
-- **After Hardening HTML Report**: `/var/log/openscap-after-report.html`
-- **Before Hardening Results XML**: `/var/log/openscap-before-results.xml`
-- **After Hardening Results XML**: `/var/log/openscap-after-results.xml`
+Under full production runs with root privileges, OpenSCAP generates interactive HTML and XML report files:
+- **Before Hardening HTML Report**: `/var/log/openscap-before-report.html` (Expected privileged output)
+- **After Hardening HTML Report**: `/var/log/openscap-after-report.html` (Expected privileged output)
+- **Before Hardening Results XML**: `/var/log/openscap-before-results.xml` (Expected privileged output)
+- **After Hardening Results XML**: `/var/log/openscap-after-results.xml` (Expected privileged output)
+
+*Note: In the unprivileged sandbox environment, these HTML/XML artifacts are skipped due to host permission limits.*
 
 ---
-*Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-08-11*
+*Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-08-05*
