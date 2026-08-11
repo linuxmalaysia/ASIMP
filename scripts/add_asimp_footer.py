@@ -44,11 +44,7 @@ def patch_markdown_file(filepath: str) -> None:
 
 
 def main() -> None:
-    """
-    Process repository Markdown files and add the standard footer where needed.
-    
-    Directories excluded from traversal include version-control, dependency, virtual-environment, and `lynis-ansible` directories. Files under `roles/lynis-ansible` are also skipped.
-    """
+    """Walk through the repository directories and processes all markdown (.md) documents."""
     exclude_dirs: Set[str] = {
         ".git",
         "node_modules",
