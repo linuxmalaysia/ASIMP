@@ -2,7 +2,7 @@
 okf_version: "0.1"
 type: report
 title: "Google Jules Sovereign OS Security Hardening & Compliance Report"
-timestamp: "2026-08-11T03:58:28Z"
+timestamp: "2026-08-11T17:32:19Z"
 topics: [security, compliance, audit, report, sandbox]
 ---
 # Google Jules Sovereign OS Security Hardening & Compliance Report
@@ -10,7 +10,7 @@ topics: [security, compliance, audit, report, sandbox]
 ## System Overview
 
 - **Target Host**: Google Jules Sandbox
-- **Report Timestamp**: 2026-08-11 03:58:28
+- **Report Timestamp**: 2026-08-11 17:32:19
 
 ## Hardening & Audit Scores
 
@@ -33,4 +33,5 @@ topics: [security, compliance, audit, report, sandbox]
 - **OVAL Vulnerability Scan**: Non-vulnerable (Fully patched packages simulation)
 
 ---
-*Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-08-11*
+
+ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu Malaysia (Piawai) | GNU General Public License v3.0

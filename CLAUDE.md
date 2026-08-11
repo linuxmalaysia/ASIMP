@@ -57,3 +57,7 @@ ansible-lint play-localhost.yml
 
 4. **No Direct Log/Artifact Modification**:
    - Never directly modify `/var/log/*` files or generated report HTMLs. Always modify the source Ansible task files under `roles/` or the playbook templates.
+
+---
+
+ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu Malaysia (Piawai) | GNU General Public License v3.0
