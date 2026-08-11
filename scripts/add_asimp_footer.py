@@ -38,8 +38,14 @@ def patch_markdown_file(filepath: str) -> None:
         print(f"Skipping non-regular file: {filepath}")
         return
 
+    # Check repository containment using commonpath
     repo_root = os.path.realpath(os.getcwd())
-    if not resolved_path.startswith(repo_root):
+    try:
+        common = os.path.commonpath([repo_root, resolved_path])
+        if os.path.realpath(common) != repo_root:
+            print(f"Skipping file outside repository root: {filepath}")
+            return
+    except Exception:
         print(f"Skipping file outside repository root: {filepath}")
         return
 
@@ -57,18 +63,24 @@ def patch_markdown_file(filepath: str) -> None:
             body = parts[2]
 
     # 3. Clean legacy / existing standard footers from the body
-    # Loop recursively to clean multiple duplicate footer/attribution blocks from the end
+    # Loop recursively to clean multiple duplicate footer/attribution blocks from the end.
+    # It removes content only when a recognized legacy or standardized footer block
+    # is anchored at the end of the document (validated to be exactly a single footer line).
     while True:
         lines = body.splitlines()
         footer_start_idx = -1
         for i in range(len(lines) - 1, -1, -1):
             line = lines[i].strip()
             if line == "---":
-                subsequent_text = "\n".join(lines[i+1:])
-                # Use stable markers to identify legacy or existing standardized footers
-                if "Deep State of Mind (DSOM)" in subsequent_text or "ASIMP (Ansible System" in subsequent_text:
-                    footer_start_idx = i
-                    break
+                subsequent_lines = lines[i+1:]
+                non_empty_subsequent = [l.strip() for l in subsequent_lines if l.strip()]
+                # Validate that it is a trailing block consisting of exactly one line
+                if len(non_empty_subsequent) == 1:
+                    sub_line = non_empty_subsequent[0]
+                    # Use stable markers to identify legacy or existing standardized footers
+                    if "Deep State of Mind (DSOM)" in sub_line or "ASIMP (Ansible System" in sub_line:
+                        footer_start_idx = i
+                        break
         if footer_start_idx != -1:
             body = "\n".join(lines[:footer_start_idx])
         else:
