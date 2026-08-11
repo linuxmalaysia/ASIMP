@@ -41,6 +41,11 @@ class TestJekyllGhPagesWorkflow(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        """
+        Load and parse the Jekyll GitHub Pages workflow for the test class.
+        
+        Stores the workflow source text and parsed YAML data as class attributes.
+        """
         with open(WORKFLOW_PATH, "r", encoding="utf-8") as f:
             cls.raw_content = f.read()
         cls.data = yaml.safe_load(cls.raw_content)
@@ -61,6 +66,12 @@ class TestJekyllGhPagesWorkflow(unittest.TestCase):
         # YAML 1.1 core schema rules (like `y`/`yes`/`no`/`off`), *not* the
         # string "on". GitHub Actions workflow files rely on this key, so
         # tests must look it up the same way a real parse would produce it.
+        """
+        Retrieve the parsed GitHub Actions trigger configuration.
+        
+        Returns:
+        	dict: The workflow's `on` configuration.
+        """
         self.assertIn(
             True,
             self.data,
@@ -86,6 +97,9 @@ class TestJekyllGhPagesWorkflow(unittest.TestCase):
         # which does not exist in this repository (whose default branch is
         # "master"), so the workflow would never have run. Ensure "main" is
         # not reintroduced anywhere in the push branch trigger.
+        """
+        Verify that the push trigger does not include the `main` branch.
+        """
         on_block = self._get_on_block()
         self.assertNotIn("main", on_block["push"]["branches"])
 
@@ -106,6 +120,7 @@ class TestJekyllGhPagesWorkflow(unittest.TestCase):
         # to "main" changes the parsed trigger away from "master", which
         # would once again silently prevent this workflow from running on
         # pushes to this repository's actual default branch.
+        """Verify that reverting the workflow branch configuration to `main` changes the parsed push branches accordingly."""
         reverted_content = self.raw_content.replace(
             'branches: ["master"]', 'branches: ["main"]'
         )
