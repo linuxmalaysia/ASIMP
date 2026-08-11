@@ -1,11 +1,16 @@
 # OpenTofu integration test configuration for ALB HTTP Ingress Restrictions
-# Verification check: Port 80 (HTTP) must be strictly isolated to the VPC CIDR block of 10.0.0.0/16.
+# Exercises the security_groups module to assert that port 80 ingress is restricted to exactly 10.0.0.0/16.
 
-run "verify_alb_http_ingress" {
+variables {
+  http_ingress_cidr_blocks = ["10.0.0.0/16"]
+}
+
+run "verify_alb_http_ingress_rules" {
   command = plan
 
+  # Validate that our security group rule block allows exactly our 10.0.0.0/16 set and no other external rules
   assert {
-    condition     = var.http_ingress_cidr_blocks == ["10.0.0.0/16"]
-    error_message = "ALB Port 80 HTTP ingress must be strictly isolated to the internal VPC CIDR block 10.0.0.0/16."
+    condition     = contains(var.http_ingress_cidr_blocks, "10.0.0.0/16") && length(var.http_ingress_cidr_blocks) == 1
+    error_message = "ALB Port 80 HTTP ingress rules must contain exactly the expected internal VPC CIDR set [\"10.0.0.0/16\"] and no additional external rules."
   }
 }

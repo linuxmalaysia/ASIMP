@@ -2,7 +2,7 @@
 okf_version: "0.1"
 type: report
 title: "Google Jules Sovereign OS Security Hardening & Compliance Report"
-timestamp: "2026-08-11T03:15:40Z"
+timestamp: "2026-08-11T03:58:28Z"
 topics: [security, compliance, audit, report, sandbox]
 ---
 # Google Jules Sovereign OS Security Hardening & Compliance Report
@@ -10,7 +10,7 @@ topics: [security, compliance, audit, report, sandbox]
 ## System Overview
 
 - **Target Host**: Google Jules Sandbox
-- **Report Timestamp**: 2026-08-11 03:15:40
+- **Report Timestamp**: 2026-08-11 03:58:28
 
 ## Hardening & Audit Scores
 
