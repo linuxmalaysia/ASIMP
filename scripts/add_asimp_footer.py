@@ -38,15 +38,15 @@ def patch_markdown_file(filepath: str) -> None:
         print(f"Skipping non-regular file: {filepath}")
         return
 
-    # Check repository containment using commonpath
+    # Check repository containment using commonpath, catching only ValueError
     repo_root = os.path.realpath(os.getcwd())
     try:
         common = os.path.commonpath([repo_root, resolved_path])
         if os.path.realpath(common) != repo_root:
             print(f"Skipping file outside repository root: {filepath}")
             return
-    except Exception:
-        print(f"Skipping file outside repository root: {filepath}")
+    except ValueError:
+        print(f"Skipping file outside repository root due to drive mismatch: {filepath}")
         return
 
     with open(resolved_path, "r", encoding="utf-8") as f:
@@ -56,11 +56,18 @@ def patch_markdown_file(filepath: str) -> None:
     front_matter = ""
     body = content
 
-    if content.startswith("---"):
-        parts = content.split("---", 2)
-        if len(parts) >= 3:
-            front_matter = "---" + parts[1] + "---"
-            body = parts[2]
+    # Find the front-matter block by looking for complete lines containing only the '---' delimiter
+    if content.startswith("---\n") or content.startswith("---\r\n"):
+        lines = content.splitlines(keepends=True)
+        closing_idx = -1
+        for idx in range(1, len(lines)):
+            if lines[idx].rstrip("\r\n") == "---":
+                closing_idx = idx
+                break
+
+        if closing_idx != -1:
+            front_matter = "".join(lines[:closing_idx + 1])
+            body = "".join(lines[closing_idx + 1:])
 
     # 3. Clean legacy / existing standard footers from the body
     # Loop recursively to clean multiple duplicate footer/attribution blocks from the end.
