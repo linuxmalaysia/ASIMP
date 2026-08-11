@@ -15,8 +15,10 @@ permissions:
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+# Allow only one concurrent deployment, skipping runs queued between the run in-
+# progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production d
+# eployments to complete.
 concurrency:
   group: "pages"
   cancel-in-progress: false
@@ -28,13 +30,26 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Prepare Markdown Front Matter
+        run: |
+          chmod +x scripts/prepare_docs.py
+          python scripts/prepare_docs.py
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
         with:
-          source: ./
+          source: ./docs
           destination: ./_site
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
 
