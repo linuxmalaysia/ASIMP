@@ -22,12 +22,13 @@ FOOTER_TEXT = (
 
 
 def patch_markdown_file(filepath: str) -> None:
-    """Check a markdown file and append the standard ASIMP footer if absent,
-
-    while removing any older legacy or standard footers.
-
+    """
+    Append the standard ASIMP/DSOM footer to a Markdown file when needed.
+    
+    Existing recognized legacy footer blocks are removed before the standard footer is appended. Files outside the repository, symbolic links, non-regular files, and files that already contain the standard footer are skipped.
+    
     Args:
-        filepath: The path of the markdown file to process.
+        filepath (str): Path to the Markdown file to process.
     """
     # 1. File path safety validation guards
     if os.path.islink(filepath):
