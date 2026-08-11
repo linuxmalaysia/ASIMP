@@ -32,7 +32,8 @@ class TestAddAsimpFooter(unittest.TestCase):
         "Harisfazillah Jamel (LinuxMalaysia) | "
         "2026-07-12 Standard: UK English | "
         "DBP-standard Bahasa Melayu Malaysia (Piawai) | "
-        "GNU General Public License v3.0"
+        "GNU General Public License v3.0 | "
+        "[Legal Notice & Disclaimer](https://linuxmalaysia.github.io/ASIMP/legal-notice.html)"
     )
 
     def setUp(self) -> None:

@@ -16,7 +16,8 @@ FOOTER_TEXT = (
     "Harisfazillah Jamel (LinuxMalaysia) | "
     "2026-07-12 Standard: UK English | "
     "DBP-standard Bahasa Melayu Malaysia (Piawai) | "
-    "GNU General Public License v3.0"
+    "GNU General Public License v3.0 | "
+    "[Legal Notice & Disclaimer](https://linuxmalaysia.github.io/ASIMP/legal-notice.html)"
 )
 
 
@@ -51,6 +52,10 @@ def patch_markdown_file(filepath: str) -> None:
 
     with open(resolved_path, "r", encoding="utf-8") as f:
         content = f.read()
+
+    if FOOTER_TEXT in content:
+        print(f"No update needed (already has footer): {filepath}")
+        return
 
     # 2. Split front matter and body to prevent touch of front matter delimiters
     front_matter = ""
@@ -112,7 +117,7 @@ def patch_markdown_file(filepath: str) -> None:
         temp_file.write(new_content)
         temp_file.close()
         os.replace(temp_filepath, resolved_path)
-        print(f"Successfully patched footer in: {filepath}")
+        print(f"Successfully appended standard footer to: {filepath}")
     except Exception as e:
         if os.path.exists(temp_filepath):
             os.remove(temp_filepath)
