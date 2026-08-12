@@ -22,13 +22,12 @@ FOOTER_TEXT = (
 
 
 def patch_markdown_file(filepath: str) -> None:
-    """
-    Append the standard ASIMP/DSOM footer to a Markdown file when needed.
-    
-    Existing recognized legacy footer blocks are removed before the standard footer is appended. Files outside the repository, symbolic links, non-regular files, and files that already contain the standard footer are skipped.
-    
+    """Check a markdown file and append the standard ASIMP footer if absent,
+
+    while removing any older legacy or standard footers.
+
     Args:
-        filepath (str): Path to the Markdown file to process.
+        filepath: The path of the markdown file to process.
     """
     # 1. File path safety validation guards
     if os.path.islink(filepath):
@@ -54,7 +53,7 @@ def patch_markdown_file(filepath: str) -> None:
     with open(resolved_path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    if FOOTER_TEXT in content:
+    if content.rstrip().endswith("\n\n---\n\n" + FOOTER_TEXT):
         print(f"No update needed (already has footer): {filepath}")
         return
 
@@ -134,6 +133,7 @@ def main() -> None:
         ".venv",
         "lynis-ansible",
         "asimp_mock",  # Prune asimp_mock folder entirely from walking
+        "docs",        # Exclude docs directory so Jekyll site pages do not get inline footers
     }
 
     # Walk repository from the root directory
@@ -147,9 +147,12 @@ def main() -> None:
 
                 # Prune and filter path components to exclude generated report paths or submodules
                 norm_path = os.path.normpath(filepath)
-                if "roles/lynis-ansible" in norm_path:
+                parts = norm_path.split(os.sep)
+                if "roles" in parts and "lynis-ansible" in parts:
                     continue
-                if "data/asimp_mock" in norm_path:
+                if "data" in parts and "asimp_mock" in parts:
+                    continue
+                if "docs" in parts:
                     continue
 
                 patch_markdown_file(filepath)

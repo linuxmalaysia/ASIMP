@@ -39,12 +39,6 @@
       - SECURITY_AUDIT_REPORT.md
       - SUMMARY.md
       - data/asimp_mock/opt/report/openscap/SECURITY_AUDIT_REPORT.md
-      - docs/architecture.md
-      - docs/configuration.md
-      - docs/dsom_ansible_review.md
-      - docs/index.md
-      - docs/legal-notice.md
-      - docs/local_testing_matrix_spec.md
       - roles/reporting-ASIMP/README.md
       - roles/update-ubuntu-ASIMP/README.md
 

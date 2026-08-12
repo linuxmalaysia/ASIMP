@@ -128,7 +128,3 @@ To bypass these limitations gracefully:
    - **Important Note**: These simulated/mock fallback scores and any derived "Compliant" or "Non-vulnerable" reports are strictly **non-authoritative and test-only data**. They are preserved strictly for sandbox test verification and CI/CD logical consistency.
 4. **Downstream Compliance Gate Behavior**: To prevent any security bypasses, downstream compliance-gate verification explicitly **rejects** simulated/mock results. Simulated executions will fail to satisfy any actual compliance checkpoints (i.e. `lynis_success` and `audits_completed` are set to `false` when simulated fallbacks are used), ensuring only real, verified audits can validate a system's true security baseline.
 5. **Unified Scorecard Storage**: The parsed or simulated score is saved into `data/asimp_mock/var/log/asimp-baseline-scores.json` and printed on the final terminal report. This ensures that CI/CD and sandbox environments remain green while verifying overall playbook logical consistency.
-
----
-
-ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu Malaysia (Piawai) | GNU General Public License v3.0 | [Legal Notice & Disclaimer](https://linuxmalaysia.github.io/ASIMP/legal-notice.html)

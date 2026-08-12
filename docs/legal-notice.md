@@ -7,8 +7,6 @@ timestamp: "2026-08-05T12:00:00Z"
 topics: [legal, notice, privacy, disclaimer, assumptions]
 ---
 
-# Legal Notice // Privacy Policy, Critical Assumptions & Disclaimer of Liability
-
 This document outlines the legal notice, privacy statement, and system limitations of the Ansible System Integrity Management Platform (ASIMP).
 
 ---
@@ -33,7 +31,7 @@ Please note that this project does not represent a live, production-grade deploy
 
 We are deeply committed to privacy and data protection. We have done our best to protect anyone and organisation referenced, simulated, or involved in the design and execution of this baseline.
 
-* **Anonymised Metadata**: All IP addresses, domains, names, and contact details used within the configurations, tests, and documentation are either strictly fictional, non-routable, or reserved documentation blocks (such as `.internal` or `.example`).
+* **Anonymised Metadata**: All IP addresses, domains, names, and contact details used within the example and test configuration files are strictly fictional, non-routable, or reserved documentation blocks (such as `.internal` or `.example`). This claim does not apply to active, public project URLs, external reference links, or maintainer attribution listed in standard documentation.
 * **Zero Real-World Storage**: This repository does not harvest, process, or store any actual personal identifying information (PII) of third parties.
 
 ---
@@ -49,7 +47,3 @@ Use of this project, its code, and its documents is at your own risk.
 ---
 
 *ASIMP Architecture Team | OKF v0.1 Compliant | 2026-08-05*
-
----
-
-ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu Malaysia (Piawai) | GNU General Public License v3.0 | [Legal Notice & Disclaimer](https://linuxmalaysia.github.io/ASIMP/legal-notice.html)

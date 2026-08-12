@@ -7,8 +7,6 @@ timestamp: "2026-08-05T12:00:00Z"
 topics: ["ansible", "dsom", "asimp", "compatibility", "review"]
 ---
 
-# Review & Adoption of DSOM Ansible Configuration Guide (v3.6.2)
-
 This document provides a comprehensive structural review and alignment strategy for adopting the **DSOM (Deep State of Mind) Ansible Configuration Guide (v3.6.2)** into the **ASIMP (Ansible System Integrity Management Platform)** repository.
 
 ASIMP is designed as a security hardening and auditing framework. Integrating DSOM's infrastructure guidelines allows ASIMP to align seamlessly with DSOM Ingestion Backbone environments.
@@ -106,7 +104,3 @@ To successfully deploy ASIMP alongside the DSOM Backbone, follow these implement
 
 ---
 *Created by the ASIMP Architecture Team | OKF v0.1 Compliant | 2026-08-05*
-
----
-
-ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu Malaysia (Piawai) | GNU General Public License v3.0 | [Legal Notice & Disclaimer](https://linuxmalaysia.github.io/ASIMP/legal-notice.html)

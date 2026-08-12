@@ -70,7 +70,3 @@ Under full production runs with root privileges, OpenSCAP generates interactive 
 - **After Hardening Results XML**: `/var/log/openscap-after-results.xml` (Expected privileged output)
 
 *Note: In the unprivileged sandbox environment, these HTML/XML artifacts are skipped due to host permission limits.*
-
----
-
-ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu Malaysia (Piawai) | GNU General Public License v3.0 | [Legal Notice & Disclaimer](https://linuxmalaysia.github.io/ASIMP/legal-notice.html)
