@@ -99,6 +99,7 @@ class TestTestAsimpMockDataValidity(unittest.TestCase):
         self.assertTrue(compiled(report_frontmatter=report_frontmatter))
 
     def test_float_coerced_condition_evaluates_false_for_a_mismatched_version(self) -> None:
+        """Verify that the expected version condition evaluates to false for a mismatched version."""
         env = Environment()
         compiled = env.compile_expression(EXPECTED_OKF_VERSION_CONDITION)
         report_frontmatter = {"okf_version": "0.2"}
@@ -106,6 +107,7 @@ class TestTestAsimpMockDataValidity(unittest.TestCase):
 
     def test_previous_unconverted_condition_would_regress_into_always_false(self) -> None:
         # Demonstrates *why* comparing string to float literal directly is incorrect
+        """Verify that the previous direct string-to-float comparison evaluates to `false` for the quoted version value."""
         env = Environment()
         compiled = env.compile_expression(PREVIOUS_UNCONVERTED_CONDITION)
         report_frontmatter = {"okf_version": "0.1"}
