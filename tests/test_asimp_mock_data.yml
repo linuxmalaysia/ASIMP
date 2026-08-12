@@ -79,7 +79,7 @@
     - name: Assert the frontmatter declares the expected OKF metadata
       ansible.builtin.assert:
         that:
-          - report_frontmatter.okf_version | float == 0.1
+          - report_frontmatter.okf_version == "0.1"
           - report_frontmatter.type == 'report'
           - "'security' in report_frontmatter.topics"
           - "'compliance' in report_frontmatter.topics"

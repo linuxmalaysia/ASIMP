@@ -41,3 +41,7 @@ Only execute remote terminal queries or run Ansible commands against the target 
 2. **Mandatory OKF Keys**: Frontmatter must define `okf_version`, `type`, `title`, `timestamp`, and `topics`.
 3. **No Drift Policy**: The set of directories under `.agents/skills/` must exactly match the skills documented in `AGENTS.md`.
 4. **Standard Footer Compliance**: All markdown documents must end with the standard ASIMP/DSOM footer to ensure consistent branding and legal coverage.
+
+---
+
+ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu Malaysia (Piawai) | GNU General Public License v3.0 | [Legal Notice & Disclaimer](https://linuxmalaysia.github.io/ASIMP/legal-notice.html)

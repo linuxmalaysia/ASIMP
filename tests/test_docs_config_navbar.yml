@@ -80,8 +80,9 @@
       loop:
         - openscap.md
         - lynis.md
+        - legal-notice.md
 
-    - name: Assert both new navbar-linked markdown files were found
+    - name: Assert all new navbar-linked markdown files were found
       ansible.builtin.assert:
         that:
           - item.stat.exists
