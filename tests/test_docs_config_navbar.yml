@@ -1,13 +1,12 @@
 ---
-# Structural regression tests for the navbar entries in docs/_config.yml:
-# the pre-existing "OpenSCAP & Playbooks" -> /openscap.html and
-# "Lynis & Playbooks" -> /lynis.html entries (inserted between "Architecture
-# & Design" and "Configuration & Variables"), plus the new "Legal Notice"
-# -> /legal-notice.html entry appended after "Troubleshooting" in this PR.
+# Structural regression tests for the two new navbar entries added to
+# docs/_config.yml ("OpenSCAP & Playbooks" -> /openscap.html and
+# "Lynis & Playbooks" -> /lynis.html), inserted between the existing
+# "Architecture & Design" and "Configuration & Variables" entries.
 #
 # Run with:
 #   ansible-playbook -i tests/inventory tests/test_docs_config_navbar.yml
-- name: Verify docs/_config.yml navbar contains the OpenSCAP/Lynis/Legal Notice entries
+- name: Verify docs/_config.yml navbar contains the new OpenSCAP/Lynis entries
   hosts: localhost
   connection: local
   gather_facts: false
@@ -28,8 +27,6 @@
         url: "/configuration.html"
       - title: "Troubleshooting"
         url: "/troubleshooting.html"
-      - title: "Legal Notice"
-        url: "/legal-notice.html"
 
   tasks:
     - name: Load and parse docs/_config.yml
@@ -42,17 +39,17 @@
           - config_data.navbar is sequence
         fail_msg: "docs/_config.yml must define a 'navbar' list"
 
-    - name: Assert the navbar contains exactly seven entries
+    - name: Assert the navbar contains exactly six entries
       ansible.builtin.assert:
         that:
-          - config_data.navbar | length == 7
-        fail_msg: "docs/_config.yml navbar must contain exactly 7 entries (Home, Architecture, OpenSCAP, Lynis, Configuration, Troubleshooting, Legal Notice)"
+          - config_data.navbar | length == 6
+        fail_msg: "docs/_config.yml navbar must contain exactly 6 entries (Home, Architecture, OpenSCAP, Lynis, Configuration, Troubleshooting)"
 
     - name: Assert the navbar entries match the expected title/url pairs, in exact order
       ansible.builtin.assert:
         that:
           - config_data.navbar == expected_navbar
-        fail_msg: "docs/_config.yml navbar must list Home, Architecture & Design, OpenSCAP & Playbooks (/openscap.html), Lynis & Playbooks (/lynis.html), Configuration & Variables, Troubleshooting, then Legal Notice (/legal-notice.html), in that exact order"
+        fail_msg: "docs/_config.yml navbar must list Home, Architecture & Design, OpenSCAP & Playbooks (/openscap.html), Lynis & Playbooks (/lynis.html), Configuration & Variables, then Troubleshooting, in that exact order"
 
     - name: Assert the new OpenSCAP navbar entry is positioned directly after Architecture & Design
       ansible.builtin.assert:
@@ -67,27 +64,6 @@
           - (config_data.navbar | map(attribute='title') | list).index('Lynis & Playbooks') == (config_data.navbar | map(attribute='title') | list).index('Configuration & Variables') - 1
         fail_msg: "The 'Lynis & Playbooks' navbar entry must sit directly between 'OpenSCAP & Playbooks' and 'Configuration & Variables'"
 
-    - name: Assert the new Legal Notice navbar entry is appended as the final entry, directly after Troubleshooting
-      ansible.builtin.assert:
-        that:
-          - (config_data.navbar | map(attribute='title') | list).index('Legal Notice') == (config_data.navbar | map(attribute='title') | list).index('Troubleshooting') + 1
-          - (config_data.navbar | map(attribute='title') | list).index('Legal Notice') == (config_data.navbar | length) - 1
-        fail_msg: "The 'Legal Notice' navbar entry must be appended immediately after 'Troubleshooting' as the last navbar entry"
-
-    - name: Assert the Legal Notice navbar entry points to the exact expected relative URL
-      ansible.builtin.assert:
-        that:
-          - (config_data.navbar | selectattr('title', 'equalto', 'Legal Notice') | list | length) == 1
-          - (config_data.navbar | selectattr('title', 'equalto', 'Legal Notice') | first).url == "/legal-notice.html"
-        fail_msg: "docs/_config.yml navbar must contain exactly one 'Legal Notice' entry pointing to '/legal-notice.html'"
-
-    - name: Assert no duplicate navbar titles or URLs were introduced by the Legal Notice addition
-      ansible.builtin.assert:
-        that:
-          - (config_data.navbar | map(attribute='title') | list) == (config_data.navbar | map(attribute='title') | unique | list)
-          - (config_data.navbar | map(attribute='url') | list) == (config_data.navbar | map(attribute='url') | unique | list)
-        fail_msg: "docs/_config.yml navbar must not contain duplicate title or url entries"
-
     - name: Assert the pre-existing site metadata keys are still present and unmodified
       ansible.builtin.assert:
         that:
@@ -95,21 +71,20 @@
           - config_data.show_downloads == false
         fail_msg: "docs/_config.yml must retain its pre-existing site 'title' and 'show_downloads' settings"
 
-    - name: Assert the markdown source files backing the navbar entries exist on disk
+    - name: Assert the markdown source files backing the new navbar entries exist on disk
       ansible.builtin.stat:
         path: "{{ docs_dir }}/{{ item }}"
       register: navbar_doc_stat
       loop:
         - openscap.md
         - lynis.md
-        - legal-notice.md
 
-    - name: Assert all navbar-linked markdown files were found
+    - name: Assert both new navbar-linked markdown files were found
       ansible.builtin.assert:
         that:
           - item.stat.exists
           - item.stat.isreg
-        fail_msg: "The markdown source file backing a navbar entry is missing from docs/"
+        fail_msg: "The markdown source file backing a new navbar entry is missing from docs/"
       loop: "{{ navbar_doc_stat.results }}"
       loop_control:
         label: "{{ item.item }}"

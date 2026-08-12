@@ -100,7 +100,7 @@ class TestAddAsimpFooter(unittest.TestCase):
         # File must be byte-for-byte unchanged (idempotent, no duplicate footer).
         self.assertEqual(self._read(path), original)
 
-    def test_patch_markdown_file_noop_when_footer_embedded_mid_document(self) -> None:
+    def test_patch_markdown_file_appends_canonical_footer_when_footer_embedded_mid_document(self) -> None:
         path = "docs/weird.md"
         original = (
             "# Title\n" + add_asimp_footer.FOOTER_TEXT + "\nMore content below.\n"
@@ -111,6 +111,22 @@ class TestAddAsimpFooter(unittest.TestCase):
 
         # It should append the footer to the end since the mid-document footer is not the canonical trailing block.
         expected = original.rstrip() + "\n\n---\n\n" + add_asimp_footer.FOOTER_TEXT + "\n"
+        self.assertEqual(self._read(path), expected)
+
+    def test_patch_markdown_file_cleans_duplicate_trailing_footers(self) -> None:
+        path = "README.md"
+        # File has duplicate trailing footers
+        original = (
+            "# Title\n" +
+            "\n\n---\n\n" + add_asimp_footer.FOOTER_TEXT +
+            "\n\n---\n\n" + add_asimp_footer.FOOTER_TEXT + "\n"
+        )
+        self._write(path, original)
+
+        add_asimp_footer.patch_markdown_file(path)
+
+        # It should clean the duplicate and keep exactly one canonical trailing footer
+        expected = "# Title" + "\n\n---\n\n" + add_asimp_footer.FOOTER_TEXT + "\n"
         self.assertEqual(self._read(path), expected)
 
     def test_patch_markdown_file_on_empty_file(self) -> None:

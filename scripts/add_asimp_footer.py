@@ -53,7 +53,14 @@ def patch_markdown_file(filepath: str) -> None:
     with open(resolved_path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    if content.rstrip().endswith("\n\n---\n\n" + FOOTER_TEXT):
+    # Check if the canonical trailing footer is present and is the sole recognized footer
+    has_trailing_canonical = content.rstrip().endswith("\n\n---\n\n" + FOOTER_TEXT)
+    has_duplicates_or_legacy = (
+        content.count("Deep State of Mind (DSOM)") > 1 or
+        content.count("ASIMP (Ansible System") > 1
+    )
+
+    if has_trailing_canonical and not has_duplicates_or_legacy:
         print(f"No update needed (already has footer): {filepath}")
         return
 
