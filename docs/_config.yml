@@ -9,6 +9,8 @@ navbar:
     url: "/"
   - title: "Architecture & Design"
     url: "/architecture.html"
+  - title: "AI Agents & DSOM"
+    url: "/ai_agents.html"
   - title: "OpenSCAP & Playbooks"
     url: "/openscap.html"
   - title: "Lynis & Playbooks"
