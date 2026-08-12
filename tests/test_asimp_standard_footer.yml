@@ -17,7 +17,7 @@
     footer_text: >-
       ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol
       | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu
-      Malaysia (Piawai) | GNU General Public License v3.0
+      Malaysia (Piawai) | GNU General Public License v3.0 | [Legal Notice & Disclaimer](https://linuxmalaysia.github.io/ASIMP/legal-notice.html)
     # Files this PR appended the standard footer to (relative to repo root).
     footer_files:
       - .agents/skills/ai-agent-instructions/SKILL.md
@@ -43,6 +43,7 @@
       - docs/configuration.md
       - docs/dsom_ansible_review.md
       - docs/index.md
+      - docs/legal-notice.md
       - docs/local_testing_matrix_spec.md
       - roles/reporting-ASIMP/README.md
       - roles/update-ubuntu-ASIMP/README.md
@@ -117,6 +118,24 @@
           - "'Zero-runtime database-free' not in default_layout_content"
         fail_msg: "docs/_layouts/default.html must no longer contain the old ad-hoc footer copy"
 
+    - name: Assert the standard footer text is preserved verbatim inside an HTML comment above the rendered footer
+      ansible.builtin.assert:
+        that:
+          - ("<!-- " + footer_text + " -->") in default_layout_content
+        fail_msg: "docs/_layouts/default.html must retain the exact standard ASIMP/DSOM footer text inside an HTML comment immediately above the rendered footer div"
+
+    - name: Assert the rendered footer div links to the Legal Notice page via a clickable anchor
+      ansible.builtin.assert:
+        that:
+          - '''<a href="/ASIMP/legal-notice.html">Legal Notice & Disclaimer</a>'' in default_layout_content'
+        fail_msg: "docs/_layouts/default.html footer div must render a clickable anchor to /ASIMP/legal-notice.html with the text 'Legal Notice & Disclaimer'"
+
+    - name: Assert the rendered footer anchor appears exactly once (no accidental duplication)
+      ansible.builtin.assert:
+        that:
+          - (default_layout_content | regex_findall('<a href="/ASIMP/legal-notice.html">Legal Notice & Disclaimer</a>' | regex_escape)) | length == 1
+        fail_msg: "docs/_layouts/default.html must contain exactly one Legal Notice anchor link in the rendered footer"
+
     - name: Assert scripts/add_asimp_footer.py declares the FOOTER_TEXT constant
       ansible.builtin.set_fact:
         footer_script_content: "{{ lookup('file', repo_root + '/scripts/add_asimp_footer.py') }}"
@@ -129,5 +148,6 @@
           - "'Harisfazillah Jamel (LinuxMalaysia) | \"' in footer_script_content"
           - "'2026-07-12 Standard: UK English | \"' in footer_script_content"
           - "'DBP-standard Bahasa Melayu Malaysia (Piawai) | \"' in footer_script_content"
-          - "'GNU General Public License v3.0'  in footer_script_content"
+          - "'GNU General Public License v3.0 | \"'  in footer_script_content"
+          - "'[Legal Notice & Disclaimer](https://linuxmalaysia.github.io/ASIMP/legal-notice.html)' in footer_script_content"
         fail_msg: "scripts/add_asimp_footer.py FOOTER_TEXT must be built from the exact standard footer fragments"
