@@ -1,0 +1,153 @@
+---
+# Structural and content-correctness tests for the new Local Knowledge-First
+# & Metadata Discovery SOP document (docs/sop_knowledge_first_discovery.md),
+# which documents the 5-step discovery flow AI agents must follow and the
+# mandatory OKF metadata rules.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_sop_knowledge_first_discovery_doc.yml
+- name: Verify docs/sop_knowledge_first_discovery.md frontmatter and content
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    doc_path: "{{ repo_root }}/docs/sop_knowledge_first_discovery.md"
+    expected_title: "Local Knowledge-First & Metadata Discovery"
+    expected_topics:
+      - asimp
+      - SOP
+      - metadata
+      - discovery
+      - OKF
+    required_headings:
+      - "## 🧭 The 5-Step Discovery Flow"
+      - "## 🔒 Mandatory Metadata Rules"
+    required_steps:
+      - "### Step 1: Local Frontmatter & Metadata Search"
+      - "### Step 2: Targeted File Viewing"
+      - "### Step 3: Temporal Verification Gate"
+      - "### Step 4: Human Verification & Knowledge Update"
+      - "### Step 5: Terminal Execution Gate"
+    mandatory_okf_keys:
+      - okf_version
+      - type
+      - title
+      - timestamp
+      - topics
+
+  tasks:
+    - name: Assert docs/sop_knowledge_first_discovery.md exists and is a regular file
+      ansible.builtin.stat:
+        path: "{{ doc_path }}"
+      register: doc_stat
+
+    - name: Fail loudly if the document is missing
+      ansible.builtin.assert:
+        that:
+          - doc_stat.stat.exists
+          - doc_stat.stat.isreg
+        fail_msg: "docs/sop_knowledge_first_discovery.md must exist as a regular file"
+
+    - name: Load raw content of docs/sop_knowledge_first_discovery.md
+      ansible.builtin.set_fact:
+        doc_content: "{{ lookup('file', doc_path) }}"
+
+    - name: Assert the document begins with a '---' front matter delimiter
+      ansible.builtin.assert:
+        that:
+          - doc_content.startswith('---')
+        fail_msg: "docs/sop_knowledge_first_discovery.md must start with a YAML front matter block delimited by '---' on the very first line"
+
+    - name: Assert the front matter block closes with a second '---' before the main heading
+      ansible.builtin.assert:
+        that:
+          - (doc_content.split('---', 2) | length) == 3
+          - doc_content.split('---', 2)[2].lstrip().startswith('# ' + expected_title)
+        fail_msg: "docs/sop_knowledge_first_discovery.md front matter must close with a second '---' immediately followed by the '# {{ expected_title }}' heading"
+
+    - name: Parse the YAML front matter block
+      ansible.builtin.set_fact:
+        doc_frontmatter: "{{ doc_content.split('---', 2)[1] | from_yaml }}"
+
+    - name: Assert the OKF metadata fields are present and correct
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.okf_version == "0.1"
+          - doc_frontmatter.type == "documentation"
+          - doc_frontmatter.title == expected_title
+          - doc_frontmatter.layout == "default"
+        fail_msg: "docs/sop_knowledge_first_discovery.md frontmatter must declare okf_version '0.1', type 'documentation', the exact title, and layout 'default'"
+
+    - name: Assert the frontmatter timestamp is a well-formed ISO-8601 UTC timestamp
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.timestamp is match('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$')
+        fail_msg: "docs/sop_knowledge_first_discovery.md frontmatter 'timestamp' must be an ISO-8601 UTC timestamp (YYYY-MM-DDTHH:MM:SSZ)"
+
+    - name: Assert the frontmatter topics list matches exactly, in order
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.topics == expected_topics
+        fail_msg: "docs/sop_knowledge_first_discovery.md frontmatter 'topics' must list asimp, SOP, metadata, discovery, OKF in that exact order"
+
+    - name: Assert the document title heading matches the frontmatter title
+      ansible.builtin.assert:
+        that:
+          - ("# " + expected_title) in doc_content
+        fail_msg: "docs/sop_knowledge_first_discovery.md must contain a top-level heading matching its frontmatter title"
+
+    - name: Assert every required section heading is present
+      ansible.builtin.assert:
+        that:
+          - heading in doc_content
+        fail_msg: "docs/sop_knowledge_first_discovery.md is missing required section heading: {{ heading }}"
+      loop: "{{ required_headings }}"
+      loop_control:
+        loop_var: heading
+
+    - name: Assert all five discovery steps are documented, in strict numeric order
+      ansible.builtin.assert:
+        that:
+          - required_steps[0] in doc_content
+          - required_steps[1] in doc_content
+          - required_steps[2] in doc_content
+          - required_steps[3] in doc_content
+          - required_steps[4] in doc_content
+          - doc_content.find(required_steps[0]) < doc_content.find(required_steps[1])
+          - doc_content.find(required_steps[1]) < doc_content.find(required_steps[2])
+          - doc_content.find(required_steps[2]) < doc_content.find(required_steps[3])
+          - doc_content.find(required_steps[3]) < doc_content.find(required_steps[4])
+        fail_msg: "docs/sop_knowledge_first_discovery.md must document Steps 1 through 5 of the Discovery Flow in strict numeric order"
+
+    - name: Assert the mandatory metadata rules enumerate every required OKF key
+      ansible.builtin.assert:
+        that:
+          - "'`' + item + '`' in doc_content"
+        fail_msg: "docs/sop_knowledge_first_discovery.md 'Mandatory Metadata Rules' must list the required OKF key: {{ item }}"
+      loop: "{{ mandatory_okf_keys }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert the No Drift Policy rule is documented, matching AGENTS.md's own skill/directory guarantee
+      ansible.builtin.assert:
+        that:
+          - "'No Drift Policy' in doc_content"
+          - "'.agents/skills/' in doc_content"
+          - "'AGENTS.md' in doc_content"
+        fail_msg: "docs/sop_knowledge_first_discovery.md must document the No Drift Policy linking .agents/skills/ to AGENTS.md"
+
+    - name: Assert the mandatory rules section is numbered exactly 1 through 4
+      ansible.builtin.assert:
+        that:
+          - "'1. **Frontmatter Definition**' in doc_content"
+          - "'2. **Mandatory OKF Keys**' in doc_content"
+          - "'3. **No Drift Policy**' in doc_content"
+          - "'4. **Standard Footer Compliance**' in doc_content"
+        fail_msg: "docs/sop_knowledge_first_discovery.md 'Mandatory Metadata Rules' must be numbered 1 through 4 with the expected bold labels"
+
+    - name: Assert the document does not declare the 'layout' key more than once
+      ansible.builtin.assert:
+        that:
+          - (doc_content.split('---', 2)[1] | regex_findall('^layout:', multiline=True) | length) == 1
+        fail_msg: "docs/sop_knowledge_first_discovery.md front matter must declare the 'layout' key exactly once"

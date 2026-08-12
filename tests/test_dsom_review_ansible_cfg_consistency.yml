@@ -1,0 +1,65 @@
+---
+# Cross-file consistency/regression test between the ansible.cfg callback
+# setting changed in this PR (`callback_result_format = yaml` renamed to the
+# actually-supported `stdout_callback = yaml`) and its narrative description
+# in docs/dsom_ansible_review.md.
+#
+# ansible.cfg's [defaults] section standardizes console output via
+# `stdout_callback = yaml` / `bin_ansible_callbacks = True`. This test reads
+# the *actual* callback key name configured in ansible.cfg and asserts that
+# docs/dsom_ansible_review.md's adoption narrative references that same,
+# real key -- guarding against the documentation drifting out of sync with
+# the setting it claims to describe (e.g. continuing to reference the
+# previous, non-functional `callback_result_format` key name after ansible.cfg
+# is renamed to the supported `stdout_callback` key).
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_dsom_review_ansible_cfg_consistency.yml
+- name: Verify docs/dsom_ansible_review.md stays consistent with the real ansible.cfg callback setting
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    cfg_path: "{{ repo_root }}/ansible.cfg"
+    doc_path: "{{ repo_root }}/docs/dsom_ansible_review.md"
+    stdout_callback_key_regex: '^(\w+)\s*=\s*yaml\s*$'
+
+  tasks:
+    - name: Load raw content of ansible.cfg
+      ansible.builtin.set_fact:
+        cfg_content: "{{ lookup('file', cfg_path) }}"
+
+    - name: Load raw content of docs/dsom_ansible_review.md
+      ansible.builtin.set_fact:
+        doc_content: "{{ lookup('file', doc_path) }}"
+
+    - name: Extract the actual callback setting key name configured to 'yaml' in ansible.cfg
+      ansible.builtin.set_fact:
+        actual_callback_key: "{{ (cfg_content | regex_findall(stdout_callback_key_regex, multiline=True))[0] }}"
+
+    - name: Sanity-check that ansible.cfg configures exactly the expected, supported callback key
+      ansible.builtin.assert:
+        that:
+          - actual_callback_key == 'stdout_callback'
+        fail_msg: "ansible.cfg's '= yaml' callback setting must use the supported key 'stdout_callback', found '{{ actual_callback_key }}' instead"
+
+    - name: Assert docs/dsom_ansible_review.md references the real, currently-configured callback key
+      ansible.builtin.assert:
+        that:
+          - (actual_callback_key + ' = yaml') in doc_content
+        fail_msg: >-
+          docs/dsom_ansible_review.md must reference the callback key actually configured in
+          ansible.cfg ('{{ actual_callback_key }} = yaml'). If ansible.cfg's callback key name
+          changes, this document's adoption narrative must be updated to match, otherwise it
+          documents a setting that no longer reflects reality.
+
+    - name: Assert docs/dsom_ansible_review.md does not still reference the superseded callback_result_format key
+      ansible.builtin.assert:
+        that:
+          - "'callback_result_format' not in doc_content"
+        fail_msg: >-
+          docs/dsom_ansible_review.md still references the superseded 'callback_result_format'
+          setting name, but ansible.cfg was changed in this PR to use 'stdout_callback' instead.
+          Update the document's adoption narrative (the ansible.cfg blueprint table, the adoption
+          path diagram, and the Output Standardisation note) to reference 'stdout_callback = yaml'.
