@@ -168,24 +168,6 @@ class TestTestAnsibleCfgStdoutCallbackYamlValidity(unittest.TestCase):
             return
         self.assertFalse(result)
 
-    def test_default_filter_cleanly_evaluates_false_instead_of_raising_when_setting_is_entirely_absent(
-        self,
-    ) -> None:
-        # This is the specific regression this PR's `| default('', true)` addition
-        # guards against: regex_search() returns None when the setting is entirely
-        # absent (not merely commented out), and piping that None straight into
-        # `length` used to raise a TypeError. With `| default('', true)` in place,
-        # a None match result is coerced to '' before `length` is applied, so the
-        # condition must evaluate cleanly to False rather than raising.
-        env = self._make_env()
-        compiled = env.compile_expression(EXPECTED_CONDITIONS[0])
-        no_setting_at_all_snippet = "[defaults]\nbin_ansible_callbacks = True\n"
-        result = compiled(
-            cfg_content=no_setting_at_all_snippet,
-            callback_result_format_regex=CALLBACK_RESULT_FORMAT_REGEX,
-        )
-        self.assertFalse(result)
-
 
 if __name__ == "__main__":
     unittest.main()

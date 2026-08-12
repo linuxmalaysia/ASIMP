@@ -72,6 +72,23 @@ def escape_attr(val: str) -> str:
     return val
 
 
+def escape_text(val: str) -> str:
+    """Escape special characters for use in XML tag text bodies.
+
+    Args:
+        val: The raw text string.
+
+    Returns:
+        An XML-safe text body string.
+    """
+    if not val:
+        return ""
+    val = val.replace('&', '&amp;')
+    val = val.replace('<', '&lt;')
+    val = val.replace('>', '&gt;')
+    return val
+
+
 def parse_link(line: str) -> Optional[Dict[str, Optional[str]]]:
     """Parse a single markdown list line containing a hyperlink and optional description.
 
@@ -190,16 +207,33 @@ def get_doc_content(url_or_path: str) -> str:
     if url_or_path.startswith(('http://', 'https://')):
         return f"<!-- Remote content skipped: {url_or_path} -->"
 
+    # Reject absolute paths
+    if os.path.isabs(url_or_path) or url_or_path.startswith('/'):
+        return f"<!-- Error: Absolute path rejected: {url_or_path} -->"
+
     try:
-        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        filepath = os.path.join(repo_root, url_or_path)
-        if os.path.exists(filepath):
-            with open(filepath, 'r', encoding='utf-8') as f:
-                return f.read()
+        # Determine and normalize the repo root
+        repo_root = os.path.abspath(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        repo_root_real = os.path.realpath(repo_root)
+
+        # Build candidate filepath and resolve all symlinks/relative paths
+        filepath = os.path.join(repo_root_real, url_or_path)
+        filepath_real = os.path.realpath(filepath)
+
+        # Check path containment to prevent directory traversal
+        # filepath_real must start with repo_root_real (and follow path separator boundaries)
+        prefix = repo_root_real if repo_root_real.endswith(os.sep) else repo_root_real + os.sep
+        if not (filepath_real == repo_root_real or filepath_real.startswith(prefix)):
+            return f"<!-- Error: Path traversal detected and rejected: {url_or_path} -->"
+
+        # Verify it is a regular file (not a directory, symlink directory, or special file)
+        if not os.path.isfile(filepath_real):
+            return f"<!-- Error: Not a regular file: {url_or_path} -->"
+
+        with open(filepath_real, 'r', encoding='utf-8') as f:
+            return f.read()
     except Exception as e:
         return f"<!-- Error reading file {url_or_path}: {str(e)} -->"
-
-    return f"<!-- File not found: {url_or_path} -->"
 
 
 def create_ctx(txt: str, optional: bool = False) -> str:
@@ -223,7 +257,7 @@ def create_ctx(txt: str, optional: bool = False) -> str:
 
     # info section
     if parsed.info:
-        xml_parts.append(parsed.info)
+        xml_parts.append(escape_text(parsed.info))
 
     # loop through markdown sections
     for sec_name, links in parsed.sections.items():
@@ -248,8 +282,10 @@ def create_ctx(txt: str, optional: bool = False) -> str:
 
             xml_parts.append(f'  <{link_tag} url="{url_esc}"{desc_attr}>')
             content = get_doc_content(url_val if url_val else '')
+            # Escape document content to ensure valid XML tag contents
+            content_esc = escape_text(content)
             # Indent content slightly for cleaner formatting
-            indented_content = "\n".join("    " + line for line in content.split('\n'))
+            indented_content = "\n".join("    " + line for line in content_esc.split('\n'))
             xml_parts.append(indented_content)
             xml_parts.append(f'  </{link_tag}>')
 
@@ -269,13 +305,22 @@ def main() -> None:
     input_file = sys.argv[1]
     include_optional = False
 
-    if len(sys.argv) > 2:
-        for arg in sys.argv[2:]:
-            if arg.startswith('--optional='):
-                val = arg.split('=', 1)[1].lower()
+    args = sys.argv[2:]
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg.startswith('--optional='):
+            val = arg.split('=', 1)[1].lower()
+            include_optional = val in ('true', '1', 'yes')
+        elif arg == '--optional':
+            # Check if there is a next argument that represents a boolean value
+            if i + 1 < len(args) and args[i + 1].lower() in ('true', 'false', '1', '0', 'yes', 'no'):
+                val = args[i + 1].lower()
                 include_optional = val in ('true', '1', 'yes')
-            elif arg == '--optional':
+                i += 1  # consume next argument
+            else:
                 include_optional = True
+        i += 1
 
     if not os.path.exists(input_file):
         print(f"Error: File not found: {input_file}", file=sys.stderr)
