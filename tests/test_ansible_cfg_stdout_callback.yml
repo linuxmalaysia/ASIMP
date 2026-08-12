@@ -52,20 +52,22 @@
           - (cfg_content | regex_search(bin_ansible_callbacks_regex, multiline=True) | default('', true)) | length > 0
         fail_msg: "callback_result_format and bin_ansible_callbacks must be set as exact, uncommented key = value lines (not partial matches or comments) in ansible.cfg"
 
-    - name: Assert both new settings live inside the [defaults] section, before [ssh_connection]
+    - name: Extract only the [defaults] section from ansible.cfg
+      ansible.builtin.set_fact:
+        defaults_section: "{{ (cfg_content.split('[defaults]')[1]).split('[ssh_connection]')[0] }}"
+
+    - name: Assert both new settings live inside the [defaults] section
       ansible.builtin.assert:
         that:
-          - cfg_content.find('callback_result_format = yaml') > cfg_content.find('[defaults]')
-          - cfg_content.find('callback_result_format = yaml') < cfg_content.find('[ssh_connection]')
-          - cfg_content.find('bin_ansible_callbacks = True') > cfg_content.find('[defaults]')
-          - cfg_content.find('bin_ansible_callbacks = True') < cfg_content.find('[ssh_connection]')
+          - (defaults_section | regex_search(callback_result_format_regex, multiline=True) | default('', true)) | length > 0
+          - (defaults_section | regex_search(bin_ansible_callbacks_regex, multiline=True) | default('', true)) | length > 0
         fail_msg: "callback_result_format and bin_ansible_callbacks must be defined inside the [defaults] section, not [ssh_connection] or [local]"
 
-    - name: Assert callback_result_format is declared immediately before bin_ansible_callbacks
+    - name: Assert callback_result_format and bin_ansible_callbacks are declared consecutively in documented order
       ansible.builtin.assert:
         that:
-          - cfg_content.find('callback_result_format = yaml') < cfg_content.find('bin_ansible_callbacks = True')
-        fail_msg: "callback_result_format = yaml must be declared before bin_ansible_callbacks = True, matching the documented adoption order"
+          - (defaults_section | regex_search('callback_result_format[ \t]*=[ \t]*yaml[ \t]*\r?\n[ \t]*bin_ansible_callbacks[ \t]*=[ \t]*True', multiline=True) | default('', true)) | length > 0
+        fail_msg: "callback_result_format = yaml must be declared consecutively and immediately before bin_ansible_callbacks = True inside the [defaults] section, matching the documented adoption order"
 
     - name: Assert each new setting key appears exactly once (no accidental duplicates)
       ansible.builtin.assert:
