@@ -16,7 +16,6 @@ class AttrDict(dict):
     """A dictionary subclass that allows attribute-style access to its keys."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """Initialize the mapping and convert nested dictionaries to attribute-accessible mappings."""
         super().__init__(*args, **kwargs)
         for k, v in self.items():
             if isinstance(v, dict):
@@ -25,41 +24,23 @@ class AttrDict(dict):
                 self[k] = [AttrDict(i) if isinstance(i, dict) else i for i in v]
 
     def __getattr__(self, name: str) -> Any:
-        """
-        Retrieve a dictionary value through attribute-style access.
-        
-        Parameters:
-        	name (str): The dictionary key to retrieve.
-        
-        Returns:
-        	Any: The value associated with the key.
-        """
         try:
             return self[name]
         except KeyError:
             raise AttributeError(name)
 
     def __setattr__(self, name: str, value: Any) -> None:
-        """
-        Set an attribute by storing its value under the corresponding dictionary key.
-        
-        Parameters:
-            name (str): The attribute and dictionary key to assign.
-            value (Any): The value to store.
-        """
         self[name] = value
 
 
 def slugify(title: str) -> str:
-    """
-    Convert a title into a lowercase, hyphen-separated XML tag name.
-    
-    Parameters:
-        title (str): The title to normalize.
-    
+    """Convert a title string into a valid, clean XML tag name.
+
+    Args:
+        title: The input title string.
+
     Returns:
-        str: The normalized tag name, using ``page`` for empty results and
-            prefixing names that begin with a digit with ``p``.
+        A lowercased, hyphenated alphanumeric string safe for XML tag names.
     """
     s: str = title.strip().lower()
     s = re.sub(r'[^a-z0-9\-]', '-', s)
@@ -73,14 +54,13 @@ def slugify(title: str) -> str:
 
 
 def escape_attr(val: str) -> str:
-    """
-    Escape a string for use in an XML attribute value.
-    
+    """Escape special characters for use in XML attribute values.
+
     Args:
-        val: Raw attribute text.
-    
+        val: The raw attribute string.
+
     Returns:
-        The escaped attribute string, or an empty string for falsy input.
+        A serialized XML-safe attribute string.
     """
     if not val:
         return ""
@@ -93,13 +73,13 @@ def escape_attr(val: str) -> str:
 
 
 def parse_link(line: str) -> Optional[Dict[str, Optional[str]]]:
-    """Parse a markdown list item containing a hyperlink and optional description.
-    
+    """Parse a single markdown list line containing a hyperlink and optional description.
+
     Args:
-        line: The raw markdown list item.
-    
+        line: The raw markdown list line.
+
     Returns:
-        A dictionary with `title`, `url`, and `desc` keys if the line matches, otherwise `None`.
+        A dictionary with keys 'title', 'url', 'desc' if matched, otherwise None.
     """
     # Regex matching optional list bullets, then a markdown link [title](url) followed optionally by : description
     match = re.match(r'^\s*[-\*]\s*\[([^\]]+)\]\(([^)]+)\)(?:\s*:\s*(.*))?$', line.strip())
@@ -116,14 +96,13 @@ def parse_link(line: str) -> Optional[Dict[str, Optional[str]]]:
 
 
 def parse_llms_file(txt: str) -> AttrDict:
-    """
-    Parse an llms.txt document into structured project metadata.
-    
-    Parameters:
-    	txt: The raw llms.txt content.
-    
+    """Parse the raw content of an llms.txt file into a structured AttrDict object.
+
+    Args:
+        txt: The raw string content of the llms.txt file.
+
     Returns:
-    	An AttrDict with title, summary, info, and sections.
+        An AttrDict containing 'title', 'summary', 'info', and 'sections'.
     """
     # Split text into introduction and sections using H2 headers
     parts: List[str] = re.split(r'^##\s*(.*?)$', txt, flags=re.MULTILINE)
@@ -200,14 +179,13 @@ def parse_llms_file(txt: str) -> AttrDict:
 
 
 def get_doc_content(url_or_path: str) -> str:
-    """
-    Read a local document relative to the repository root or provide a placeholder for unavailable content.
-    
+    """Retrieve document content. For local relative paths, reads from repository root.
+
     Args:
-        url_or_path: A local document path or an HTTP(S) URL.
-    
+        url_or_path: The URL or path to retrieve.
+
     Returns:
-        The document content, or a placeholder comment when remote content is skipped, the file is missing, or reading fails.
+        The content string or a placeholder message on failure or network block.
     """
     if url_or_path.startswith(('http://', 'https://')):
         return f"<!-- Remote content skipped: {url_or_path} -->"
@@ -225,15 +203,14 @@ def get_doc_content(url_or_path: str) -> str:
 
 
 def create_ctx(txt: str, optional: bool = False) -> str:
-    """
-    Compile llms.txt content into an XML context document.
-    
+    """Create an LLM context XML compilation from the raw text content of an llms.txt file.
+
     Args:
-        txt: Raw llms.txt text to parse.
-        optional: Whether to include the section named Optional.
-    
+        txt: Raw text content of the input llms.txt file.
+        optional: If True, includes optional H2 sections. Otherwise, skips them.
+
     Returns:
-        The assembled XML document.
+        An XML-formatted string compiling the project and documentation sections.
     """
     parsed = parse_llms_file(txt)
 
@@ -284,12 +261,7 @@ def create_ctx(txt: str, optional: bool = False) -> str:
 
 
 def main() -> None:
-    """
-    Run the command-line converter and print the generated XML.
-    
-    Reads the input `llms.txt` file specified on the command line. The optional
-    section can be included with `--optional` or `--optional=true|1|yes`.
-    """
+    """CLI execution entrypoint."""
     if len(sys.argv) < 2 or sys.argv[1] in ('-h', '--help'):
         print("Usage: llms_txt2ctx <input_llms.txt> [--optional <True|False>]", file=sys.stderr)
         sys.exit(1)
