@@ -47,8 +47,8 @@
     - name: Assert both settings are exact, uncommented whole-line key = value pairs
       ansible.builtin.assert:
         that:
-          - cfg_content | regex_search(stdout_callback_regex, multiline=True)
-          - cfg_content | regex_search(bin_ansible_callbacks_regex, multiline=True)
+          - (cfg_content | regex_search(stdout_callback_regex, multiline=True)) | length > 0
+          - (cfg_content | regex_search(bin_ansible_callbacks_regex, multiline=True)) | length > 0
         fail_msg: "stdout_callback and bin_ansible_callbacks must be set as exact, uncommented key = value lines (not partial matches or comments) in ansible.cfg"
 
     - name: Assert both new settings live inside the [defaults] section, before [ssh_connection]
