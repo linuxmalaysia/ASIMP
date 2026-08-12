@@ -9,23 +9,18 @@ declares the expected OKF metadata" assertion from:
 
 to:
 
-    report_frontmatter.okf_version | float == 0.1
+    report_frontmatter.okf_version == "0.1"
 
 The report frontmatter (data/asimp_mock/opt/report/openscap/
 SECURITY_AUDIT_REPORT.md) declares `okf_version: "0.1"` as a quoted YAML
 string. Once parsed with `from_yaml`, `report_frontmatter.okf_version` is
-therefore the Python string "0.1", not the float 0.1. The previous,
-unconverted condition compared a string to a float literal, which in
-Jinja2/Python always evaluates to False regardless of the file's actual
-content -- silently making that half of the assertion meaningless (it could
-never pass) rather than ever really validating okf_version. Piping the value
-through the `float` filter before comparing fixes this.
+therefore the Python string "0.1", not the float 0.1.
 
 These tests parse tests/test_asimp_mock_data.yml with a real YAML loader
 (the same family ansible-playbook itself uses) and verify:
   1. The file loads as valid YAML (a basic sanity check for the whole file).
-  2. The specific assertion's 'that' list contains the float-coerced
-     condition string, not the previous, always-false raw comparison.
+  2. The specific assertion's 'that' list contains the string comparison
+     condition string, not the previous, always-false float comparison.
   3. The compiled Jinja2 expression evaluates True for the real, quoted
      string frontmatter value "0.1" actually used in the mock fixture.
   4. The compiled expression still correctly evaluates False for a
@@ -47,11 +42,11 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEST_ASIMP_MOCK_DATA_YML = os.path.join(REPO_ROOT, "tests", "test_asimp_mock_data.yml")
 
 TARGET_TASK_NAME = "Assert the frontmatter declares the expected OKF metadata"
-EXPECTED_OKF_VERSION_CONDITION = "report_frontmatter.okf_version | float == 0.1"
-PREVIOUS_UNCONVERTED_CONDITION = "report_frontmatter.okf_version == 0.1"
+EXPECTED_OKF_VERSION_CONDITION = 'report_frontmatter.okf_version == "0.1"'
+PREVIOUS_UNCONVERTED_CONDITION = 'report_frontmatter.okf_version == 0.1'
 
 
-class TestTestAsimpMockDataYamlValidity(unittest.TestCase):
+class TestTestAsimpMockDataValidity(unittest.TestCase):
     """Verify tests/test_asimp_mock_data.yml is syntactically valid and semantically correct."""
 
     @classmethod
@@ -104,17 +99,15 @@ class TestTestAsimpMockDataYamlValidity(unittest.TestCase):
         self.assertTrue(compiled(report_frontmatter=report_frontmatter))
 
     def test_float_coerced_condition_evaluates_false_for_a_mismatched_version(self) -> None:
+        """Verify that the expected version condition evaluates to false for a mismatched version."""
         env = Environment()
         compiled = env.compile_expression(EXPECTED_OKF_VERSION_CONDITION)
         report_frontmatter = {"okf_version": "0.2"}
         self.assertFalse(compiled(report_frontmatter=report_frontmatter))
 
     def test_previous_unconverted_condition_would_regress_into_always_false(self) -> None:
-        # Demonstrates *why* the float-filter fix in this PR matters:
-        # comparing the quoted string "0.1" directly against the float
-        # literal 0.1 (without the `| float` filter) is always False, no
-        # matter what value the frontmatter actually declares -- silently
-        # defeating the purpose of the OKF version check.
+        # Demonstrates *why* comparing string to float literal directly is incorrect
+        """Verify that the previous direct string-to-float comparison evaluates to `false` for the quoted version value."""
         env = Environment()
         compiled = env.compile_expression(PREVIOUS_UNCONVERTED_CONDITION)
         report_frontmatter = {"okf_version": "0.1"}
@@ -123,6 +116,21 @@ class TestTestAsimpMockDataYamlValidity(unittest.TestCase):
             "The previous unconverted condition unexpectedly evaluated True; "
             "test fixture assumptions about Jinja2 str/float comparison may have changed",
         )
+
+    def test_string_comparison_correctly_rejects_a_differently_formatted_but_float_equal_version(
+        self,
+    ) -> None:
+        # Boundary case demonstrating the real value of the string-comparison fix
+        # beyond just fixing the always-false bug: a differently-formatted version
+        # string such as "0.10" is float-equal to 0.1 (float("0.10") == float("0.1")),
+        # so a `| float` coercion would have *silently accepted* it as a match. The
+        # exact string comparison this PR settled on correctly treats "0.10" as a
+        # distinct version from "0.1" and rejects it.
+        self.assertEqual(float("0.10"), float("0.1"))  # sanity-check the premise
+        env = Environment()
+        compiled = env.compile_expression(EXPECTED_OKF_VERSION_CONDITION)
+        report_frontmatter = {"okf_version": "0.10"}
+        self.assertFalse(compiled(report_frontmatter=report_frontmatter))
 
 
 if __name__ == "__main__":
