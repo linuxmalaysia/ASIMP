@@ -19,7 +19,7 @@
   vars:
     repo_root: "{{ playbook_dir }}/.."
     cfg_path: "{{ repo_root }}/ansible.cfg"
-    stdout_callback_regex: '^callback_result_format\s*=\s*yaml\s*$'
+    callback_result_format_regex: '^callback_result_format\s*=\s*yaml\s*$'
     bin_ansible_callbacks_regex: '^bin_ansible_callbacks\s*=\s*True\s*$'
 
   tasks:
@@ -40,15 +40,15 @@
     - name: Assert the new callback_result_format and bin_ansible_callbacks settings are present, and old stdout_callback is rejected
       ansible.builtin.assert:
         that:
-          - "'stdout_callback = yaml' not in cfg_content"
+          - ((cfg_content | regex_search('^[ \t]*stdout_callback[ \t]*=[ \t]*yaml[ \t]*(?:#.*)?$', multiline=True) | default('', true)) | length == 0)
           - "'callback_result_format = yaml' in cfg_content"
           - "'bin_ansible_callbacks = True' in cfg_content"
-        fail_msg: "ansible.cfg must set callback_result_format = yaml and bin_ansible_callbacks = True, and reject stdout_callback = yaml"
+        fail_msg: "ansible.cfg must set callback_result_format = yaml and bin_ansible_callbacks = True, and reject active stdout_callback = yaml"
 
     - name: Assert both settings are exact, uncommented whole-line key = value pairs
       ansible.builtin.assert:
         that:
-          - (cfg_content | regex_search(stdout_callback_regex, multiline=True) | default('', true)) | length > 0
+          - (cfg_content | regex_search(callback_result_format_regex, multiline=True) | default('', true)) | length > 0
           - (cfg_content | regex_search(bin_ansible_callbacks_regex, multiline=True) | default('', true)) | length > 0
         fail_msg: "callback_result_format and bin_ansible_callbacks must be set as exact, uncommented key = value lines (not partial matches or comments) in ansible.cfg"
 
