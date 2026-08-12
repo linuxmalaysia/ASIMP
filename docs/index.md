@@ -43,6 +43,11 @@ Explore the different sections of our system design, setup guides, and troublesh
 - **[Lynis Auditing & Playbooks](lynis.html)**: Detailed analysis of how ASIMP conducts host audits, extracts the Hardening Index, and integrates with the `lynis-ansible` hardening role.
 - **[Configuration & Variables](configuration.html)**: Discover customizable variables for our roles (`reporting-ASIMP`, `update-ubuntu-ASIMP`, `lynis-ansible`) and sample inventories.
 - **[Troubleshooting & Fallbacks](troubleshooting.html)**: Read detailed instructions on addressing DataStream resolution errors, connection elevation failures, and timeout behaviors.
+- **[Review & Adoption of DSOM Guide](dsom_ansible_review.html)**: Structural alignment review of the DSOM Ansible Configuration Guide v3.6.2.
+- **[Rootless Podman 5+ & Quadlet Orchestration](podman_rootless.html)**: Overview of rootless orchestration, systemd Quadlets, namespace mappings, and unprivileged container matrix testing.
+- **[Ansible Best Practices & FQCN Standards](ansible_fqcn.html)**: Guidelines for Fully Qualified Collection Names (FQCN), task idempotency checks, and privilege strategies.
+- **[Ansible Playbook and Document Architecture Map](ansible_playbook_map.html)**: Architectural dictionary linking playbook files with their core roles and operational documents.
+- **[Local Knowledge-First & Metadata Discovery](sop_knowledge_first_discovery.html)**: SOP guidelines for unprivileged and agentic spatial discovery and context preservation.
 
 ---
 

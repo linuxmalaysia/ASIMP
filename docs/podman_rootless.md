@@ -1,0 +1,56 @@
+---
+okf_version: "0.1"
+layout: default
+type: documentation
+title: "Rootless Podman 5+ & Quadlet Orchestration"
+timestamp: "2026-08-05T12:00:00Z"
+topics: [asimp, podman, rootless, quadlet, orchestration]
+---
+
+
+# Rootless Podman 5+ & Quadlet Orchestration
+
+In ASIMP, we embrace the security-first principle of unprivileged, rootless workload execution. While typical systems-level security testing frameworks require full superuser privileges, ASIMP separates host OS tuning from target testing environments using **Rootless Podman 5+ & Systemd Quadlets**.
+
+---
+
+## 🧭 Why Rootless Podman 5+ & Quadlets?
+
+Containerized workloads run in parallel to test and verify ASIMP's hardening policies. Legacy architectures rely on rootful Docker daemons, which introduce unnecessary host security exposure. Podman 5+ resolves this by converting unprivileged declarative container specifications directly into native, unprivileged systemd unit files using **Quadlets** (such as `.container`, `.volume`, `.pod`, and `.network` configurations).
+
+This enables containers to be treated natively as standard local system services without daemon overhead.
+
+---
+
+## ⚙️ Unprivileged Environment Mappings
+
+To safely interact with rootless systemd managers, Ansible playbooks must operate under correct environment contexts:
+
+- **`XDG_RUNTIME_DIR`**: Specifies the socket and runtime file storage location. For rootless execution sessions, this defaults to `/run/user/<UID>`.
+- **`DBUS_SESSION_BUS_ADDRESS`**: Directs client requests to the user-level D-Bus message bus socket, typically located at `unix:path=/run/user/<UID>/bus`.
+
+Without these environment variables, systemctl commands executed by Ansible inside unprivileged user blocks will fail with connection errors.
+
+---
+
+## 🔒 Namespace Mapping & the keep-id Strategy
+
+When running rootless containers, Podman maps internal root (UID 0) to the host user's UID (e.g., `2001`). Internal non-root container users (like UID `2001` inside the container) map to high-range subuids on the host. This complicates backup processes and permission management.
+
+ASIMP leverages Podman's **User Namespace Mapping** (`UserNS=keep-id:uid=2001,gid=2001`) at container and pod levels. By provisioning a dedicated unprivileged user on the host and aligning container and host permissions, we preserve storage sovereignty and absolute file permission transparency without root level interventions.
+
+---
+
+## 🔄 Enabling Systemd Lingering
+
+By default, user-level systemd managers terminate when the user logs out. To allow background containers and unprivileged scanning services to survive sessions and launch on system start, lingering must be enabled:
+
+```yaml
+- name: Enable systemd lingering for songket user
+  ansible.builtin.command:
+    cmd: "loginctl enable-linger songket"
+    creates: "/var/lib/systemd/linger/songket"
+  become: yes
+```
+
+This guarantees seamless, high-performance background execution for our unprivileged testing matrix under any context.

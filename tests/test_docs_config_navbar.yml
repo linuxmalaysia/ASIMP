@@ -27,6 +27,8 @@
         url: "/configuration.html"
       - title: "Troubleshooting"
         url: "/troubleshooting.html"
+      - title: "Legal Notice"
+        url: "/legal-notice.html"
 
   tasks:
     - name: Load and parse docs/_config.yml
@@ -39,17 +41,17 @@
           - config_data.navbar is sequence
         fail_msg: "docs/_config.yml must define a 'navbar' list"
 
-    - name: Assert the navbar contains exactly six entries
+    - name: Assert the navbar contains exactly seven entries
       ansible.builtin.assert:
         that:
-          - config_data.navbar | length == 6
-        fail_msg: "docs/_config.yml navbar must contain exactly 6 entries (Home, Architecture, OpenSCAP, Lynis, Configuration, Troubleshooting)"
+          - config_data.navbar | length == 7
+        fail_msg: "docs/_config.yml navbar must contain exactly 7 entries (Home, Architecture, OpenSCAP, Lynis, Configuration, Troubleshooting, Legal Notice)"
 
     - name: Assert the navbar entries match the expected title/url pairs, in exact order
       ansible.builtin.assert:
         that:
           - config_data.navbar == expected_navbar
-        fail_msg: "docs/_config.yml navbar must list Home, Architecture & Design, OpenSCAP & Playbooks (/openscap.html), Lynis & Playbooks (/lynis.html), Configuration & Variables, then Troubleshooting, in that exact order"
+        fail_msg: "docs/_config.yml navbar must list Home, Architecture & Design, OpenSCAP & Playbooks (/openscap.html), Lynis & Playbooks (/lynis.html), Configuration & Variables, Troubleshooting, then Legal Notice, in that exact order"
 
     - name: Assert the new OpenSCAP navbar entry is positioned directly after Architecture & Design
       ansible.builtin.assert:
@@ -78,8 +80,9 @@
       loop:
         - openscap.md
         - lynis.md
+        - legal-notice.md
 
-    - name: Assert both new navbar-linked markdown files were found
+    - name: Assert all new navbar-linked markdown files were found
       ansible.builtin.assert:
         that:
           - item.stat.exists
