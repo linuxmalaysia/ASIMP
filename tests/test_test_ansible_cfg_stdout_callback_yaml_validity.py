@@ -49,15 +49,15 @@ ANSIBLE_CFG_PATH = os.path.join(REPO_ROOT, "ansible.cfg")
 
 TARGET_TASK_NAME = "Assert both settings are exact, uncommented whole-line key = value pairs"
 EXPECTED_CONDITIONS = [
-    "(cfg_content | regex_search(stdout_callback_regex, multiline=True)) | length > 0",
-    "(cfg_content | regex_search(bin_ansible_callbacks_regex, multiline=True)) | length > 0",
+    "(cfg_content | regex_search(callback_result_format_regex, multiline=True) | default('', true)) | length > 0",
+    "(cfg_content | regex_search(bin_ansible_callbacks_regex, multiline=True) | default('', true)) | length > 0",
 ]
 PREVIOUS_BARE_CONDITIONS = [
-    "cfg_content | regex_search(stdout_callback_regex, multiline=True)",
+    "cfg_content | regex_search(callback_result_format_regex, multiline=True)",
     "cfg_content | regex_search(bin_ansible_callbacks_regex, multiline=True)",
 ]
 
-STDOUT_CALLBACK_REGEX = r"^stdout_callback\s*=\s*yaml\s*$"
+CALLBACK_RESULT_FORMAT_REGEX = r"^callback_result_format\s*=\s*yaml\s*$"
 BIN_ANSIBLE_CALLBACKS_REGEX = r"^bin_ansible_callbacks\s*=\s*True\s*$"
 
 
@@ -119,14 +119,14 @@ class TestTestAnsibleCfgStdoutCallbackYamlValidity(unittest.TestCase):
         self.assertTrue(
             compiled(
                 cfg_content=self.real_ansible_cfg_content,
-                stdout_callback_regex=STDOUT_CALLBACK_REGEX,
+                callback_result_format_regex=CALLBACK_RESULT_FORMAT_REGEX,
             )
         )
 
     def test_condition_evaluates_true_for_a_minimal_conforming_snippet(self) -> None:
         env = self._make_env()
         compiled = env.compile_expression(EXPECTED_CONDITIONS[1])
-        conforming_snippet = "[defaults]\nstdout_callback = yaml\nbin_ansible_callbacks = True\n"
+        conforming_snippet = "[defaults]\ncallback_result_format = yaml\nbin_ansible_callbacks = True\n"
         self.assertTrue(
             compiled(
                 cfg_content=conforming_snippet,
@@ -142,11 +142,11 @@ class TestTestAnsibleCfgStdoutCallbackYamlValidity(unittest.TestCase):
         # silent True would be a real regression.
         env = self._make_env()
         compiled = env.compile_expression(EXPECTED_CONDITIONS[0])
-        commented_out_snippet = "[defaults]\n#stdout_callback = yaml\nbin_ansible_callbacks = True\n"
+        commented_out_snippet = "[defaults]\n#callback_result_format = yaml\nbin_ansible_callbacks = True\n"
         try:
             result = compiled(
                 cfg_content=commented_out_snippet,
-                stdout_callback_regex=STDOUT_CALLBACK_REGEX,
+                callback_result_format_regex=CALLBACK_RESULT_FORMAT_REGEX,
             )
         except Exception:
             # Raising while trying to apply `length` to a None match result
@@ -158,11 +158,11 @@ class TestTestAnsibleCfgStdoutCallbackYamlValidity(unittest.TestCase):
     def test_condition_does_not_silently_accept_a_partial_match(self) -> None:
         env = self._make_env()
         compiled = env.compile_expression(EXPECTED_CONDITIONS[0])
-        partial_match_snippet = "[defaults]\nstdout_callback = json\nbin_ansible_callbacks = True\n"
+        partial_match_snippet = "[defaults]\ncallback_result_format = json\nbin_ansible_callbacks = True\n"
         try:
             result = compiled(
                 cfg_content=partial_match_snippet,
-                stdout_callback_regex=STDOUT_CALLBACK_REGEX,
+                callback_result_format_regex=CALLBACK_RESULT_FORMAT_REGEX,
             )
         except Exception:
             return
