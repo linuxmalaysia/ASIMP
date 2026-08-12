@@ -1,0 +1,134 @@
+---
+# Structural and content-correctness tests for the new Rootless Podman 5+ &
+# Quadlet Orchestration document (docs/podman_rootless.md), which documents
+# the unprivileged environment mappings, namespace/keep-id strategy, and
+# systemd lingering configuration used for rootless container orchestration.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_podman_rootless_doc.yml
+- name: Verify docs/podman_rootless.md frontmatter and content
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    doc_path: "{{ repo_root }}/docs/podman_rootless.md"
+    expected_title: "Rootless Podman 5+ & Quadlet Orchestration"
+    expected_topics:
+      - asimp
+      - podman
+      - rootless
+      - quadlet
+      - orchestration
+    required_headings:
+      - "## 🧭 Why Rootless Podman 5+ & Quadlets?"
+      - "## ⚙️ Unprivileged Environment Mappings"
+      - "## 🔒 Namespace Mapping & the keep-id Strategy"
+      - "## 🔄 Enabling Systemd Lingering"
+
+  tasks:
+    - name: Assert docs/podman_rootless.md exists and is a regular file
+      ansible.builtin.stat:
+        path: "{{ doc_path }}"
+      register: doc_stat
+
+    - name: Fail loudly if the document is missing
+      ansible.builtin.assert:
+        that:
+          - doc_stat.stat.exists
+          - doc_stat.stat.isreg
+        fail_msg: "docs/podman_rootless.md must exist as a regular file"
+
+    - name: Load raw content of docs/podman_rootless.md
+      ansible.builtin.set_fact:
+        doc_content: "{{ lookup('file', doc_path) }}"
+
+    - name: Assert the document begins with a '---' front matter delimiter
+      ansible.builtin.assert:
+        that:
+          - doc_content.startswith('---')
+        fail_msg: "docs/podman_rootless.md must start with a YAML front matter block delimited by '---' on the very first line"
+
+    - name: Assert the front matter block closes with a second '---' before the main heading
+      ansible.builtin.assert:
+        that:
+          - (doc_content.split('---', 2) | length) == 3
+          - doc_content.split('---', 2)[2].lstrip().startswith('# ' + expected_title)
+        fail_msg: "docs/podman_rootless.md front matter must close with a second '---' immediately followed by the '# {{ expected_title }}' heading"
+
+    - name: Parse the YAML front matter block
+      ansible.builtin.set_fact:
+        doc_frontmatter: "{{ doc_content.split('---', 2)[1] | from_yaml }}"
+
+    - name: Assert the OKF metadata fields are present and correct
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.okf_version == "0.1"
+          - doc_frontmatter.type == "documentation"
+          - doc_frontmatter.title == expected_title
+          - doc_frontmatter.layout == "default"
+        fail_msg: "docs/podman_rootless.md frontmatter must declare okf_version '0.1', type 'documentation', the exact title, and layout 'default'"
+
+    - name: Assert the frontmatter timestamp is a well-formed ISO-8601 UTC timestamp
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.timestamp is match('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$')
+        fail_msg: "docs/podman_rootless.md frontmatter 'timestamp' must be an ISO-8601 UTC timestamp (YYYY-MM-DDTHH:MM:SSZ)"
+
+    - name: Assert the frontmatter topics list matches exactly, in order
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.topics == expected_topics
+        fail_msg: "docs/podman_rootless.md frontmatter 'topics' must list asimp, podman, rootless, quadlet, orchestration in that exact order"
+
+    - name: Assert the document title heading matches the frontmatter title
+      ansible.builtin.assert:
+        that:
+          - ("# " + expected_title) in doc_content
+        fail_msg: "docs/podman_rootless.md must contain a top-level heading matching its frontmatter title"
+
+    - name: Assert every required section heading is present, in order
+      ansible.builtin.assert:
+        that:
+          - heading in doc_content
+        fail_msg: "docs/podman_rootless.md is missing required section heading: {{ heading }}"
+      loop: "{{ required_headings }}"
+      loop_control:
+        loop_var: heading
+
+    - name: Assert the required section headings appear in the documented order
+      ansible.builtin.assert:
+        that:
+          - doc_content.find(required_headings[0]) < doc_content.find(required_headings[1])
+          - doc_content.find(required_headings[1]) < doc_content.find(required_headings[2])
+          - doc_content.find(required_headings[2]) < doc_content.find(required_headings[3])
+        fail_msg: "docs/podman_rootless.md section headings must appear in the documented order (Why -> Environment Mappings -> Namespace Mapping -> Systemd Lingering)"
+
+    - name: Assert the unprivileged environment mapping variables are documented with correct defaults
+      ansible.builtin.assert:
+        that:
+          - "'`XDG_RUNTIME_DIR`' in doc_content"
+          - "'/run/user/<UID>' in doc_content"
+          - "'`DBUS_SESSION_BUS_ADDRESS`' in doc_content"
+          - "'unix:path=/run/user/<UID>/bus' in doc_content"
+        fail_msg: "docs/podman_rootless.md must document XDG_RUNTIME_DIR and DBUS_SESSION_BUS_ADDRESS with their expected defaults"
+
+    - name: Assert the User Namespace Mapping keep-id strategy is documented verbatim
+      ansible.builtin.assert:
+        that:
+          - "'UserNS=keep-id:uid=2001,gid=2001' in doc_content"
+        fail_msg: "docs/podman_rootless.md must document the exact UserNS=keep-id:uid=2001,gid=2001 mapping"
+
+    - name: Assert the systemd lingering task uses FQCN and the expected idempotency guard
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.command:' in doc_content"
+          - "'loginctl enable-linger songket' in doc_content"
+          - "'creates: \"/var/lib/systemd/linger/songket\"' in doc_content"
+        fail_msg: "docs/podman_rootless.md systemd lingering example must use FQCN, the loginctl command, and a 'creates' idempotency guard"
+
+    - name: Assert the document does not declare the 'layout' key more than once
+      ansible.builtin.assert:
+        that:
+          - (doc_content.split('---', 2)[1] | regex_findall('^layout:', multiline=True) | length) == 1
+        fail_msg: "docs/podman_rootless.md front matter must declare the 'layout' key exactly once"

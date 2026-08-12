@@ -1,0 +1,103 @@
+---
+# Regression tests for the "Code Conventions & File Hierarchy" and "Google
+# Open Knowledge Format (OKF) v0.1 Specification" sections added to
+# AGENTS.md, verifying their placement, content, and that the required OKF
+# frontmatter fields are documented exactly as enforced elsewhere in the
+# repository (e.g. by the per-page documentation tests under tests/).
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_agents_md_code_conventions_okf_section.yml
+- name: Verify the Code Conventions & OKF v0.1 Specification sections of AGENTS.md
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    code_conventions_heading: "## 🛠️ Code Conventions & File Hierarchy"
+    okf_spec_heading: "## 📖 Google Open Knowledge Format (OKF) v0.1 Specification"
+    frontmatter_fields_heading: "### 📐 Required Frontmatter Fields"
+    preceding_heading: "### 📜 Mandatory Playbook Compliance Standard"
+    required_conventions:
+      - "Use Fully Qualified Collection Names (FQCN) for all tasks."
+      - "Avoid deprecated features and ensure strict idempotency of every command/shell execution."
+      - "Maintain standardized layouts for documentation and playbook structures."
+    required_okf_fields:
+      - '1. `okf_version`: Declaring `"0.1"`.'
+      - "2. `type`: File category (e.g., `instructions`, `documentation`)."
+      - "3. `title`: Page header string."
+      - "4. `timestamp`: ISO-8601 creation/modification time."
+      - "5. `topics`: A list of relevant tags or keywords."
+    footer_line: "ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol"
+
+  tasks:
+    - name: Load raw content of AGENTS.md
+      ansible.builtin.set_fact:
+        agents_md_content: "{{ lookup('file', repo_root + '/AGENTS.md') }}"
+
+    - name: Assert AGENTS.md contains both new section headings and the frontmatter fields subheading
+      ansible.builtin.assert:
+        that:
+          - code_conventions_heading in agents_md_content
+          - okf_spec_heading in agents_md_content
+          - frontmatter_fields_heading in agents_md_content
+        fail_msg: "AGENTS.md must document '{{ code_conventions_heading }}' and '{{ okf_spec_heading }}' with a '{{ frontmatter_fields_heading }}' subsection"
+
+    - name: Assert the sections appear in the expected order, after the Jules Sandbox compliance standard
+      ansible.builtin.assert:
+        that:
+          - agents_md_content.find(preceding_heading) != -1
+          - agents_md_content.find(preceding_heading) < agents_md_content.find(code_conventions_heading)
+          - agents_md_content.find(code_conventions_heading) < agents_md_content.find(okf_spec_heading)
+          - agents_md_content.find(okf_spec_heading) < agents_md_content.find(frontmatter_fields_heading)
+        fail_msg: "AGENTS.md must order '{{ preceding_heading }}' -> '{{ code_conventions_heading }}' -> '{{ okf_spec_heading }}' -> '{{ frontmatter_fields_heading }}'"
+
+    - name: Assert every required code convention bullet is documented verbatim
+      ansible.builtin.assert:
+        that:
+          - item in agents_md_content
+        fail_msg: "AGENTS.md 'Code Conventions & File Hierarchy' section must document: {{ item }}"
+      loop: "{{ required_conventions }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert every required code convention bullet falls between the two section headings
+      ansible.builtin.assert:
+        that:
+          - agents_md_content.find(code_conventions_heading) < agents_md_content.find(item)
+          - agents_md_content.find(item) < agents_md_content.find(okf_spec_heading)
+        fail_msg: "AGENTS.md convention '{{ item }}' must appear inside the Code Conventions & File Hierarchy section"
+      loop: "{{ required_conventions }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert every required OKF frontmatter field is documented, numbered 1 through 5
+      ansible.builtin.assert:
+        that:
+          - item in agents_md_content
+        fail_msg: "AGENTS.md 'Required Frontmatter Fields' list must document: {{ item }}"
+      loop: "{{ required_okf_fields }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert the OKF frontmatter fields are listed in strict numeric order
+      ansible.builtin.assert:
+        that:
+          - agents_md_content.find(required_okf_fields[0]) < agents_md_content.find(required_okf_fields[1])
+          - agents_md_content.find(required_okf_fields[1]) < agents_md_content.find(required_okf_fields[2])
+          - agents_md_content.find(required_okf_fields[2]) < agents_md_content.find(required_okf_fields[3])
+          - agents_md_content.find(required_okf_fields[3]) < agents_md_content.find(required_okf_fields[4])
+        fail_msg: "AGENTS.md must list the required OKF frontmatter fields (okf_version, type, title, timestamp, topics) in strict numeric order"
+
+    - name: Assert the OKF specification declares that all documentation conforms to OKF v0.1
+      ansible.builtin.assert:
+        that:
+          - "'Google Open Knowledge Format (OKF) v0.1' in agents_md_content"
+          - "'conforms to the Google Open Knowledge Format (OKF) v0.1' in agents_md_content"
+        fail_msg: "AGENTS.md must explicitly state that all repository documentation conforms to OKF v0.1"
+
+    - name: Assert the repository-wide standard footer remains present and unmodified after the new sections
+      ansible.builtin.assert:
+        that:
+          - footer_line in agents_md_content
+          - agents_md_content.rfind(footer_line) > agents_md_content.rfind(frontmatter_fields_heading)
+        fail_msg: "AGENTS.md must retain its standard ASIMP/DSOM footer as the final content, after the new OKF specification section"

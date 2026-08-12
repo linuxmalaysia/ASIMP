@@ -1,0 +1,133 @@
+---
+# Regression tests for the five new "Technical Documentation Index" entries
+# added to docs/index.md in this PR, linking to the new
+# dsom_ansible_review.html, podman_rootless.html, ansible_fqcn.html,
+# ansible_playbook_map.html, and sop_knowledge_first_discovery.html pages.
+#
+# Unlike the pre-existing OpenSCAP/Lynis pages, these new pages are
+# intentionally NOT added to the site navbar (docs/_config.yml); they are
+# only reachable from the homepage documentation index. These tests verify
+# each new entry is present verbatim, points at an existing markdown source
+# file, appears after the pre-existing "Troubleshooting & Fallbacks" entry,
+# and that the navbar was left untouched by this addition.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_docs_index_new_documentation_links.yml
+- name: Verify docs/index.md new documentation index entries
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    docs_dir: "{{ repo_root }}/docs"
+    new_index_entries:
+      - markdown: "dsom_ansible_review.md"
+        html: "dsom_ansible_review.html"
+        link_text: "- **[Review & Adoption of DSOM Guide](dsom_ansible_review.html)**: Structural alignment review of the DSOM Ansible Configuration Guide v3.6.2."
+      - markdown: "podman_rootless.md"
+        html: "podman_rootless.html"
+        link_text: "- **[Rootless Podman 5+ & Quadlet Orchestration](podman_rootless.html)**: Overview of rootless orchestration, systemd Quadlets, namespace mappings, and unprivileged container matrix testing."
+      - markdown: "ansible_fqcn.md"
+        html: "ansible_fqcn.html"
+        link_text: "- **[Ansible Best Practices & FQCN Standards](ansible_fqcn.html)**: Guidelines for Fully Qualified Collection Names (FQCN), task idempotency checks, and privilege strategies."
+      - markdown: "ansible_playbook_map.md"
+        html: "ansible_playbook_map.html"
+        link_text: "- **[Ansible Playbook and Document Architecture Map](ansible_playbook_map.html)**: Architectural dictionary linking playbook files with their core roles and operational documents."
+      - markdown: "sop_knowledge_first_discovery.md"
+        html: "sop_knowledge_first_discovery.html"
+        link_text: "- **[Local Knowledge-First & Metadata Discovery](sop_knowledge_first_discovery.html)**: SOP guidelines for unprivileged and agentic spatial discovery and context preservation."
+    preceding_entry_text: "[Troubleshooting & Fallbacks](troubleshooting.html)"
+
+  tasks:
+    - name: Load raw content of docs/index.md
+      ansible.builtin.set_fact:
+        index_content: "{{ lookup('file', docs_dir + '/index.md') }}"
+
+    - name: Load and parse docs/_config.yml
+      ansible.builtin.set_fact:
+        config_data: "{{ lookup('file', docs_dir + '/_config.yml') | from_yaml }}"
+
+    - name: Assert each new page's markdown source file exists on disk
+      ansible.builtin.stat:
+        path: "{{ docs_dir }}/{{ item.markdown }}"
+      register: page_stat
+      loop: "{{ new_index_entries }}"
+      loop_control:
+        label: "{{ item.markdown }}"
+
+    - name: Assert every new page's markdown file was found and is a regular file
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isreg
+        fail_msg: "Expected markdown source file for a new documentation index entry is missing from docs/"
+      loop: "{{ page_stat.results }}"
+      loop_control:
+        label: "{{ item.item.markdown }}"
+
+    - name: Assert every new documentation index entry is present in docs/index.md verbatim
+      ansible.builtin.assert:
+        that:
+          - item.link_text in index_content
+        fail_msg: "docs/index.md Technical Documentation Index must contain the exact entry for {{ item.markdown }}"
+      loop: "{{ new_index_entries }}"
+      loop_control:
+        label: "{{ item.markdown }}"
+
+    - name: Assert the navbar HTML target basenames match the on-disk markdown basenames
+      ansible.builtin.assert:
+        that:
+          - item.html == (item.markdown | replace('.md', '.html'))
+        fail_msg: "Documentation index link /{{ item.html }} must correspond to docs/{{ item.markdown }} (same basename, Jekyll converts .md to .html)"
+      loop: "{{ new_index_entries }}"
+      loop_control:
+        label: "{{ item.markdown }}"
+
+    - name: Assert every new entry appears after the pre-existing Troubleshooting & Fallbacks entry
+      ansible.builtin.assert:
+        that:
+          - index_content.find(preceding_entry_text) < index_content.find(item.link_text)
+        fail_msg: "docs/index.md must list the new '{{ item.markdown }}' entry after the pre-existing Troubleshooting & Fallbacks entry"
+      loop: "{{ new_index_entries }}"
+      loop_control:
+        label: "{{ item.markdown }}"
+
+    - name: Assert the five new entries appear in the exact documented order
+      ansible.builtin.assert:
+        that:
+          - index_content.find(new_index_entries[0].link_text) < index_content.find(new_index_entries[1].link_text)
+          - index_content.find(new_index_entries[1].link_text) < index_content.find(new_index_entries[2].link_text)
+          - index_content.find(new_index_entries[2].link_text) < index_content.find(new_index_entries[3].link_text)
+          - index_content.find(new_index_entries[3].link_text) < index_content.find(new_index_entries[4].link_text)
+        fail_msg: "docs/index.md must list the DSOM review, Podman rootless, Ansible FQCN, Ansible playbook map, then SOP knowledge-first entries, in that exact order"
+
+    - name: Assert none of the new documentation pages were also added to the site navbar
+      ansible.builtin.assert:
+        that:
+          - ("/" + item.html) not in (config_data.navbar | map(attribute='url') | list)
+        fail_msg: "docs/_config.yml navbar must not contain an entry for the new '{{ item.markdown }}' documentation page (it is intentionally index-only)"
+      loop: "{{ new_index_entries }}"
+      loop_control:
+        label: "{{ item.markdown }}"
+
+    - name: Assert the navbar still contains exactly seven pre-existing entries (unaffected by the new index links)
+      ansible.builtin.assert:
+        that:
+          - config_data.navbar | length == 7
+        fail_msg: "docs/_config.yml navbar entry count must remain unaffected by adding new documentation index links to docs/index.md"
+
+    - name: Assert no duplicate documentation index entries were introduced
+      ansible.builtin.set_fact:
+        index_entry_occurrences: "{{ index_entry_occurrences | default({}) | combine({item.markdown: (index_content | regex_findall(item.link_text | regex_escape) | length)}) }}"
+      loop: "{{ new_index_entries }}"
+      loop_control:
+        label: "{{ item.markdown }}"
+
+    - name: Assert each new documentation index entry appears exactly once
+      ansible.builtin.assert:
+        that:
+          - index_entry_occurrences[item.markdown] == 1
+        fail_msg: "docs/index.md must contain the entry for {{ item.markdown }} exactly once"
+      loop: "{{ new_index_entries }}"
+      loop_control:
+        label: "{{ item.markdown }}"

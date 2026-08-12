@@ -1,0 +1,146 @@
+---
+# Structural and content-correctness tests for the new Ansible Playbook and
+# Document Architecture Map document (docs/ansible_playbook_map.md), which
+# maps playbooks/roles/scripts to their corresponding documentation pages.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_ansible_playbook_map_doc.yml
+- name: Verify docs/ansible_playbook_map.md frontmatter and content
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    doc_path: "{{ repo_root }}/docs/ansible_playbook_map.md"
+    expected_title: "Ansible Playbook and Document Architecture Map"
+    expected_topics:
+      - asimp
+      - playbook
+      - roles
+      - architecture
+      - mapping
+    required_headings:
+      - "## 🧭 Master Playbook and Document Matrix"
+      - "## 🛡️ 1. Security Operations: Hardening & Auditing"
+      - "## 📊 2. Continuous Integration & Local Verification"
+    matrix_entries:
+      - "play.yml"
+      - "play-localhost.yml"
+      - "playbooks/matrix_test.yml"
+      - "tests/test_*.yml"
+      - "scripts/verify_sitemap_links.py"
+    referenced_files:
+      - "play.yml"
+      - "play-localhost.yml"
+      - "playbooks/matrix_test.yml"
+      - "scripts/verify_sitemap_links.py"
+
+  tasks:
+    - name: Assert docs/ansible_playbook_map.md exists and is a regular file
+      ansible.builtin.stat:
+        path: "{{ doc_path }}"
+      register: doc_stat
+
+    - name: Fail loudly if the document is missing
+      ansible.builtin.assert:
+        that:
+          - doc_stat.stat.exists
+          - doc_stat.stat.isreg
+        fail_msg: "docs/ansible_playbook_map.md must exist as a regular file"
+
+    - name: Load raw content of docs/ansible_playbook_map.md
+      ansible.builtin.set_fact:
+        doc_content: "{{ lookup('file', doc_path) }}"
+
+    - name: Assert the document begins with a '---' front matter delimiter
+      ansible.builtin.assert:
+        that:
+          - doc_content.startswith('---')
+        fail_msg: "docs/ansible_playbook_map.md must start with a YAML front matter block delimited by '---' on the very first line"
+
+    - name: Assert the front matter block closes with a second '---' before the main heading
+      ansible.builtin.assert:
+        that:
+          - (doc_content.split('---', 2) | length) == 3
+          - doc_content.split('---', 2)[2].lstrip().startswith('# ' + expected_title)
+        fail_msg: "docs/ansible_playbook_map.md front matter must close with a second '---' immediately followed by the '# {{ expected_title }}' heading"
+
+    - name: Parse the YAML front matter block
+      ansible.builtin.set_fact:
+        doc_frontmatter: "{{ doc_content.split('---', 2)[1] | from_yaml }}"
+
+    - name: Assert the OKF metadata fields are present and correct
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.okf_version == "0.1"
+          - doc_frontmatter.type == "documentation"
+          - doc_frontmatter.title == expected_title
+          - doc_frontmatter.layout == "default"
+        fail_msg: "docs/ansible_playbook_map.md frontmatter must declare okf_version '0.1', type 'documentation', the exact title, and layout 'default'"
+
+    - name: Assert the frontmatter timestamp is a well-formed ISO-8601 UTC timestamp
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.timestamp is match('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$')
+        fail_msg: "docs/ansible_playbook_map.md frontmatter 'timestamp' must be an ISO-8601 UTC timestamp (YYYY-MM-DDTHH:MM:SSZ)"
+
+    - name: Assert the frontmatter topics list matches exactly, in order
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.topics == expected_topics
+        fail_msg: "docs/ansible_playbook_map.md frontmatter 'topics' must list asimp, playbook, roles, architecture, mapping in that exact order"
+
+    - name: Assert the document title heading matches the frontmatter title
+      ansible.builtin.assert:
+        that:
+          - ("# " + expected_title) in doc_content
+        fail_msg: "docs/ansible_playbook_map.md must contain a top-level heading matching its frontmatter title"
+
+    - name: Assert every required section heading is present
+      ansible.builtin.assert:
+        that:
+          - heading in doc_content
+        fail_msg: "docs/ansible_playbook_map.md is missing required section heading: {{ heading }}"
+      loop: "{{ required_headings }}"
+      loop_control:
+        loop_var: heading
+
+    - name: Assert the master matrix table documents every expected playbook/script entry
+      ansible.builtin.assert:
+        that:
+          - ("`" + item + "`") in doc_content
+        fail_msg: "docs/ansible_playbook_map.md master matrix table must list an entry for {{ item }}"
+      loop: "{{ matrix_entries }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert every file referenced by name in the matrix actually exists in the repository
+      ansible.builtin.stat:
+        path: "{{ repo_root }}/{{ item }}"
+      register: referenced_file_stat
+      loop: "{{ referenced_files }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert every referenced playbook/script file was found on disk
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+        fail_msg: "docs/ansible_playbook_map.md references {{ item.item }}, but it does not exist in the repository"
+      loop: "{{ referenced_file_stat.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Assert the pre-remediation safety gate example uses FQCN and asserts the expected risk levels
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.assert:' in doc_content"
+          - "'CRITICAL_RISK' in doc_content"
+          - "'HIGH_RISK' in doc_content"
+        fail_msg: "docs/ansible_playbook_map.md pre-remediation safety gate example must use FQCN and document the CRITICAL_RISK/HIGH_RISK risk levels"
+
+    - name: Assert the document does not declare the 'layout' key more than once
+      ansible.builtin.assert:
+        that:
+          - (doc_content.split('---', 2)[1] | regex_findall('^layout:', multiline=True) | length) == 1
+        fail_msg: "docs/ansible_playbook_map.md front matter must declare the 'layout' key exactly once"

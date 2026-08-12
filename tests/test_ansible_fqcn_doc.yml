@@ -1,0 +1,148 @@
+---
+# Structural and content-correctness tests for the new Ansible Best
+# Practices & FQCN Standards document (docs/ansible_fqcn.md), which
+# documents ASIMP's Fully Qualified Collection Names (FQCN) mandate, the
+# symmetric privilege strategy, and explicit task idempotency requirements.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_ansible_fqcn_doc.yml
+- name: Verify docs/ansible_fqcn.md frontmatter and content
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    doc_path: "{{ repo_root }}/docs/ansible_fqcn.md"
+    expected_title: "Ansible Best Practices & FQCN Standards"
+    expected_topics:
+      - asimp
+      - ansible
+      - fqcn
+      - idempotency
+      - best-practices
+    required_headings:
+      - "## 🧭 Fully Qualified Collection Names (FQCN)"
+      - "## 🛡️ Symmetric Privilege Strategy"
+      - "## 📄 FQCN Ansible Task Blueprint"
+      - "## 🔍 Task Idempotency and Change Verification"
+    # Matches a YAML task line invoking one of the legacy, unqualified
+    # module names directly (e.g. "  file:"), but not their FQCN
+    # equivalents (e.g. "  ansible.builtin.file:"), since the module name
+    # would then be preceded by a '.' rather than only leading whitespace.
+    bare_module_regex: '^\s*(apt|copy|shell|command|replace|file|template|systemd_service):\s'
+
+  tasks:
+    - name: Assert docs/ansible_fqcn.md exists and is a regular file
+      ansible.builtin.stat:
+        path: "{{ doc_path }}"
+      register: doc_stat
+
+    - name: Fail loudly if the document is missing
+      ansible.builtin.assert:
+        that:
+          - doc_stat.stat.exists
+          - doc_stat.stat.isreg
+        fail_msg: "docs/ansible_fqcn.md must exist as a regular file"
+
+    - name: Load raw content of docs/ansible_fqcn.md
+      ansible.builtin.set_fact:
+        doc_content: "{{ lookup('file', doc_path) }}"
+
+    - name: Assert the document begins with a '---' front matter delimiter
+      ansible.builtin.assert:
+        that:
+          - doc_content.startswith('---')
+        fail_msg: "docs/ansible_fqcn.md must start with a YAML front matter block delimited by '---' on the very first line"
+
+    - name: Assert the front matter block closes with a second '---' before the main heading
+      ansible.builtin.assert:
+        that:
+          - (doc_content.split('---', 2) | length) == 3
+          - doc_content.split('---', 2)[2].lstrip().startswith('# ' + expected_title)
+        fail_msg: "docs/ansible_fqcn.md front matter must close with a second '---' immediately followed by the '# {{ expected_title }}' heading"
+
+    - name: Parse the YAML front matter block
+      ansible.builtin.set_fact:
+        doc_frontmatter: "{{ doc_content.split('---', 2)[1] | from_yaml }}"
+
+    - name: Assert the OKF metadata fields are present and correct
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.okf_version == "0.1"
+          - doc_frontmatter.type == "documentation"
+          - doc_frontmatter.title == expected_title
+          - doc_frontmatter.layout == "default"
+        fail_msg: "docs/ansible_fqcn.md frontmatter must declare okf_version '0.1', type 'documentation', the exact title, and layout 'default'"
+
+    - name: Assert the frontmatter timestamp is a well-formed ISO-8601 UTC timestamp
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.timestamp is match('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$')
+        fail_msg: "docs/ansible_fqcn.md frontmatter 'timestamp' must be an ISO-8601 UTC timestamp (YYYY-MM-DDTHH:MM:SSZ)"
+
+    - name: Assert the frontmatter topics list matches exactly, in order
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.topics == expected_topics
+        fail_msg: "docs/ansible_fqcn.md frontmatter 'topics' must list asimp, ansible, fqcn, idempotency, best-practices in that exact order"
+
+    - name: Assert the document title heading matches the frontmatter title
+      ansible.builtin.assert:
+        that:
+          - ("# " + expected_title) in doc_content
+        fail_msg: "docs/ansible_fqcn.md must contain a top-level heading matching its frontmatter title"
+
+    - name: Assert every required section heading is present
+      ansible.builtin.assert:
+        that:
+          - heading in doc_content
+        fail_msg: "docs/ansible_fqcn.md is missing required section heading: {{ heading }}"
+      loop: "{{ required_headings }}"
+      loop_control:
+        loop_var: heading
+
+    - name: Assert the FQCN legacy-to-mandatory mapping table documents every expected module pair
+      ansible.builtin.assert:
+        that:
+          - "'| `apt` | `ansible.builtin.apt` |' in doc_content"
+          - "'| `copy` | `ansible.builtin.copy` |' in doc_content"
+          - "'| `shell` | `ansible.builtin.shell` |' in doc_content"
+          - "'| `command` | `ansible.builtin.command` |' in doc_content"
+          - "'| `replace` | `ansible.builtin.replace` |' in doc_content"
+        fail_msg: "docs/ansible_fqcn.md must document the legacy module name to mandatory FQCN replacement table exactly"
+
+    - name: Assert the embedded task blueprint uses fully qualified module names
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.file:' in doc_content"
+          - "'ansible.builtin.template:' in doc_content"
+          - "'ansible.builtin.systemd_service:' in doc_content"
+        fail_msg: "docs/ansible_fqcn.md example blueprint must use FQCN for the file, template and systemd_service modules"
+
+    - name: Assert the embedded task blueprint never invokes a legacy, unqualified module name directly
+      ansible.builtin.assert:
+        that:
+          - not (doc_content | regex_search(bare_module_regex, multiline=True))
+        fail_msg: "docs/ansible_fqcn.md's own example blueprint must not itself use short, unqualified module names (e.g. 'file:' instead of 'ansible.builtin.file:')"
+
+    - name: Assert the idempotency section documents both the incorrect and correct patterns
+      ansible.builtin.assert:
+        that:
+          - "'# INCORRECT (Will always report changed)' in doc_content"
+          - "'# CORRECT (Strictly idempotent check)' in doc_content"
+          - "'changed_when: false' in doc_content"
+          - "'failed_when: false' in doc_content"
+        fail_msg: "docs/ansible_fqcn.md must document both the incorrect and correct idempotency patterns with changed_when/failed_when"
+
+    - name: Assert the rootless environment variables are documented in the FQCN blueprint
+      ansible.builtin.assert:
+        that:
+          - "'XDG_RUNTIME_DIR' in doc_content"
+          - "'DBUS_SESSION_BUS_ADDRESS' in doc_content"
+        fail_msg: "docs/ansible_fqcn.md FQCN blueprint must document the rootless systemd environment variables"
+
+    - name: Assert the document does not declare the 'layout' key more than once
+      ansible.builtin.assert:
+        that:
+          - (doc_content.split('---', 2)[1] | regex_findall('^layout:', multiline=True) | length) == 1
+        fail_msg: "docs/ansible_fqcn.md front matter must declare the 'layout' key exactly once"
