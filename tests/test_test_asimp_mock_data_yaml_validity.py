@@ -99,6 +99,7 @@ class TestTestAsimpMockDataValidity(unittest.TestCase):
         self.assertTrue(compiled(report_frontmatter=report_frontmatter))
 
     def test_float_coerced_condition_evaluates_false_for_a_mismatched_version(self) -> None:
+        """Verify that the expected version condition evaluates to false for a mismatched version."""
         env = Environment()
         compiled = env.compile_expression(EXPECTED_OKF_VERSION_CONDITION)
         report_frontmatter = {"okf_version": "0.2"}
@@ -106,6 +107,7 @@ class TestTestAsimpMockDataValidity(unittest.TestCase):
 
     def test_previous_unconverted_condition_would_regress_into_always_false(self) -> None:
         # Demonstrates *why* comparing string to float literal directly is incorrect
+        """Verify that the previous direct string-to-float comparison evaluates to `false` for the quoted version value."""
         env = Environment()
         compiled = env.compile_expression(PREVIOUS_UNCONVERTED_CONDITION)
         report_frontmatter = {"okf_version": "0.1"}
@@ -114,6 +116,21 @@ class TestTestAsimpMockDataValidity(unittest.TestCase):
             "The previous unconverted condition unexpectedly evaluated True; "
             "test fixture assumptions about Jinja2 str/float comparison may have changed",
         )
+
+    def test_string_comparison_correctly_rejects_a_differently_formatted_but_float_equal_version(
+        self,
+    ) -> None:
+        # Boundary case demonstrating the real value of the string-comparison fix
+        # beyond just fixing the always-false bug: a differently-formatted version
+        # string such as "0.10" is float-equal to 0.1 (float("0.10") == float("0.1")),
+        # so a `| float` coercion would have *silently accepted* it as a match. The
+        # exact string comparison this PR settled on correctly treats "0.10" as a
+        # distinct version from "0.1" and rejects it.
+        self.assertEqual(float("0.10"), float("0.1"))  # sanity-check the premise
+        env = Environment()
+        compiled = env.compile_expression(EXPECTED_OKF_VERSION_CONDITION)
+        report_frontmatter = {"okf_version": "0.10"}
+        self.assertFalse(compiled(report_frontmatter=report_frontmatter))
 
 
 if __name__ == "__main__":
