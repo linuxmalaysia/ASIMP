@@ -1,6 +1,6 @@
 ---
-
 okf_version: "0.1"
+layout: default
 type: documentation
 title: "ASIMP Local Testing Matrix & Telemetry Spec"
 timestamp: "2026-08-05T12:00:00Z"
@@ -154,7 +154,3 @@ The local matrix integration introduces the following files to the codebase:
 └── scripts/
     └── jules_gh_feedback.sh             # Telemetry courier bridge script (Jules & GitHub PR)
 ```
-
----
-
-ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu Malaysia (Piawai) | GNU General Public License v3.0

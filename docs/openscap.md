@@ -1,4 +1,5 @@
 ---
+layout: default
 okf_version: "0.1"
 type: documentation
 title: "OpenSCAP Integration & Playbook Analysis"
@@ -246,7 +247,3 @@ To handle these limitations gracefully:
    - **Important Note**: These simulated/mock fallback scores and any derived "Compliant" or "Non-vulnerable" reports are strictly **non-authoritative and test-only data**. They are preserved strictly for sandbox test verification and CI/CD logical consistency.
 4. **Downstream Compliance Gate Behavior**: To prevent any security bypasses, downstream compliance-gate verification explicitly **rejects** simulated/mock results. Simulated executions will fail to satisfy any actual compliance checkpoints (i.e. `openscap_success` and `audits_completed` are set to `false` when simulated fallbacks are used), ensuring only real, verified audits can validate a system's true security baseline.
 5. **Mock Scorecard Generation**: It saves the scores to `data/asimp_mock/var/log/asimp-baseline-scores.json` and templates a comprehensive Markdown report at `data/asimp_mock/opt/report/openscap/SECURITY_AUDIT_REPORT.md` conforming to standard OKF v0.1 guidelines. This guarantees that execution pipelines compile and complete successfully under any privilege level.
-
----
-
-ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu Malaysia (Piawai) | GNU General Public License v3.0

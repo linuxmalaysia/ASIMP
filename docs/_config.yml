@@ -17,6 +17,8 @@ navbar:
     url: "/configuration.html"
   - title: "Troubleshooting"
     url: "/troubleshooting.html"
+  - title: "Legal Notice"
+    url: "/legal-notice.html"
 
 # Central default settings
 defaults:

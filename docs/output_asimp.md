@@ -55,7 +55,3 @@ In the unprivileged Google Jules sandbox environment, no actual system-level mod
 - **Detailed PDF/HTML Reports**:
   - OpenSCAP Baseline: `/var/log/openscap-before-report.html`
   - OpenSCAP Post-Hardening: `/var/log/openscap-after-report.html`
-
----
-
-ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu Malaysia (Piawai) | GNU General Public License v3.0

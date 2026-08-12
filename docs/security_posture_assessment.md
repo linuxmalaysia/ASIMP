@@ -129,7 +129,3 @@ This sign-off certifies that the controls mapped in this checklist have been ver
 - **Commit Reference**: 0b9da50971b88505d61c679a97e9152be6c28817 (and downstream verification branch)
 - **Executed Test Results**: Verification pending (CI workflow check in progress for the active verification branch, targeting a final baseline of all local python unit tests and Ansible structural tests passing).
 - **Approval Date**: 2026-08-10
-
----
-
-ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu Malaysia (Piawai) | GNU General Public License v3.0

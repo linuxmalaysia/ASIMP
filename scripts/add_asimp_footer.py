@@ -16,7 +16,8 @@ FOOTER_TEXT = (
     "Harisfazillah Jamel (LinuxMalaysia) | "
     "2026-07-12 Standard: UK English | "
     "DBP-standard Bahasa Melayu Malaysia (Piawai) | "
-    "GNU General Public License v3.0"
+    "GNU General Public License v3.0 | "
+    "[Legal Notice & Disclaimer](https://linuxmalaysia.github.io/ASIMP/legal-notice.html)"
 )
 
 
@@ -51,6 +52,17 @@ def patch_markdown_file(filepath: str) -> None:
 
     with open(resolved_path, "r", encoding="utf-8") as f:
         content = f.read()
+
+    # Check if the canonical trailing footer is present and is the sole recognized footer
+    has_trailing_canonical = content.rstrip().endswith("\n\n---\n\n" + FOOTER_TEXT)
+    has_duplicates_or_legacy = (
+        content.count("Deep State of Mind (DSOM)") > 1 or
+        content.count("ASIMP (Ansible System") > 1
+    )
+
+    if has_trailing_canonical and not has_duplicates_or_legacy:
+        print(f"No update needed (already has footer): {filepath}")
+        return
 
     # 2. Split front matter and body to prevent touch of front matter delimiters
     front_matter = ""
@@ -112,7 +124,7 @@ def patch_markdown_file(filepath: str) -> None:
         temp_file.write(new_content)
         temp_file.close()
         os.replace(temp_filepath, resolved_path)
-        print(f"Successfully patched footer in: {filepath}")
+        print(f"Successfully appended standard footer to: {filepath}")
     except Exception as e:
         if os.path.exists(temp_filepath):
             os.remove(temp_filepath)
@@ -128,6 +140,7 @@ def main() -> None:
         ".venv",
         "lynis-ansible",
         "asimp_mock",  # Prune asimp_mock folder entirely from walking
+        "docs",        # Exclude docs directory so Jekyll site pages do not get inline footers
     }
 
     # Walk repository from the root directory
@@ -141,9 +154,12 @@ def main() -> None:
 
                 # Prune and filter path components to exclude generated report paths or submodules
                 norm_path = os.path.normpath(filepath)
-                if "roles/lynis-ansible" in norm_path:
+                parts = norm_path.split(os.sep)
+                if "roles" in parts and "lynis-ansible" in parts:
                     continue
-                if "data/asimp_mock" in norm_path:
+                if "data" in parts and "asimp_mock" in parts:
+                    continue
+                if "docs" in parts:
                     continue
 
                 patch_markdown_file(filepath)

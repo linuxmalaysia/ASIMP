@@ -8,5 +8,6 @@ https://linuxmalaysia.github.io/ASIMP/openscap.html
 https://linuxmalaysia.github.io/ASIMP/output_asimp.html
 https://linuxmalaysia.github.io/ASIMP/output_lynis.html
 https://linuxmalaysia.github.io/ASIMP/output_openscap.html
+https://linuxmalaysia.github.io/ASIMP/legal-notice.html
 https://linuxmalaysia.github.io/ASIMP/security_posture_assessment.html
 https://linuxmalaysia.github.io/ASIMP/troubleshooting.html

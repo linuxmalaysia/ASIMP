@@ -67,7 +67,3 @@ The package integrity check is performed using `debsums`, which verifies MD5 has
 * Unauthorized or manually modified library files.
 
 The check runs asynchronously in the background so as not to stall playbook execution, with its output saved under `/var/log/debsums.output`.
-
----
-
-ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu Malaysia (Piawai) | GNU General Public License v3.0

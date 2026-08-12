@@ -32,7 +32,8 @@ class TestAddAsimpFooter(unittest.TestCase):
         "Harisfazillah Jamel (LinuxMalaysia) | "
         "2026-07-12 Standard: UK English | "
         "DBP-standard Bahasa Melayu Malaysia (Piawai) | "
-        "GNU General Public License v3.0"
+        "GNU General Public License v3.0 | "
+        "[Legal Notice & Disclaimer](https://linuxmalaysia.github.io/ASIMP/legal-notice.html)"
     )
 
     def setUp(self) -> None:
@@ -99,9 +100,7 @@ class TestAddAsimpFooter(unittest.TestCase):
         # File must be byte-for-byte unchanged (idempotent, no duplicate footer).
         self.assertEqual(self._read(path), original)
 
-    def test_patch_markdown_file_noop_when_footer_embedded_mid_document(self) -> None:
-        # The check is a simple substring test, so a footer appearing anywhere
-        # in the document (not just trailing) must still be treated as present.
+    def test_patch_markdown_file_appends_canonical_footer_when_footer_embedded_mid_document(self) -> None:
         path = "docs/weird.md"
         original = (
             "# Title\n" + add_asimp_footer.FOOTER_TEXT + "\nMore content below.\n"
@@ -110,7 +109,25 @@ class TestAddAsimpFooter(unittest.TestCase):
 
         add_asimp_footer.patch_markdown_file(path)
 
-        self.assertEqual(self._read(path), original)
+        # It should append the footer to the end since the mid-document footer is not the canonical trailing block.
+        expected = original.rstrip() + "\n\n---\n\n" + add_asimp_footer.FOOTER_TEXT + "\n"
+        self.assertEqual(self._read(path), expected)
+
+    def test_patch_markdown_file_cleans_duplicate_trailing_footers(self) -> None:
+        path = "README.md"
+        # File has duplicate trailing footers
+        original = (
+            "# Title\n" +
+            "\n\n---\n\n" + add_asimp_footer.FOOTER_TEXT +
+            "\n\n---\n\n" + add_asimp_footer.FOOTER_TEXT + "\n"
+        )
+        self._write(path, original)
+
+        add_asimp_footer.patch_markdown_file(path)
+
+        # It should clean the duplicate and keep exactly one canonical trailing footer
+        expected = "# Title" + "\n\n---\n\n" + add_asimp_footer.FOOTER_TEXT + "\n"
+        self.assertEqual(self._read(path), expected)
 
     def test_patch_markdown_file_on_empty_file(self) -> None:
         path = "EMPTY.md"
@@ -158,12 +175,14 @@ class TestAddAsimpFooter(unittest.TestCase):
 
     def test_main_walking_excludes_standard_dirs(self) -> None:
         os.makedirs("docs", exist_ok=True)
+        os.makedirs("other_docs", exist_ok=True)
         os.makedirs(".git", exist_ok=True)
         os.makedirs("node_modules", exist_ok=True)
         os.makedirs("venv", exist_ok=True)
         os.makedirs(".venv", exist_ok=True)
 
         self._write("docs/test.md", "# Doc title\nContent")
+        self._write("other_docs/test.md", "# Other Doc title\nContent")
         self._write(".git/test.md", "# Git title\nContent")
         self._write("node_modules/test.md", "# Node title\nContent")
         self._write("venv/test.md", "# Venv title\nContent")
@@ -174,7 +193,8 @@ class TestAddAsimpFooter(unittest.TestCase):
             add_asimp_footer.main()
             processed_paths = [os.path.normpath(call[0][0]) for call in mock_patch.call_args_list]
             self.assertIn(os.path.normpath("README.md"), processed_paths)
-            self.assertIn(os.path.normpath("docs/test.md"), processed_paths)
+            self.assertIn(os.path.normpath("other_docs/test.md"), processed_paths)
+            self.assertNotIn(os.path.normpath("docs/test.md"), processed_paths)
             self.assertNotIn(os.path.normpath(".git/test.md"), processed_paths)
             self.assertNotIn(os.path.normpath("node_modules/test.md"), processed_paths)
             self.assertNotIn(os.path.normpath("venv/test.md"), processed_paths)
@@ -213,16 +233,20 @@ class TestAddAsimpFooter(unittest.TestCase):
         # Exercise main() without mocking patch_markdown_file to confirm the
         # full walk-and-patch pipeline actually mutates matching files on disk.
         os.makedirs("docs", exist_ok=True)
+        os.makedirs("other_docs", exist_ok=True)
         os.makedirs("roles/lynis-ansible", exist_ok=True)
 
         self._write("README.md", "# Root readme\nBody.")
         self._write("docs/page.md", "# Page\nBody.")
+        self._write("other_docs/page.md", "# Other Page\nBody.")
         self._write("roles/lynis-ansible/README.md", "# Vendored\nBody.")
 
         add_asimp_footer.main()
 
         self.assertIn(add_asimp_footer.FOOTER_TEXT, self._read("README.md"))
-        self.assertIn(add_asimp_footer.FOOTER_TEXT, self._read("docs/page.md"))
+        self.assertIn(add_asimp_footer.FOOTER_TEXT, self._read("other_docs/page.md"))
+        # Excluded docs directory should be left completely untouched.
+        self.assertEqual(self._read("docs/page.md"), "# Page\nBody.")
         # Vendored third-party file must be left completely untouched.
         self.assertEqual(self._read("roles/lynis-ansible/README.md"), "# Vendored\nBody.")
 
