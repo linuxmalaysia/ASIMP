@@ -8,7 +8,7 @@
         key: os_{{ ansible_distribution }}
 
 - name: Run ASIMP Security Hardening and Audits
-  hosts: os_Ubuntu:os_Debian:os_CentOS:os_RedHat:os_Rocky
+  hosts: os_Ubuntu:os_Debian:os_CentOS:os_RedHat:os_Rocky:os_AlmaLinux
   gather_facts: true
   become: false
   vars:
@@ -150,6 +150,19 @@
             debsums_ubuntu_check: "{{ not is_sandbox_jules }}"
       when:
         - (ansible_distribution == 'Ubuntu' or ansible_os_family == 'Debian')
+        - asimp_privilege_level == 'full'
+      become: true
+
+    - name: Apply RedHat Update Hardening
+      block:
+        - name: Apply RedHat Update Hardening
+          ansible.builtin.include_role:
+            name: update-ubuntu-ASIMP
+          vars:
+            upgrade_rhel_check: "{{ not is_sandbox_jules }}"
+            rpmsums_check: "{{ not is_sandbox_jules }}"
+      when:
+        - (ansible_os_family == 'RedHat')
         - asimp_privilege_level == 'full'
       become: true
 

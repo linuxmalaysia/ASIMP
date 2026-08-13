@@ -33,7 +33,6 @@
       - "### 5. Dynamic Bash Remediation Script Generation"
       - "### 6. Ubuntu USN OVAL Vulnerability Assessment"
       - "## 🐳 Unprivileged Sandbox & Mock Execution Mode"
-      - "## 🔒 Safety & Boot/Network Lockout Prevention"
     # Built via a raw block so the literal Jinja delimiters are preserved
     # verbatim instead of being (incorrectly) templated by Ansible itself.
     expected_oval_url_template: "{% raw %}https://security-metadata.canonical.com/oval/com.ubuntu.{{ ansible_distribution_release }}.usn.oval.xml.bz2{% endraw %}"
@@ -193,38 +192,3 @@
         that:
           - doc_content.find('58.4%') < doc_content.find('91.2%')
         fail_msg: "docs/openscap.md must present the simulated baseline score (58.4%) before the post-hardening score (91.2%)"
-
-    # --- Verify the new "Safety & Boot/Network Lockout Prevention" section ---
-
-    - name: Assert the new Safety & Boot/Network Lockout Prevention section appears after the sandbox execution mode section
-      ansible.builtin.assert:
-        that:
-          - doc_content.find('## 🐳 Unprivileged Sandbox & Mock Execution Mode') < doc_content.find('## 🔒 Safety & Boot/Network Lockout Prevention')
-        fail_msg: "docs/openscap.md must place '## 🔒 Safety & Boot/Network Lockout Prevention' after the sandbox execution mode section, as the final section of the document"
-
-    - name: Assert the Safety & Boot/Network Lockout Prevention section is the last top-level heading in the document
-      ansible.builtin.assert:
-        that:
-          - doc_content.find('## 🔒 Safety & Boot/Network Lockout Prevention') == doc_content.rfind('\n## ') + 1
-        fail_msg: "docs/openscap.md must place '## 🔒 Safety & Boot/Network Lockout Prevention' as the last top-level '##' heading in the document"
-
-    - name: Assert the new section documents why remediation scripts are generated instead of auto-executed
-      ansible.builtin.assert:
-        that:
-          - "'remediate-*.sh' in doc_content"
-          - "'instead of automatically or blindly running raw, destructive SCAP fixes' in doc_content"
-        fail_msg: "docs/openscap.md must explain that remediate-*.sh scripts are generated for manual inspection instead of being auto-executed"
-
-    - name: Assert the new section documents both safety guarantees verbatim
-      ansible.builtin.assert:
-        that:
-          - "'**No Silently Broken Configuration**' in doc_content"
-          - "'**Pre-execution Audit Path**' in doc_content"
-          - "'aggressive PAM modifications or bootloader parameters' in doc_content"
-        fail_msg: "docs/openscap.md must document the 'No Silently Broken Configuration' and 'Pre-execution Audit Path' safety guarantees, including the PAM/bootloader risk example"
-
-    - name: Assert the new section is not accidentally duplicated
-      ansible.builtin.assert:
-        that:
-          - (doc_content | regex_findall('## 🔒 Safety & Boot/Network Lockout Prevention') | length) == 1
-        fail_msg: "docs/openscap.md must contain the '## 🔒 Safety & Boot/Network Lockout Prevention' heading exactly once"

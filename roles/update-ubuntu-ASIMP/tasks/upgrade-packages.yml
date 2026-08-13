@@ -6,7 +6,7 @@
     upgrade: "{{ upgrade_item.upgrade | default(omit) }}"
     force_apt_get: true
   tags: apt
-  async: 361
+  async: 360
   poll: 0
   register: upgrade_sleeper
 
@@ -15,4 +15,6 @@
     jid: "{{ upgrade_sleeper.ansible_job_id }}"
   register: upgrade_job_result
   until: upgrade_job_result.finished
-  retries: 360
+  delay: 10
+  retries: 36
+  tags: apt

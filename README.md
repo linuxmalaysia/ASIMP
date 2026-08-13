@@ -178,6 +178,25 @@ For visual inspection and historical tracking of playbook execution, check out *
 
 ---
 
+## 🔒 Safety & Anti-Lockout Guarantees (Preventing Boot and SSH Failure)
+
+While automated system hardening introduces inherent risks of system lockout, network loss, PAM misconfiguration, or boot failure, ASIMP integrates a strict, multi-layered safety-gate design to significantly reduce these risks. Note that these pre-flight checks and manual remediation reviews cannot fully guarantee boot, SSH, PAM, or network availability under all system conditions, and still require final validation by an administrator:
+
+1. **Pre-Remediation Safety Checks**:
+   Before any hardening tasks or system updates are applied, ASIMP runs a mandatory, non-destructive safety validation block:
+   - **SSH Daemon Syntax Validation**: Runs `sshd -t` to guarantee the existing SSH config is healthy. If any syntax error is found, the playbook halts immediately to prevent disabling remote SSH login.
+   - **Fstab Mount Point Checks**: Runs `mount -a -f` to validate `/etc/fstab` structure and mount points. If any mount point is corrupted, the run aborts to prevent boot failure.
+   - **Root Storage Check**: Checks for at least 512MB of free space on `/` to prevent mid-upgrade disk exhaustion, which often leads to corrupted system packages.
+   - **Port Reachability**: Verifies that the configured SSH port is active and reachable beforehand.
+
+2. **Gated Privilege Levels**:
+   ASIMP dynamically probes host capabilities. In environments with limited privileges (such as Docker or unprivileged containers), ASIMP automatically defaults to `limited` mode and safely skips container-host-breaking tasks (like altering kernel sysctls, modifying hardware clock services, or changing core systemd configurations), preventing system instability.
+
+3. **Generating OpenSCAP Remediation Scripts Rather than Unaudited Execution**:
+   Instead of blindly applying destructive auto-remediations that might render an OS unbootable, OpenSCAP's CIS Level 2 remediation bash scripts (`remediate-*.sh`) are safely generated into the report directory. This allows administrators to review, audit, and selectively execute mitigations, ensuring complete safety and full compliance visibility.
+
+---
+
 ## 📜 License
 
 This project is licensed under the GNU General Public License v3.0. See the [LICENSE](LICENSE) file for details.
