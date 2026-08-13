@@ -1,0 +1,33 @@
+---
+- name: Check if rpm binary is available
+  ansible.builtin.command: which rpm
+  register: r_rpm_binary_check
+  changed_when: false
+  failed_when: false
+  tags: rpmsums
+
+- name: Run rpm verification check
+  ansible.builtin.command: rpm -Va
+  async: 361
+  poll: 0
+  register: rpmsums_sleeper
+  when:
+    - r_rpm_binary_check.rc == 0
+    - rpmsums_check is defined
+    - rpmsums_check
+  tags: rpmsums
+  ignore_errors: true
+  changed_when: false
+
+- name: Run rpm verification check - check on async task
+  ansible.builtin.async_status:
+    jid: "{{ rpmsums_sleeper.ansible_job_id }}"
+  register: rpmsums_job_result
+  until: rpmsums_job_result.finished
+  retries: 360
+  when:
+    - r_rpm_binary_check.rc == 0
+    - rpmsums_check is defined
+    - rpmsums_check
+  tags: rpmsums
+  ignore_errors: true

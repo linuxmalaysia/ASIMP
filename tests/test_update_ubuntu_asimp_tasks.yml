@@ -18,6 +18,7 @@
     expected_updaterepo_jid: "{% raw %}{{ updaterepo_sleeper.ansible_job_id }}{% endraw %}"
     expected_upgrade_jid: "{% raw %}{{ upgrade_sleeper.ansible_job_id }}{% endraw %}"
     expected_debsums_jid: "{% raw %}{{ debsums_sleeper.ansible_job_id }}{% endraw %}"
+    expected_rpmsums_jid: "{% raw %}{{ rpmsums_sleeper.ansible_job_id }}{% endraw %}"
 
   tasks:
     - name: Load tasks/main.yml
@@ -32,11 +33,16 @@
       ansible.builtin.set_fact:
         debsums_tasks: "{{ lookup('file', role_tasks_dir + '/debsums-check.yml') | from_yaml }}"
 
+    - name: Load tasks/rpmsums-check.yml
+      ansible.builtin.set_fact:
+        rpmsums_tasks: "{{ lookup('file', role_tasks_dir + '/rpmsums-check.yml') | from_yaml }}"
+
     - name: Build task-by-name lookups
       ansible.builtin.set_fact:
         main_tasks_by_name: "{{ dict(main_tasks | map(attribute='name') | zip(main_tasks)) }}"
         upgrade_tasks_by_name: "{{ dict(upgrade_tasks | map(attribute='name') | list | zip(upgrade_tasks)) }}"
         debsums_tasks_by_name: "{{ dict(debsums_tasks | map(attribute='name') | list | zip(debsums_tasks)) }}"
+        rpmsums_tasks_by_name: "{{ dict(rpmsums_tasks | map(attribute='name') | list | zip(rpmsums_tasks)) }}"
 
     # --- Verify tasks/main.yml -----------------------------------------
 
@@ -169,3 +175,69 @@
           - debsums_tasks[2].retries == 360
           - "'debsums_ubuntu_check' in debsums_tasks[2].when"
         fail_msg: "The debsums async status task inside debsums-check.yml lacks correct FQCN, job registration, or retry limits."
+
+    - name: Assert RHEL core tasks exist in main.yml
+      ansible.builtin.assert:
+        that:
+          - "'Update RHEL repositories cache' in main_tasks_by_name"
+          - "'Update RHEL repositories cache - check on async task' in main_tasks_by_name"
+          - "'Run RHEL package upgrades' in main_tasks_by_name"
+          - "'Run RHEL package upgrades - check on async task' in main_tasks_by_name"
+          - "'Run rpmsums check' in main_tasks_by_name"
+        fail_msg: "One or more expected RedHat tasks is missing from roles/update-ubuntu-ASIMP/tasks/main.yml"
+
+    - name: Assert 'Update RHEL repositories cache' is fully compliant
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.dnf' in main_tasks_by_name['Update RHEL repositories cache']"
+          - main_tasks_by_name['Update RHEL repositories cache']['ansible.builtin.dnf'].update_cache == true
+          - main_tasks_by_name['Update RHEL repositories cache'].async == 361
+          - main_tasks_by_name['Update RHEL repositories cache'].poll == 0
+          - main_tasks_by_name['Update RHEL repositories cache'].register == 'updaterepo_rhel_sleeper'
+          - main_tasks_by_name['Update RHEL repositories cache'].when == "ansible_os_family == 'RedHat'"
+          - main_tasks_by_name['Update RHEL repositories cache'].tags == 'dnf'
+        fail_msg: "'Update RHEL repositories cache' task lacks correct dnf module, async parameters, or conditional check."
+
+    # --- Verify tasks/rpmsums-check.yml --------------------------------
+
+    - name: Assert core tasks exist in rpmsums-check.yml
+      ansible.builtin.assert:
+        that:
+          - rpmsums_tasks | length == 3
+        fail_msg: "rpmsums-check.yml must contain exactly three tasks (safety check, rpm verification execution, and async check status)."
+
+    - name: Verify rpm binary check (safety check) inside rpmsums-check.yml
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.command' in rpmsums_tasks[0]"
+          - rpmsums_tasks[0]['ansible.builtin.command'] == 'which rpm'
+          - rpmsums_tasks[0].register == 'r_rpm_binary_check'
+          - rpmsums_tasks[0].changed_when == false
+          - rpmsums_tasks[0].failed_when == false
+          - rpmsums_tasks[0].tags == 'rpmsums'
+        fail_msg: "The rpm availability safety check task is misconfigured."
+
+    - name: Verify rpm verification run task parameters inside rpmsums-check.yml
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.command' in rpmsums_tasks[1]"
+          - rpmsums_tasks[1]['ansible.builtin.command'] == 'rpm -Va'
+          - rpmsums_tasks[1].async == 361
+          - rpmsums_tasks[1].poll == 0
+          - rpmsums_tasks[1].register == 'rpmsums_sleeper'
+          - rpmsums_tasks[1].tags == 'rpmsums'
+          - rpmsums_tasks[1].ignore_errors == true
+          - rpmsums_tasks[1].changed_when == false
+          - "'rpmsums_check' in rpmsums_tasks[1].when"
+        fail_msg: "The rpm verification run task must use ansible.builtin.command, carry changed_when: false, and require rpmsums_check."
+
+    - name: Verify rpm status check task parameters inside rpmsums-check.yml
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.async_status' in rpmsums_tasks[2]"
+          - rpmsums_tasks[2]['ansible.builtin.async_status'].jid == expected_rpmsums_jid
+          - rpmsums_tasks[2].register == 'rpmsums_job_result'
+          - rpmsums_tasks[2].until == 'rpmsums_job_result.finished'
+          - rpmsums_tasks[2].retries == 360
+          - "'rpmsums_check' in rpmsums_tasks[2].when"
+        fail_msg: "The rpmsums async status task inside rpmsums-check.yml lacks correct FQCN, job registration, or retry limits."
