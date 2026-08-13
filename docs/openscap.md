@@ -254,6 +254,6 @@ To handle these limitations gracefully:
 
 A critical design choice in ASIMP's OpenSCAP integration is generating a tailor-made remediation bash script (`remediate-*.sh`) for manual inspection **instead of automatically or blindly running raw, destructive SCAP fixes**.
 
-This approach provides absolute safety and guarantees that:
+While this approach significantly reduces the risk of system instability, pre-flight checks and manual remediation reviews cannot fully guarantee boot, SSH, PAM, or network availability under all system conditions, and require final validation by an administrator:
 - **No Silently Broken Configuration**: High-risk SCAP compliance changes (such as aggressive PAM modifications or bootloader parameters) are never applied blindly by the background playbooks.
 - **Pre-execution Audit Path**: System administrators can audit, customize, test, and selectively execute parts of the generated bash fixes manually when they are confident that no boot or network capabilities will be impacted.

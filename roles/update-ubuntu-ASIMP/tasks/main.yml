@@ -5,7 +5,7 @@
     update_cache: true
   when: ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu'
   tags: apt
-  async: 361
+  async: 360
   poll: 0
   register: updaterepo_sleeper
 
@@ -14,7 +14,8 @@
     jid: "{{ updaterepo_sleeper.ansible_job_id }}"
   register: updaterepo_job_result
   until: updaterepo_job_result.finished
-  retries: 360
+  delay: 10
+  retries: 36
   when: ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu'
 
 - name: Run package upgrades
@@ -83,7 +84,7 @@
     update_cache: true
   when: ansible_os_family == 'RedHat'
   tags: dnf
-  async: 361
+  async: 360
   poll: 0
   register: updaterepo_rhel_sleeper
 
@@ -92,14 +93,15 @@
     jid: "{{ updaterepo_rhel_sleeper.ansible_job_id }}"
   register: updaterepo_rhel_job_result
   until: updaterepo_rhel_job_result.finished
-  retries: 360
+  delay: 10
+  retries: 36
   when: ansible_os_family == 'RedHat'
 
 - name: Run RHEL package upgrades
   ansible.builtin.dnf:
     name: "*"
     state: latest
-  async: 361
+  async: 360
   poll: 0
   register: upgrade_rhel_sleeper
   when:
@@ -113,7 +115,8 @@
     jid: "{{ upgrade_rhel_sleeper.ansible_job_id }}"
   register: upgrade_rhel_job_result
   until: upgrade_rhel_job_result.finished
-  retries: 360
+  delay: 10
+  retries: 36
   when:
     - ansible_os_family == 'RedHat'
     - upgrade_rhel_check is defined

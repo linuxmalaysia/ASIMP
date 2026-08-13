@@ -180,7 +180,7 @@ For visual inspection and historical tracking of playbook execution, check out *
 
 ## 🔒 Safety & Anti-Lockout Guarantees (Preventing Boot and SSH Failure)
 
-To completely mitigate the risk of system lockout, network loss, or boot failure—which are common risks during automated system hardening—ASIMP integrates a strict, multi-layered safety-gate design:
+While automated system hardening introduces inherent risks of system lockout, network loss, PAM misconfiguration, or boot failure, ASIMP integrates a strict, multi-layered safety-gate design to significantly reduce these risks. Note that these pre-flight checks and manual remediation reviews cannot fully guarantee boot, SSH, PAM, or network availability under all system conditions, and still require final validation by an administrator:
 
 1. **Pre-Remediation Safety Checks**:
    Before any hardening tasks or system updates are applied, ASIMP runs a mandatory, non-destructive safety validation block:

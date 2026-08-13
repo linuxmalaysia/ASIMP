@@ -8,26 +8,25 @@
 
 - name: Run debsums check
   ansible.builtin.command: debsums -c
-  when:
-    - r_debsums_binary_check.rc == 0
-    - (ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu')
-    - debsums_ubuntu_check is defined
-    - debsums_ubuntu_check
-  changed_when: false
-  tags: debsums
-  ignore_errors: true
-  async: 361
+  async: 360
   poll: 0
   register: debsums_sleeper
+  when:
+    - r_debsums_binary_check.rc == 0
+    - debsums_ubuntu_check is defined
+    - debsums_ubuntu_check
+  tags: debsums
+  ignore_errors: true
+  changed_when: false
 
 - name: Run debsums check - check on async task
   ansible.builtin.async_status:
     jid: "{{ debsums_sleeper.ansible_job_id }}"
   register: debsums_job_result
   until: debsums_job_result.finished
-  retries: 360
+  delay: 10
+  retries: 36
   when:
     - r_debsums_binary_check.rc == 0
-    - (ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu')
     - debsums_ubuntu_check is defined
     - debsums_ubuntu_check

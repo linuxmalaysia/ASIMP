@@ -8,7 +8,7 @@
 
 - name: Run rpm verification check
   ansible.builtin.command: rpm -Va
-  async: 361
+  async: 360
   poll: 0
   register: rpmsums_sleeper
   when:
@@ -24,7 +24,8 @@
     jid: "{{ rpmsums_sleeper.ansible_job_id }}"
   register: rpmsums_job_result
   until: rpmsums_job_result.finished
-  retries: 360
+  delay: 10
+  retries: 36
   when:
     - r_rpm_binary_check.rc == 0
     - rpmsums_check is defined
