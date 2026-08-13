@@ -14,16 +14,24 @@
   vars:
     repo_root: "{{ playbook_dir }}/.."
     role_tasks_dir: "{{ repo_root }}/roles/update-ubuntu-ASIMP/tasks"
+    role_defaults_dir: "{{ repo_root }}/roles/update-ubuntu-ASIMP/defaults"
     expected_os_when: "ansible_os_family == 'Debian' or ansible_os_family == 'Ubuntu'"
+    expected_rhel_when: "ansible_os_family == 'RedHat'"
     expected_updaterepo_jid: "{% raw %}{{ updaterepo_sleeper.ansible_job_id }}{% endraw %}"
     expected_upgrade_jid: "{% raw %}{{ upgrade_sleeper.ansible_job_id }}{% endraw %}"
     expected_debsums_jid: "{% raw %}{{ debsums_sleeper.ansible_job_id }}{% endraw %}"
     expected_rpmsums_jid: "{% raw %}{{ rpmsums_sleeper.ansible_job_id }}{% endraw %}"
+    expected_updaterepo_rhel_jid: "{% raw %}{{ updaterepo_rhel_sleeper.ansible_job_id }}{% endraw %}"
+    expected_upgrade_rhel_jid: "{% raw %}{{ upgrade_rhel_sleeper.ansible_job_id }}{% endraw %}"
 
   tasks:
     - name: Load tasks/main.yml
       ansible.builtin.set_fact:
         main_tasks: "{{ lookup('file', role_tasks_dir + '/main.yml') | from_yaml }}"
+
+    - name: Load defaults/main.yml
+      ansible.builtin.set_fact:
+        role_defaults: "{{ lookup('file', role_defaults_dir + '/main.yml') | from_yaml }}"
 
     - name: Load tasks/upgrade-packages.yml
       ansible.builtin.set_fact:
@@ -241,3 +249,97 @@
           - rpmsums_tasks[2].retries == 360
           - "'rpmsums_check' in rpmsums_tasks[2].when"
         fail_msg: "The rpmsums async status task inside rpmsums-check.yml lacks correct FQCN, job registration, or retry limits."
+
+    - name: Verify rpm binary check and rpm verification run both require the rpmsums_check guard (not the Debian debsums_ubuntu_check guard)
+      ansible.builtin.assert:
+        that:
+          - "'debsums_ubuntu_check' not in rpmsums_tasks[1].when"
+          - "'debsums_ubuntu_check' not in rpmsums_tasks[2].when"
+          - "'r_rpm_binary_check.rc == 0' in rpmsums_tasks[1].when"
+          - "'r_rpm_binary_check.rc == 0' in rpmsums_tasks[2].when"
+        fail_msg: "rpmsums-check.yml must gate on rpmsums_check and the rpm binary safety check, never on the unrelated Debian debsums_ubuntu_check flag."
+
+    # --- Verify RHEL-family tasks inside tasks/main.yml (full compliance) ---
+
+    - name: Assert 'Update RHEL repositories cache - check on async task' is fully compliant
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.async_status' in main_tasks_by_name['Update RHEL repositories cache - check on async task']"
+          - main_tasks_by_name['Update RHEL repositories cache - check on async task']['ansible.builtin.async_status'].jid == expected_updaterepo_rhel_jid
+          - main_tasks_by_name['Update RHEL repositories cache - check on async task'].register == 'updaterepo_rhel_job_result'
+          - main_tasks_by_name['Update RHEL repositories cache - check on async task'].until == 'updaterepo_rhel_job_result.finished'
+          - main_tasks_by_name['Update RHEL repositories cache - check on async task'].retries == 360
+          - main_tasks_by_name['Update RHEL repositories cache - check on async task'].when == expected_rhel_when
+        fail_msg: "The async status check task for updaterepo_rhel_sleeper has incorrect parameters."
+
+    - name: Assert 'Run RHEL package upgrades' task is fully compliant
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.dnf' in main_tasks_by_name['Run RHEL package upgrades']"
+          - main_tasks_by_name['Run RHEL package upgrades']['ansible.builtin.dnf'].name == '*'
+          - main_tasks_by_name['Run RHEL package upgrades']['ansible.builtin.dnf'].state == 'latest'
+          - main_tasks_by_name['Run RHEL package upgrades'].async == 361
+          - main_tasks_by_name['Run RHEL package upgrades'].poll == 0
+          - main_tasks_by_name['Run RHEL package upgrades'].register == 'upgrade_rhel_sleeper'
+          - main_tasks_by_name['Run RHEL package upgrades'].tags == 'dnf'
+          - main_tasks_by_name['Run RHEL package upgrades'].when == [expected_rhel_when, 'upgrade_rhel_check is defined', 'upgrade_rhel_check']
+        fail_msg: "'Run RHEL package upgrades' task lacks correct dnf module, name/state, async parameters, tags, or the upgrade_rhel_check gate."
+
+    - name: Assert 'Run RHEL package upgrades - check on async task' is fully compliant
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.async_status' in main_tasks_by_name['Run RHEL package upgrades - check on async task']"
+          - main_tasks_by_name['Run RHEL package upgrades - check on async task']['ansible.builtin.async_status'].jid == expected_upgrade_rhel_jid
+          - main_tasks_by_name['Run RHEL package upgrades - check on async task'].register == 'upgrade_rhel_job_result'
+          - main_tasks_by_name['Run RHEL package upgrades - check on async task'].until == 'upgrade_rhel_job_result.finished'
+          - main_tasks_by_name['Run RHEL package upgrades - check on async task'].retries == 360
+          - main_tasks_by_name['Run RHEL package upgrades - check on async task'].when == [expected_rhel_when, 'upgrade_rhel_check is defined', 'upgrade_rhel_check']
+        fail_msg: "The async status check task for upgrade_rhel_sleeper has incorrect parameters or is missing the upgrade_rhel_check gate."
+
+    - name: Assert 'Run rpmsums check' inclusion task in main.yml is fully compliant
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.include_tasks' in main_tasks_by_name['Run rpmsums check']"
+          - main_tasks_by_name['Run rpmsums check']['ansible.builtin.include_tasks'] == 'rpmsums-check.yml'
+          - main_tasks_by_name['Run rpmsums check'].when == [expected_rhel_when, 'rpmsums_check is defined', 'rpmsums_check']
+          - main_tasks_by_name['Run rpmsums check'].tags == 'rpmsums'
+          - main_tasks_by_name['Run rpmsums check'].ignore_errors == true
+        fail_msg: "'Run rpmsums check' task must include rpmsums-check.yml, gate on rpmsums_check, be tagged 'rpmsums', and tolerate errors."
+
+    - name: Assert the RHEL update-cache task uses the exact same async/poll pattern as its Debian counterpart (regression guard)
+      ansible.builtin.assert:
+        that:
+          - main_tasks_by_name['Update RHEL repositories cache'].async == main_tasks_by_name['Update repositories cache'].async
+          - main_tasks_by_name['Update RHEL repositories cache'].poll == main_tasks_by_name['Update repositories cache'].poll
+        fail_msg: "The RHEL and Debian repository cache update tasks must share the same async/poll fire-and-forget pattern."
+
+    - name: Assert the Debian-only tasks remain gated on the Debian/Ubuntu condition, unaffected by the new RHEL tasks (regression guard)
+      ansible.builtin.assert:
+        that:
+          - main_tasks_by_name['Update repositories cache'].when == expected_os_when
+          - main_tasks_by_name['Run debsums check'].tags == 'debsums'
+        fail_msg: "Adding RedHat-family tasks must not change the existing Debian/Ubuntu task conditions or tags."
+
+    - name: Assert the RHEL tasks in main.yml run after the existing Debian debsums check task (append-only ordering)
+      ansible.builtin.assert:
+        that:
+          - (main_tasks | map(attribute='name') | list).index('Run debsums check') < (main_tasks | map(attribute='name') | list).index('Update RHEL repositories cache')
+        fail_msg: "The new RedHat-family tasks must be appended after the existing Debian/Ubuntu tasks in tasks/main.yml"
+
+    # --- Verify defaults/main.yml -------------------------------------
+
+    - name: Assert the new RHEL-related default variables are defined with the expected values
+      ansible.builtin.assert:
+        that:
+          - role_defaults.upgrade_rhel_check == true
+          - role_defaults.rpmsums_check == true
+        fail_msg: "roles/update-ubuntu-ASIMP/defaults/main.yml must define upgrade_rhel_check and rpmsums_check, both defaulting to true"
+
+    - name: Assert the pre-existing Debian/Ubuntu default variables are unaffected (regression guard)
+      ansible.builtin.assert:
+        that:
+          - role_defaults.upgrade_ubuntu_check == false
+          - role_defaults.dist_upgrade_ubuntu_check == false
+          - role_defaults.safe_upgrade_ubuntu_check == true
+          - role_defaults.debsums_ubuntu_check == true
+        fail_msg: "roles/update-ubuntu-ASIMP/defaults/main.yml must not alter the pre-existing Debian/Ubuntu default values"
