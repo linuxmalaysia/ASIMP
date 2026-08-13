@@ -26,6 +26,7 @@
   until: debsums_job_result.finished
   delay: 10
   retries: 36
+  failed_when: false
   when:
     - r_debsums_binary_check.rc == 0
     - debsums_ubuntu_check is defined

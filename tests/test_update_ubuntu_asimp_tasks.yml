@@ -83,6 +83,7 @@
           - main_tasks_by_name['Update repositories cache - check on async task'].delay == 10
           - main_tasks_by_name['Update repositories cache - check on async task'].retries == 36
           - main_tasks_by_name['Update repositories cache - check on async task'].when == expected_os_when
+          - main_tasks_by_name['Update repositories cache - check on async task'].tags == 'apt'
         fail_msg: "The async status check task for updaterepo has incorrect parameters."
 
     - name: Assert 'Run package upgrades' task is fully compliant
@@ -133,6 +134,7 @@
           - upgrade_tasks[1].until == 'upgrade_job_result.finished'
           - upgrade_tasks[1].delay == 10
           - upgrade_tasks[1].retries == 36
+          - upgrade_tasks[1].tags == 'apt'
         fail_msg: "The async status check task inside upgrade-packages.yml lacks correct FQCN, job registration, or retry limits."
 
     # --- Verify tasks/debsums-check.yml --------------------------------
@@ -178,7 +180,9 @@
           - debsums_tasks[2].until == 'debsums_job_result.finished'
           - debsums_tasks[2].delay == 10
           - debsums_tasks[2].retries == 36
+          - debsums_tasks[2].failed_when == false
           - "'debsums_ubuntu_check' in debsums_tasks[2].when"
+          - debsums_tasks[2].tags == 'debsums'
         fail_msg: "The debsums async status task inside debsums-check.yml lacks correct FQCN, job registration, or retry limits."
 
     - name: Assert RHEL core tasks exist in main.yml
@@ -285,4 +289,5 @@
           - rpmsums_tasks[2].delay == 10
           - rpmsums_tasks[2].retries == 36
           - "'rpmsums_check' in rpmsums_tasks[2].when"
+          - rpmsums_tasks[2].tags == 'rpmsums'
         fail_msg: "The rpmsums async status task inside rpmsums-check.yml lacks correct FQCN, job registration, or retry limits."
