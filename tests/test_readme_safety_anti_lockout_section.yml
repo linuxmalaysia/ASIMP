@@ -1,0 +1,84 @@
+---
+# Content/regression tests for the new "Safety & Anti-Lockout Guarantees
+# (Preventing Boot and SSH Failure)" section added to README.md. This section
+# documents the pre-remediation safety checks, gated privilege levels, and
+# OpenSCAP remediation-script-generation design that protect against system
+# lockout, network loss, or boot failure during automated hardening.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_readme_safety_anti_lockout_section.yml
+- name: Verify the Safety & Anti-Lockout Guarantees section of README.md
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    section_heading: "## 🔒 Safety & Anti-Lockout Guarantees (Preventing Boot and SSH Failure)"
+    preceding_heading: "## 🐳 Testing & Integration"
+    following_heading: "## 📜 License"
+
+  tasks:
+    - name: Load raw content of README.md
+      ansible.builtin.set_fact:
+        readme_content: "{{ lookup('file', repo_root + '/README.md') }}"
+
+    - name: Assert README.md contains the new Safety & Anti-Lockout Guarantees heading
+      ansible.builtin.assert:
+        that:
+          - section_heading in readme_content
+        fail_msg: "README.md must contain the '{{ section_heading }}' heading"
+
+    - name: Assert the new section is inserted between Testing & Integration and License
+      ansible.builtin.assert:
+        that:
+          - readme_content.find(preceding_heading) != -1
+          - readme_content.find(section_heading) != -1
+          - readme_content.find(following_heading) != -1
+          - readme_content.find(preceding_heading) < readme_content.find(section_heading)
+          - readme_content.find(section_heading) < readme_content.find(following_heading)
+        fail_msg: "The new Safety & Anti-Lockout Guarantees section must be placed between '{{ preceding_heading }}' and '{{ following_heading }}'"
+
+    - name: Assert the section documents all three numbered safety pillars
+      ansible.builtin.assert:
+        that:
+          - "'**Pre-Remediation Safety Checks**' in readme_content"
+          - "'**Gated Privilege Levels**' in readme_content"
+          - "'**Generating OpenSCAP Remediation Scripts Rather than Unaudited Execution**' in readme_content"
+        fail_msg: "README.md must document the Pre-Remediation Safety Checks, Gated Privilege Levels, and OpenSCAP Remediation Script Generation pillars"
+
+    - name: Assert the numbered safety pillars appear in ascending order
+      ansible.builtin.assert:
+        that:
+          - readme_content.find('**Pre-Remediation Safety Checks**') < readme_content.find('**Gated Privilege Levels**')
+          - readme_content.find('**Gated Privilege Levels**') < readme_content.find('**Generating OpenSCAP Remediation Scripts Rather than Unaudited Execution**')
+        fail_msg: "README.md must present the three safety pillars in ascending numeric order"
+
+    - name: Assert the Pre-Remediation Safety Checks bullets document the exact safety commands
+      ansible.builtin.assert:
+        that:
+          - "'sshd -t' in readme_content"
+          - "'mount -a -f' in readme_content"
+          - "'/etc/fstab' in readme_content"
+          - "'512MB' in readme_content"
+          - "'**Port Reachability**' in readme_content"
+        fail_msg: "README.md must document the sshd -t syntax check, mount -a -f fstab check, 512MB free-space check, and port reachability check"
+
+    - name: Assert the Gated Privilege Levels bullet documents the limited-mode fallback behavior
+      ansible.builtin.assert:
+        that:
+          - "'`limited` mode' in readme_content"
+          - "'kernel sysctls' in readme_content"
+        fail_msg: "README.md must document that ASIMP defaults to 'limited' mode and skips container-host-breaking tasks like kernel sysctl changes"
+
+    - name: Assert the OpenSCAP remediation-script bullet documents the generated script naming pattern
+      ansible.builtin.assert:
+        that:
+          - "'`remediate-*.sh`' in readme_content"
+          - "'CIS Level 2' in readme_content"
+        fail_msg: "README.md must document that CIS Level 2 remediation scripts are generated as remediate-*.sh rather than auto-executed"
+
+    - name: Assert the new section is delimited by horizontal rules on both sides
+      ansible.builtin.assert:
+        that:
+          - ("---\n\n" + section_heading) in readme_content
+        fail_msg: "README.md's new safety section must be preceded by a '---' horizontal rule, consistent with the rest of the document"
