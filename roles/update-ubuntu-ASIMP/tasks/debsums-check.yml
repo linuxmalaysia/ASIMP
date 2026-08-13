@@ -30,3 +30,4 @@
     - r_debsums_binary_check.rc == 0
     - debsums_ubuntu_check is defined
     - debsums_ubuntu_check
+  tags: debsums

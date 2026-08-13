@@ -17,3 +17,4 @@
   until: upgrade_job_result.finished
   delay: 10
   retries: 36
+  tags: apt

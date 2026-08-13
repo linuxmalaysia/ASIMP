@@ -19,6 +19,8 @@
     expected_upgrade_jid: "{% raw %}{{ upgrade_sleeper.ansible_job_id }}{% endraw %}"
     expected_debsums_jid: "{% raw %}{{ debsums_sleeper.ansible_job_id }}{% endraw %}"
     expected_rpmsums_jid: "{% raw %}{{ rpmsums_sleeper.ansible_job_id }}{% endraw %}"
+    expected_updaterepo_rhel_jid: "{% raw %}{{ updaterepo_rhel_sleeper.ansible_job_id }}{% endraw %}"
+    expected_upgrade_rhel_jid: "{% raw %}{{ upgrade_rhel_sleeper.ansible_job_id }}{% endraw %}"
 
   tasks:
     - name: Load tasks/main.yml
@@ -200,6 +202,45 @@
           - main_tasks_by_name['Update RHEL repositories cache'].when == "ansible_os_family == 'RedHat'"
           - main_tasks_by_name['Update RHEL repositories cache'].tags == 'dnf'
         fail_msg: "'Update RHEL repositories cache' task lacks correct dnf module, async parameters, or conditional check."
+
+    - name: Assert 'Update RHEL repositories cache - check on async task' is fully compliant
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.async_status' in main_tasks_by_name['Update RHEL repositories cache - check on async task']"
+          - main_tasks_by_name['Update RHEL repositories cache - check on async task']['ansible.builtin.async_status'].jid == expected_updaterepo_rhel_jid
+          - main_tasks_by_name['Update RHEL repositories cache - check on async task'].register == 'updaterepo_rhel_job_result'
+          - main_tasks_by_name['Update RHEL repositories cache - check on async task'].until == 'updaterepo_rhel_job_result.finished'
+          - main_tasks_by_name['Update RHEL repositories cache - check on async task'].delay == 10
+          - main_tasks_by_name['Update RHEL repositories cache - check on async task'].retries == 36
+          - main_tasks_by_name['Update RHEL repositories cache - check on async task'].when == "ansible_os_family == 'RedHat'"
+          - main_tasks_by_name['Update RHEL repositories cache - check on async task'].tags == 'dnf'
+        fail_msg: "'Update RHEL repositories cache - check on async task' task has incorrect parameters."
+
+    - name: Assert 'Run RHEL package upgrades' is fully compliant
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.dnf' in main_tasks_by_name['Run RHEL package upgrades']"
+          - main_tasks_by_name['Run RHEL package upgrades']['ansible.builtin.dnf'].name == '*'
+          - main_tasks_by_name['Run RHEL package upgrades']['ansible.builtin.dnf'].state == 'latest'
+          - main_tasks_by_name['Run RHEL package upgrades'].async == 360
+          - main_tasks_by_name['Run RHEL package upgrades'].poll == 0
+          - main_tasks_by_name['Run RHEL package upgrades'].register == 'upgrade_rhel_sleeper'
+          - main_tasks_by_name['Run RHEL package upgrades'].when == ["ansible_os_family == 'RedHat'", "upgrade_rhel_check is defined", "upgrade_rhel_check"]
+          - main_tasks_by_name['Run RHEL package upgrades'].tags == 'dnf'
+        fail_msg: "'Run RHEL package upgrades' task has incorrect parameters."
+
+    - name: Assert 'Run RHEL package upgrades - check on async task' is fully compliant
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.async_status' in main_tasks_by_name['Run RHEL package upgrades - check on async task']"
+          - main_tasks_by_name['Run RHEL package upgrades - check on async task']['ansible.builtin.async_status'].jid == expected_upgrade_rhel_jid
+          - main_tasks_by_name['Run RHEL package upgrades - check on async task'].register == 'upgrade_rhel_job_result'
+          - main_tasks_by_name['Run RHEL package upgrades - check on async task'].until == 'upgrade_rhel_job_result.finished'
+          - main_tasks_by_name['Run RHEL package upgrades - check on async task'].delay == 10
+          - main_tasks_by_name['Run RHEL package upgrades - check on async task'].retries == 36
+          - main_tasks_by_name['Run RHEL package upgrades - check on async task'].when == ["ansible_os_family == 'RedHat'", "upgrade_rhel_check is defined", "upgrade_rhel_check"]
+          - main_tasks_by_name['Run RHEL package upgrades - check on async task'].tags == 'dnf'
+        fail_msg: "'Run RHEL package upgrades - check on async task' task has incorrect parameters."
 
     # --- Verify tasks/rpmsums-check.yml --------------------------------
 
