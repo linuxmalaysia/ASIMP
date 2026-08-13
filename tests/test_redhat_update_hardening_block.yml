@@ -1,0 +1,135 @@
+---
+# Structural regression tests for the "Apply RedHat Update Hardening" block
+# that this PR added to both play.yml and play-localhost.yml. This block
+# wires the update-ubuntu-ASIMP role's new RedHat-family tasks (dnf package
+# upgrades and rpm -Va integrity checks) into the main hardening plays,
+# gated on ansible_os_family == 'RedHat' and asimp_privilege_level == 'full'.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_redhat_update_hardening_block.yml
+- name: Verify the Apply RedHat Update Hardening block in play.yml and play-localhost.yml
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    block_task_name: "Apply RedHat Update Hardening"
+    ubuntu_block_task_name: "Apply Ubuntu Update Hardening"
+    expected_full_mode_when: "asimp_privilege_level == 'full'"
+    expected_when: ["(ansible_os_family == 'RedHat')", expected_full_mode_when]
+    expected_upgrade_rhel_check_expr: "{% raw %}{{ not is_sandbox_jules }}{% endraw %}"
+    expected_rpmsums_check_expr: "{% raw %}{{ not is_sandbox_jules }}{% endraw %}"
+
+  tasks:
+    - name: Load play.yml plays
+      ansible.builtin.set_fact:
+        play_yml_plays: "{{ lookup('file', repo_root + '/play.yml') | from_yaml }}"
+
+    - name: Load play-localhost.yml plays
+      ansible.builtin.set_fact:
+        play_localhost_plays: "{{ lookup('file', repo_root + '/play-localhost.yml') | from_yaml }}"
+
+    - name: Extract the hardening play from play.yml
+      ansible.builtin.set_fact:
+        play_yml_hardening_play: "{{ play_yml_plays | selectattr('name', 'equalto', 'Run ASIMP Security Hardening and Audits') | first }}"
+
+    - name: Extract the hardening play from play-localhost.yml
+      ansible.builtin.set_fact:
+        play_localhost_hardening_play: "{{ play_localhost_plays | selectattr('name', 'equalto', 'Run localhost ASIMP Security Hardening and Audits') | first }}"
+
+    - name: Extract task name lists for ordering/regression checks
+      ansible.builtin.set_fact:
+        play_yml_task_names: "{{ play_yml_hardening_play.tasks | map(attribute='name') | list }}"
+        play_localhost_task_names: "{{ play_localhost_hardening_play.tasks | map(attribute='name') | list }}"
+
+    - name: Assert the 'Apply RedHat Update Hardening' block exists in both playbooks
+      ansible.builtin.assert:
+        that:
+          - block_task_name in play_yml_task_names
+          - block_task_name in play_localhost_task_names
+        fail_msg: "The '{{ block_task_name }}' task must exist in both play.yml and play-localhost.yml"
+
+    - name: Build a name-to-task lookup for play.yml
+      ansible.builtin.set_fact:
+        play_yml_tasks_by_name: "{{ dict(play_yml_task_names | zip(play_yml_hardening_play.tasks)) }}"
+
+    - name: Build a name-to-task lookup for play-localhost.yml
+      ansible.builtin.set_fact:
+        play_localhost_tasks_by_name: "{{ dict(play_localhost_task_names | zip(play_localhost_hardening_play.tasks)) }}"
+
+    - name: Assert the block is gated on RedHat OS family and full privilege level in both playbooks
+      ansible.builtin.assert:
+        that:
+          - "'block' in play_yml_tasks_by_name[block_task_name]"
+          - play_yml_tasks_by_name[block_task_name].when == expected_when
+          - play_yml_tasks_by_name[block_task_name].become == true
+          - "'block' in play_localhost_tasks_by_name[block_task_name]"
+          - play_localhost_tasks_by_name[block_task_name].when == expected_when
+          - play_localhost_tasks_by_name[block_task_name].become == true
+        fail_msg: "'{{ block_task_name }}' must be a block gated on ansible_os_family == 'RedHat' and asimp_privilege_level == 'full', requiring become: true"
+
+    - name: Extract the single inner task from the block in play.yml
+      ansible.builtin.set_fact:
+        play_yml_inner_task: "{{ play_yml_tasks_by_name[block_task_name].block | first }}"
+
+    - name: Extract the single inner task from the block in play-localhost.yml
+      ansible.builtin.set_fact:
+        play_localhost_inner_task: "{{ play_localhost_tasks_by_name[block_task_name].block | first }}"
+
+    - name: Assert the block contains exactly one inner task that includes the update-ubuntu-ASIMP role
+      ansible.builtin.assert:
+        that:
+          - play_yml_tasks_by_name[block_task_name].block | length == 1
+          - play_yml_inner_task.name == block_task_name
+          - "'ansible.builtin.include_role' in play_yml_inner_task"
+          - play_yml_inner_task['ansible.builtin.include_role'].name == 'update-ubuntu-ASIMP'
+          - play_localhost_tasks_by_name[block_task_name].block | length == 1
+          - play_localhost_inner_task.name == block_task_name
+          - "'ansible.builtin.include_role' in play_localhost_inner_task"
+          - play_localhost_inner_task['ansible.builtin.include_role'].name == 'update-ubuntu-ASIMP'
+        fail_msg: "The '{{ block_task_name }}' block must contain exactly one task that includes the update-ubuntu-ASIMP role"
+
+    - name: Assert the role inclusion passes the exact expected upgrade_rhel_check and rpmsums_check vars
+      ansible.builtin.assert:
+        that:
+          - play_yml_inner_task.vars.upgrade_rhel_check == expected_upgrade_rhel_check_expr
+          - play_yml_inner_task.vars.rpmsums_check == expected_rpmsums_check_expr
+          - play_localhost_inner_task.vars.upgrade_rhel_check == expected_upgrade_rhel_check_expr
+          - play_localhost_inner_task.vars.rpmsums_check == expected_rpmsums_check_expr
+        fail_msg: "The update-ubuntu-ASIMP role inclusion inside '{{ block_task_name }}' must set upgrade_rhel_check and rpmsums_check to '{{ not is_sandbox_jules }}'"
+
+    - name: Assert the role inclusion does NOT pass the unrelated Debian/Ubuntu vars (negative/regression guard)
+      ansible.builtin.assert:
+        that:
+          - "'upgrade_ubuntu_check' not in play_yml_inner_task.vars"
+          - "'dist_upgrade_ubuntu_check' not in play_yml_inner_task.vars"
+          - "'safe_upgrade_ubuntu_check' not in play_yml_inner_task.vars"
+          - "'debsums_ubuntu_check' not in play_yml_inner_task.vars"
+          - "'upgrade_ubuntu_check' not in play_localhost_inner_task.vars"
+          - "'dist_upgrade_ubuntu_check' not in play_localhost_inner_task.vars"
+          - "'safe_upgrade_ubuntu_check' not in play_localhost_inner_task.vars"
+          - "'debsums_ubuntu_check' not in play_localhost_inner_task.vars"
+        fail_msg: "The RedHat update-hardening block must only set the RHEL-specific vars, not the Debian/Ubuntu-specific vars from the Ubuntu block"
+
+    - name: Assert both playbooks define an identical 'Apply RedHat Update Hardening' block
+      ansible.builtin.assert:
+        that:
+          - play_yml_tasks_by_name[block_task_name] == play_localhost_tasks_by_name[block_task_name]
+        fail_msg: "play.yml and play-localhost.yml must define the exact same 'Apply RedHat Update Hardening' block so both entry points behave consistently"
+
+    - name: Assert the RedHat block runs immediately after the Ubuntu block and before OpenStack hardening, in both playbooks
+      ansible.builtin.assert:
+        that:
+          - play_yml_task_names.index(ubuntu_block_task_name) < play_yml_task_names.index(block_task_name)
+          - play_yml_task_names.index(block_task_name) < play_yml_task_names.index('Apply OpenStack System Hardening')
+          - play_localhost_task_names.index(ubuntu_block_task_name) < play_localhost_task_names.index(block_task_name)
+          - play_localhost_task_names.index(block_task_name) < play_localhost_task_names.index('Apply OpenStack System Hardening')
+        fail_msg: "'{{ block_task_name }}' must run after '{{ ubuntu_block_task_name }}' and before 'Apply OpenStack System Hardening' in both playbooks"
+
+    - name: Assert the pre-existing Ubuntu Update Hardening block is unaffected by the new RedHat block (regression guard)
+      ansible.builtin.assert:
+        that:
+          - play_yml_tasks_by_name[ubuntu_block_task_name].when == ["(ansible_distribution == 'Ubuntu' or ansible_os_family == 'Debian')", expected_full_mode_when]
+          - play_yml_tasks_by_name[ubuntu_block_task_name].become == true
+          - play_localhost_tasks_by_name[ubuntu_block_task_name] == play_yml_tasks_by_name[ubuntu_block_task_name]
+        fail_msg: "Adding the RedHat update-hardening block must not change the pre-existing Ubuntu Update Hardening block's conditions"
