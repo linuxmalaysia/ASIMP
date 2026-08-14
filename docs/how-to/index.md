@@ -1,0 +1,38 @@
+---
+title: "Operational Recipes Index"
+description: "Index of task-oriented how-to guides for performing security compliance scans, patching roles, and running tests."
+type: "guide"
+id: "docs/how-to/index.md"
+dsom_governance:
+  domain: "Automation"
+  context_tier: "L2-Operational"
+tags:
+  - "guide"
+  - "how-to"
+  - "recipes"
+related_links:
+  - "docs/how-to/run-tool.md"
+  - "docs/tutorials/01-getting-started.md"
+nav_order: 10
+layout: "default"
+---
+
+# Operational Recipes Index
+
+These task-oriented guides provide direct, problem-solving procedures for systems engineers, compliance auditors, and AI developers working with ASIMP.
+
+---
+
+## 📋 Available Guides
+
+### 1. [Executing Tool Workflows & Scripts](run-tool.md)
+- Learn how to run the `add_asimp_footer.py` patcher across files.
+- Learn how to compile `llms.txt` indexes into LLM-friendly XML blocks using `llms_txt2ctx.py`.
+- Learn how to run sandbox compatibility patches on external Galaxy roles using `patch_roles.py`.
+- Learn how to run sitemap validations prior to Git commits using `verify_sitemap_links.py`.
+
+### 2. [Rootless Podman & Quadlets Guide](../podman_rootless.html)
+- Step-by-step guidance on running parallel target containers under rootless Podman profiles.
+
+### 3. [Local Knowledge-First & Metadata Discovery Guide](../sop_knowledge_first_discovery.html)
+- Standard Operating Procedures for performing safe agent-based context discovery in unprivileged workspaces.

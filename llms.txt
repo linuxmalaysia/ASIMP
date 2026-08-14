@@ -4,7 +4,7 @@ ASIMP is a host-based, automated security hardening, compliance, and auditing pl
 
 ## Metadata
 - **Language**: Python (Ansible), Shell
-- **Keywords**: security, hardening, auditing, openscap, lynis, compliance, CIS, debsums, ansible
+- **Keywords**: security, hardening, auditing, openscap, lynis, compliance, CIS, debsums, ansible, dsom, diataxis
 - **Primary OS Targets**: Ubuntu, Debian, RedHat (RHEL), CentOS, Rocky Linux
 
 ## Key Information
@@ -30,3 +30,32 @@ ASIMP performs dynamic auditing before and after configurations are modified. It
 - [Configuration & Variables](docs/configuration.md)
 - [Troubleshooting & Fallbacks](docs/troubleshooting.md)
 - [Complete Information Compilation](llms-full.txt)
+
+## 🏛️ DSOM-Governed Diátaxis Documentation (AI Traversable)
+
+### Explanation & Architecture
+- [DSOM Governance](docs/explanation/dsom-governance.md): Metacognitive context management and protocol standards.
+- [Diátaxis Framework](docs/explanation/diataxis.md): Quadrant layout and documentation structure.
+- [System Architecture](docs/explanation/system-architecture.md): Subsystem topologies and integration points.
+
+### Tools & Component References
+- [Tool Index](docs/reference/index.md): Exhaustive list of scripts, modules, and API signatures.
+- [OpenWiki Reference](docs/reference/openwiki-emulator.md): Specifications for OpenWiki Python tools.
+- [ASIMP Standard Footer Patcher](docs/reference/add-asimp-footer.md): Reference for `scripts/add_asimp_footer.py`.
+- [Google OKF Frontmatter Patcher](docs/reference/add-okf-frontmatter.md): Reference for `scripts/add_okf_frontmatter.py`.
+- [Sovereign Feedback Collector](docs/reference/jules-gh-feedback.md): Reference for `scripts/jules_gh_feedback.sh`.
+- [LLM XML Context Compiler](docs/reference/llms-txt2ctx.md): Reference for `scripts/llms_txt2ctx.py`.
+- [Sovereign OS Role Patcher](docs/reference/patch-roles.md): Reference for `scripts/patch_roles.py`.
+- [Jekyll Pre-processor](docs/reference/prepare-docs.md): Reference for `scripts/prepare_docs.py`.
+- [Sitemap & Link Integrity Validator](docs/reference/verify-sitemap-links.md): Reference for `scripts/verify_sitemap_links.py`.
+- [Mock Scanning Utility](docs/reference/mock-asimp.md): Reference for `tools/mock-asimp.sh`.
+- [Ansible Config Parameters](docs/reference/ansible-cfg.md): Reference for standard `ansible.cfg` configurations.
+- [System Core Playbooks](docs/reference/playbooks.md): Reference for `play.yml` and `play-localhost.yml`.
+- [Role: reporting-ASIMP](docs/reference/reporting-asimp-role.md): Compliance parser and scorecard engine metrics.
+- [Role: update-ubuntu-ASIMP](docs/reference/update-ubuntu-asimp-role.md): Upgrade pipelines and file integrity.
+- [Role: lynis-ansible](docs/reference/lynis-ansible-role.md): Hardening index calculations.
+
+### Practical Operational Guides
+- [Getting Started Onboarding](docs/tutorials/01-getting-started.md): Beginner step-by-step onboarding walkthrough.
+- [Operational Recipes](docs/how-to/index.md): Task-oriented execution recipes.
+- [Execute Tool Workflows](docs/how-to/run-tool.md): Operational recipes for scripts and utilities.

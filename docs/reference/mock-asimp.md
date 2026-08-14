@@ -1,0 +1,48 @@
+---
+title: "Mock Scanning Utility Reference"
+description: "Detailed specification of tools/mock-asimp.sh mock scan generator."
+type: "reference"
+id: "docs/reference/mock-asimp.md"
+dsom_governance:
+  domain: "Automation"
+  context_tier: "L3-TechnicalReference"
+tags:
+  - "reference"
+  - "mock"
+  - "scap"
+  - "lynis"
+related_links:
+  - "docs/reference/index.md"
+nav_order: 100
+layout: "default"
+---
+
+# Mock Scanning Utility Reference
+
+`tools/mock-asimp.sh` is a shell utility designed to mock SCAP Level 2 and Lynis compliance scan reports for unprivileged or sandboxed workspaces.
+
+---
+
+## 🛠️ CLI Execution
+
+```bash
+bash tools/mock-asimp.sh
+```
+
+---
+
+## 💾 Outputs Generated
+
+Saves identical compliant outputs under the local mock directory:
+- `data/asimp_mock/opt/report/openscap/openscap-report-pre.html`
+- `data/asimp_mock/opt/report/openscap/openscap-report-post.html`
+- `data/asimp_mock/opt/report/openscap/SECURITY_AUDIT_REPORT.md`
+- `data/asimp_mock/opt/report/lynis/lynis-report-pre.txt`
+- `data/asimp_mock/opt/report/lynis/lynis-report-post.txt`
+
+---
+
+## 🔒 Exit Codes
+
+- `0`: Success. Reports written successfully.
+- `1`: Directory creation failure or write restriction.

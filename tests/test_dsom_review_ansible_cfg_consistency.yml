@@ -41,8 +41,8 @@
     - name: Sanity-check that ansible.cfg configures exactly the expected, supported callback key
       ansible.builtin.assert:
         that:
-          - actual_callback_key == 'stdout_callback'
-        fail_msg: "ansible.cfg's '= yaml' callback setting must use the supported key 'stdout_callback', found '{{ actual_callback_key }}' instead"
+          - actual_callback_key == 'callback_result_format'
+        fail_msg: "ansible.cfg's '= yaml' callback setting must use the supported key 'callback_result_format', found '{{ actual_callback_key }}' instead"
 
     - name: Assert docs/dsom_ansible_review.md references the real, currently-configured callback key
       ansible.builtin.assert:
@@ -54,12 +54,12 @@
           changes, this document's adoption narrative must be updated to match, otherwise it
           documents a setting that no longer reflects reality.
 
-    - name: Assert docs/dsom_ansible_review.md does not still reference the superseded callback_result_format key
+    - name: Assert docs/dsom_ansible_review.md does not still reference the superseded stdout_callback key
       ansible.builtin.assert:
         that:
-          - "'callback_result_format' not in doc_content"
+          - "'stdout_callback' not in doc_content"
         fail_msg: >-
-          docs/dsom_ansible_review.md still references the superseded 'callback_result_format'
-          setting name, but ansible.cfg was changed in this PR to use 'stdout_callback' instead.
+          docs/dsom_ansible_review.md still references the superseded 'stdout_callback'
+          setting name, but ansible.cfg is configured to use 'callback_result_format' instead.
           Update the document's adoption narrative (the ansible.cfg blueprint table, the adoption
-          path diagram, and the Output Standardisation note) to reference 'stdout_callback = yaml'.
+          path diagram, and the Output Standardisation note) to reference 'callback_result_format = yaml'.

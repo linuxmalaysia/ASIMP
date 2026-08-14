@@ -110,10 +110,10 @@
       loop_control:
         label: "{{ item.markdown }}"
 
-    - name: Assert the navbar still contains exactly seven pre-existing entries (unaffected by the new index links)
+    - name: Assert the navbar still contains exactly eight pre-existing entries (unaffected by the new index links)
       ansible.builtin.assert:
         that:
-          - config_data.navbar | length == 7
+          - config_data.navbar | length == 8
         fail_msg: "docs/_config.yml navbar entry count must remain unaffected by adding new documentation index links to docs/index.md"
 
     - name: Assert no duplicate documentation index entries were introduced
