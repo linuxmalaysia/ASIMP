@@ -72,7 +72,7 @@ class TestOKFFrontmatterAndFooters(unittest.TestCase):
             ts_str = str(fm_data["timestamp"])
             try:
                 datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
-            except Exception as e:
+            except ValueError as e:
                 self.fail(f"{rel_path} 'timestamp' ({ts_str}) is not valid ISO-8601: {e}")
 
             # Assert non-empty topics list containing valid topic strings
