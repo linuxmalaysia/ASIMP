@@ -19,6 +19,8 @@
         url: "/"
       - title: "Architecture & Design"
         url: "/architecture.html"
+      - title: "AI Agents & DSOM"
+        url: "/ai_agents.html"
       - title: "OpenSCAP & Playbooks"
         url: "/openscap.html"
       - title: "Lynis & Playbooks"
@@ -41,23 +43,23 @@
           - config_data.navbar is sequence
         fail_msg: "docs/_config.yml must define a 'navbar' list"
 
-    - name: Assert the navbar contains exactly seven entries
+    - name: Assert the navbar contains exactly eight entries
       ansible.builtin.assert:
         that:
-          - config_data.navbar | length == 7
-        fail_msg: "docs/_config.yml navbar must contain exactly 7 entries (Home, Architecture, OpenSCAP, Lynis, Configuration, Troubleshooting, Legal Notice)"
+          - config_data.navbar | length == 8
+        fail_msg: "docs/_config.yml navbar must contain exactly 8 entries (Home, Architecture, AI Agents & DSOM, OpenSCAP, Lynis, Configuration, Troubleshooting, Legal Notice)"
 
     - name: Assert the navbar entries match the expected title/url pairs, in exact order
       ansible.builtin.assert:
         that:
           - config_data.navbar == expected_navbar
-        fail_msg: "docs/_config.yml navbar must list Home, Architecture & Design, OpenSCAP & Playbooks (/openscap.html), Lynis & Playbooks (/lynis.html), Configuration & Variables, Troubleshooting, then Legal Notice, in that exact order"
+        fail_msg: "docs/_config.yml navbar must list Home, Architecture & Design, AI Agents & DSOM, OpenSCAP & Playbooks (/openscap.html), Lynis & Playbooks (/lynis.html), Configuration & Variables, Troubleshooting, then Legal Notice, in that exact order"
 
-    - name: Assert the new OpenSCAP navbar entry is positioned directly after Architecture & Design
+    - name: Assert the new OpenSCAP navbar entry is positioned directly after AI Agents & DSOM
       ansible.builtin.assert:
         that:
-          - (config_data.navbar | map(attribute='title') | list).index('OpenSCAP & Playbooks') == (config_data.navbar | map(attribute='title') | list).index('Architecture & Design') + 1
-        fail_msg: "The 'OpenSCAP & Playbooks' navbar entry must be inserted immediately after 'Architecture & Design'"
+          - (config_data.navbar | map(attribute='title') | list).index('OpenSCAP & Playbooks') == (config_data.navbar | map(attribute='title') | list).index('AI Agents & DSOM') + 1
+        fail_msg: "The 'OpenSCAP & Playbooks' navbar entry must be inserted immediately after 'AI Agents & DSOM'"
 
     - name: Assert the new Lynis navbar entry is positioned directly after OpenSCAP and before Configuration & Variables
       ansible.builtin.assert:
@@ -78,6 +80,7 @@
         path: "{{ docs_dir }}/{{ item }}"
       register: navbar_doc_stat
       loop:
+        - ai_agents.md
         - openscap.md
         - lynis.md
         - legal-notice.md

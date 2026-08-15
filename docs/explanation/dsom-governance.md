@@ -1,0 +1,52 @@
+---
+okf_version: "0.1"
+type: "concept"
+title: "Deep State of Mind (DSOM) Governance Framework"
+description: "High-level governance and metacognitive architecture rules for persistent context management between AI and humans."
+timestamp: "2026-08-15T00:00:00Z"
+topics: ["dsom-protocol", "governance", "diataxis-quadrant"]
+id: "docs/explanation/dsom-governance.md"
+dsom_governance:
+  domain: "Security"
+  context_tier: "L1-Overview"
+related_links:
+  - "docs/explanation/diataxis.md"
+  - "docs/explanation/system-architecture.md"
+nav_order: 10
+layout: "default"
+---
+
+# Deep State of Mind (DSOM) Governance Framework
+
+The **Deep State of Mind (DSOM) Protocol** is a living, version-controlled **"Brain in Palace"** framework designed to facilitate persistent context coordination, metacognitive session management, and spatial memory synchronization across autonomous AI agents and human operators.
+
+---
+
+## 🏛️ Spatial Memory: The Sovereign Markdown Palace
+
+AI agents typically operate in stateless environments where episodic memory is discarded at the end of each session. To solve this, DSOM externalises mental state into the local filesystem, dividing knowledge into nested "Wings," "Halls," and "Rooms":
+
+- **`.agents/brain/`**: The core directory for persistent conversational states.
+- **Progressive Disclosure**: Information is split into high-density, modular files so that AI agents only read the exact context required for their active task, reducing token bloat by up to 90%.
+
+---
+
+## 🔁 Operational Rituals: SOD and EOD
+
+Human-AI cooperation is governed by two daily rituals:
+
+1. **Start of Day (SOD) Alignment**:
+   - The AI agent reads the active spatial memory or handover manifest.
+   - It re-aligns its context with historical decisions and outstanding issues without requiring human re-explanation.
+
+2. **End of Day (EOD) Compaction**:
+   - The AI agent compiles completed tasks, outstanding engineering constraints, and files modified.
+   - It compresses this information into a handover manifest, persisting it under `.agents/brain/` for the next session.
+
+---
+
+## 🚀 Key Advantages of DSOM in ASIMP
+
+- **Zero-Downtime Initialization**: The agent is immediately productive.
+- **Resource Efficiency**: Drastically lower token usage per session.
+- **True Collaboration**: Keeps both humans and agents completely synchronized on system-level security hardening states.
