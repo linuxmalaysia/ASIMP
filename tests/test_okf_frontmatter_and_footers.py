@@ -15,8 +15,8 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 class TestOKFFrontmatterAndFooters(unittest.TestCase):
     """Validate OKF v0.1 frontmatter metadata and standard footers across docs."""
 
-    def test_repository_markdown_okf_frontmatter(self) -> None:
-        """Verify that all markdown files in the repository have valid OKF v0.1 frontmatter."""
+    def test_repository_markdown_okf_frontmatter_and_footers(self) -> None:
+        """Verify that all markdown files in the repository have valid OKF v0.1 frontmatter and standard footer."""
         exclude_dirs = {".git", "node_modules", "venv", ".venv", ".pytest_cache", "asimp_mock"}
         target_files = []
 
@@ -34,19 +34,25 @@ class TestOKFFrontmatterAndFooters(unittest.TestCase):
             with open(filepath, "r", encoding="utf-8") as f:
                 content = f.read()
 
+            lines = content.splitlines()
             self.assertTrue(
-                content.startswith("---"),
-                f"{rel_path} must start with YAML frontmatter delimiter '---'"
+                lines and lines[0].strip() == "---",
+                f"{rel_path} must start with line '---'"
             )
 
-            parts = content.lstrip().split("---", 2)
-            self.assertGreaterEqual(
-                len(parts),
-                3,
-                f"{rel_path} must have closing YAML frontmatter delimiter '---'"
+            closing_idx = -1
+            for idx in range(1, len(lines)):
+                if lines[idx].strip() == "---":
+                    closing_idx = idx
+                    break
+
+            self.assertNotEqual(
+                closing_idx,
+                -1,
+                f"{rel_path} must have a closing '---' frontmatter line"
             )
 
-            fm_raw = parts[1]
+            fm_raw = "\n".join(lines[1:closing_idx])
             try:
                 fm_data = yaml.safe_load(fm_raw)
             except Exception as e:
@@ -83,6 +89,17 @@ class TestOKFFrontmatterAndFooters(unittest.TestCase):
                 self.assertIsInstance(topic, str, f"{rel_path} topic element must be a string")
                 self.assertTrue(bool(topic.strip()), f"{rel_path} topic element must not be empty")
 
+            # Assert required canonical ASIMP/DSOM footer or Jekyll docs layout
+            has_dsom_footer = (
+                "Deep State of Mind (DSOM)" in content or
+                "ASIMP (Ansible System Integrity Management Platform)" in content or
+                rel_path.startswith("docs/")
+            )
+            self.assertTrue(
+                has_dsom_footer,
+                f"{rel_path} must contain standard ASIMP/DSOM footer or reside under docs/ (using central Jekyll layout)"
+            )
+
     def test_markdown_code_block_blank_lines(self) -> None:
         """Verify that markdown files in docs/how-to/ and docs/tutorials/ have blank lines around code blocks."""
         check_dirs = [
@@ -101,6 +118,14 @@ class TestOKFFrontmatterAndFooters(unittest.TestCase):
                         with open(filepath, "r", encoding="utf-8") as f:
                             lines = f.readlines()
 
+                        # Determine frontmatter boundary lines (line 0 and line closing_idx)
+                        closing_idx = -1
+                        if lines and lines[0].strip() == "---":
+                            for idx in range(1, len(lines)):
+                                if lines[idx].strip() == "---":
+                                    closing_idx = idx
+                                    break
+
                         in_code_block = False
                         for i in range(1, len(lines)):
                             line = lines[i].strip()
@@ -108,8 +133,10 @@ class TestOKFFrontmatterAndFooters(unittest.TestCase):
                                 if not in_code_block:
                                     # Entering opening fence
                                     in_code_block = True
-                                    prev_line = lines[i - 1].strip()
-                                    if prev_line and not prev_line.startswith("---"):
+                                    prev_idx = i - 1
+                                    prev_line = lines[prev_idx].strip()
+                                    # Exemption applies ONLY if prev line is frontmatter closing line (closing_idx)
+                                    if prev_idx != closing_idx:
                                         self.assertEqual(
                                             prev_line,
                                             "",
@@ -119,8 +146,9 @@ class TestOKFFrontmatterAndFooters(unittest.TestCase):
                                     # Closing fence
                                     in_code_block = False
                                     if i + 1 < len(lines):
-                                        next_line = lines[i + 1].strip()
-                                        if next_line and not next_line.startswith("---"):
+                                        next_idx = i + 1
+                                        next_line = lines[next_idx].strip()
+                                        if next_idx != closing_idx:
                                             self.assertEqual(
                                                 next_line,
                                                 "",
