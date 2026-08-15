@@ -24,7 +24,7 @@ The `ansible.cfg` file configures play and task behaviors across local and remot
 ## ⚙️ Config Parameters & Tuning
 
 ### Core Settings
-- `callback_result_format = yaml`: Formats playbook outputs using human-readable YAML blocks (active under ansible-core 2.13+).
+- `callback_result_format = yaml`: Configures YAML-style console output that mixes YAML-formatted task results with non-machine-parsable execution text, rather than emitting a standalone YAML document (active under ansible-core 2.13+).
 - `bin_ansible_callbacks = True`: Enforces execution metrics callbacks across multiple modules.
 - `roles_path = roles:common_roles`: Directs where roles and external Galaxy requirements are loaded.
 
