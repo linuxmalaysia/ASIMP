@@ -1,16 +1,14 @@
 ---
+okf_version: "0.1"
+type: "reference"
 title: "Mock Scanning Utility Reference"
 description: "Detailed specification of tools/mock-asimp.sh mock scan generator."
-type: "reference"
+timestamp: "2026-08-15T00:00:00Z"
+topics: ["mock", "scap", "lynis", "reference"]
 id: "docs/reference/mock-asimp.md"
 dsom_governance:
   domain: "Automation"
   context_tier: "L3-TechnicalReference"
-tags:
-  - "reference"
-  - "mock"
-  - "scap"
-  - "lynis"
 related_links:
   - "docs/reference/index.md"
 nav_order: 100

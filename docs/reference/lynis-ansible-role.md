@@ -1,16 +1,14 @@
 ---
+okf_version: "0.1"
+type: "reference"
 title: "Role lynis-ansible Reference"
 description: "Detailed specification of the lynis-ansible role system auditing configurations."
-type: "reference"
+timestamp: "2026-08-15T00:00:00Z"
+topics: ["lynis", "auditing", "role", "reference"]
 id: "docs/reference/lynis-ansible-role.md"
 dsom_governance:
   domain: "Security"
   context_tier: "L3-TechnicalReference"
-tags:
-  - "reference"
-  - "role"
-  - "lynis"
-  - "auditing"
 related_links:
   - "docs/reference/index.md"
 nav_order: 150

@@ -1,15 +1,14 @@
 ---
+okf_version: "0.1"
+type: "tutorial"
 title: "Quickstart Onboarding Guide"
 description: "Step-by-step tutorial for setting up ASIMP, installing dependencies, and running your first compliance scan on localhost."
-type: "tutorial"
+timestamp: "2026-08-15T00:00:00Z"
+topics: ["tutorial", "quickstart", "onboarding", "asimp"]
 id: "docs/tutorials/01-getting-started.md"
 dsom_governance:
   domain: "Automation"
   context_tier: "L2-Operational"
-tags:
-  - "tutorial"
-  - "quickstart"
-  - "onboarding"
 related_links:
   - "docs/how-to/run-tool.md"
   - "docs/reference/index.md"
@@ -72,6 +71,7 @@ ansible-playbook -i tests/inventory play-localhost.yml
 ```
 
 ### Expected Console Output
+
 You should see a clean Ansible playbook execution run:
 
 ```text
@@ -93,10 +93,26 @@ localhost                  : ok=114  changed=0    unreachable=0    failed=0    s
 
 ## 📄 Step 4: Inspect Generated Reports
 
-After execution, examine the security posture scorecard report:
+After execution, examine the generated security posture reports:
+
+### Unprivileged / Sandbox Execution (Google Jules Mode)
+
+In sandboxed or unprivileged environments (`is_sandbox_jules: true`), reports are saved locally under the mock report workspace:
 
 ```bash
 cat data/asimp_mock/opt/report/openscap/SECURITY_AUDIT_REPORT.md
+```
+
+### Full Privileged Real OS Execution
+
+On fully privileged Linux systems (`asimp_privilege_level: 'full'`), live OpenSCAP XCCDF evaluation reports are written directly to system log paths:
+
+```bash
+# HTML Compliance Reports
+ls -la /var/log/openscap-*.html
+
+# Lynis Audit Log
+cat /var/log/lynis-report.dat
 ```
 
 Congratulations! You have completed your first successful ASIMP compliance and auditing cycle.

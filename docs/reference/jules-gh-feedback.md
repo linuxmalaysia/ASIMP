@@ -1,15 +1,14 @@
 ---
+okf_version: "0.1"
+type: "reference"
 title: "Sovereign Feedback Collector Reference"
 description: "Detailed specification of scripts/jules_gh_feedback.sh telemetry aggregator."
-type: "reference"
+timestamp: "2026-08-15T00:00:00Z"
+topics: ["telemetry", "feedback", "github", "reference"]
 id: "docs/reference/jules-gh-feedback.md"
 dsom_governance:
   domain: "Automation"
   context_tier: "L3-TechnicalReference"
-tags:
-  - "reference"
-  - "telemetry"
-  - "feedback"
 related_links:
   - "docs/reference/index.md"
 nav_order: 50

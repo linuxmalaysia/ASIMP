@@ -1,15 +1,14 @@
 ---
+okf_version: "0.1"
+type: "reference"
 title: "Component & Tool Index"
 description: "Reference index and catalog of all scripts, tools, APIs, playbooks, and roles inside ASIMP."
-type: "reference"
+timestamp: "2026-08-15T00:00:00Z"
+topics: ["reference", "index", "tools", "scripts", "roles"]
 id: "docs/reference/index.md"
 dsom_governance:
   domain: "Automation"
   context_tier: "L3-TechnicalReference"
-tags:
-  - "reference"
-  - "index"
-  - "tools"
 related_links:
   - "docs/how-to/run-tool.md"
   - "docs/tutorials/01-getting-started.md"

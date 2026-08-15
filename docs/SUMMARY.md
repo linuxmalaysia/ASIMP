@@ -1,3 +1,11 @@
+---
+okf_version: "0.1"
+type: "documentation"
+title: "GitBook & DSOM Summary Index"
+timestamp: "2026-08-15T00:00:00Z"
+topics: ["summary", "gitbook", "dsom", "diataxis"]
+---
+
 # Summary
 
 * [System Overview](README.md)

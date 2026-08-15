@@ -80,6 +80,7 @@
         path: "{{ docs_dir }}/{{ item }}"
       register: navbar_doc_stat
       loop:
+        - ai_agents.md
         - openscap.md
         - lynis.md
         - legal-notice.md

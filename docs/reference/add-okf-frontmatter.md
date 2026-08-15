@@ -1,15 +1,14 @@
 ---
+okf_version: "0.1"
+type: "reference"
 title: "Google OKF Frontmatter Patcher Reference"
 description: "Detailed specification of scripts/add_okf_frontmatter.py for Google OKF v0.1 YAML compliance."
-type: "reference"
+timestamp: "2026-08-15T00:00:00Z"
+topics: ["okf", "frontmatter", "patcher", "reference"]
 id: "docs/reference/add-okf-frontmatter.md"
 dsom_governance:
   domain: "Automation"
   context_tier: "L3-TechnicalReference"
-tags:
-  - "reference"
-  - "okf"
-  - "patcher"
 related_links:
   - "docs/reference/index.md"
 nav_order: 40

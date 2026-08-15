@@ -1,15 +1,14 @@
 ---
+okf_version: "0.1"
+type: "reference"
 title: "ASIMP Standard Footer Patcher Reference"
 description: "Detailed specification of scripts/add_asimp_footer.py for automating standard attributions."
-type: "reference"
+timestamp: "2026-08-15T00:00:00Z"
+topics: ["footer", "patcher", "python", "reference"]
 id: "docs/reference/add-asimp-footer.md"
 dsom_governance:
   domain: "Automation"
   context_tier: "L3-TechnicalReference"
-tags:
-  - "reference"
-  - "footer"
-  - "patcher"
 related_links:
   - "docs/reference/index.md"
 nav_order: 30

@@ -1,3 +1,11 @@
+---
+okf_version: "0.1"
+type: "documentation"
+title: "ASIMP Summary Index"
+timestamp: "2026-08-15T00:00:00Z"
+topics: ["asimp", "summary", "documentation", "index"]
+---
+
 # Summary
 
 * [ASIMP Overview](README.md)

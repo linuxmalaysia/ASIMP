@@ -1,17 +1,14 @@
 ---
+okf_version: "0.1"
+type: "reference"
 title: "Role reporting-ASIMP Reference"
 description: "Detailed specification of the reporting-ASIMP role metrics engine and compliance scorecard parser."
-type: "reference"
+timestamp: "2026-08-15T00:00:00Z"
+topics: ["reporting", "role", "openscap", "lynis", "reference"]
 id: "docs/reference/reporting-asimp-role.md"
 dsom_governance:
   domain: "Security"
   context_tier: "L3-TechnicalReference"
-tags:
-  - "reference"
-  - "role"
-  - "reporting"
-  - "openscap"
-  - "lynis"
 related_links:
   - "docs/reference/index.md"
 nav_order: 130

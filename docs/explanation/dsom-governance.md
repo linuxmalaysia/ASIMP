@@ -1,15 +1,14 @@
 ---
+okf_version: "0.1"
+type: "concept"
 title: "Deep State of Mind (DSOM) Governance Framework"
 description: "High-level governance and metacognitive architecture rules for persistent context management between AI and humans."
-type: "concept"
+timestamp: "2026-08-15T00:00:00Z"
+topics: ["dsom-protocol", "governance", "diataxis-quadrant"]
 id: "docs/explanation/dsom-governance.md"
 dsom_governance:
   domain: "Security"
   context_tier: "L1-Overview"
-tags:
-  - "dsom-protocol"
-  - "governance"
-  - "diataxis-quadrant"
 related_links:
   - "docs/explanation/diataxis.md"
   - "docs/explanation/system-architecture.md"

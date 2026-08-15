@@ -1,15 +1,14 @@
 ---
+okf_version: "0.1"
+type: "documentation"
 title: "ASIMP AI & Human Documentation Gateway"
 description: "Sovereign gateway and indexing baseline for human administrators and autonomous AI agents navigating ASIMP."
-type: "documentation"
+timestamp: "2026-08-15T00:00:00Z"
+topics: ["dsom-protocol", "gateway", "documentation", "diataxis"]
 id: "docs/README.md"
 dsom_governance:
   domain: "Automation"
   context_tier: "L1-Overview"
-tags:
-  - "dsom-protocol"
-  - "gateway"
-  - "documentation"
 related_links:
   - "docs/SUMMARY.md"
 nav_order: 5

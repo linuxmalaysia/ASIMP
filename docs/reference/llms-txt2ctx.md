@@ -1,15 +1,14 @@
 ---
+okf_version: "0.1"
+type: "reference"
 title: "LLM XML Context Compiler Reference"
 description: "Detailed specification of scripts/llms_txt2ctx.py for converting llms.txt to LLM context."
-type: "reference"
+timestamp: "2026-08-15T00:00:00Z"
+topics: ["llms-txt", "xml-compiler", "python", "reference"]
 id: "docs/reference/llms-txt2ctx.md"
 dsom_governance:
   domain: "AI"
   context_tier: "L3-TechnicalReference"
-tags:
-  - "reference"
-  - "llms-txt"
-  - "xml-compiler"
 related_links:
   - "docs/reference/index.md"
 nav_order: 60

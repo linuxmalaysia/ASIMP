@@ -1,15 +1,14 @@
 ---
+okf_version: "0.1"
+type: "reference"
 title: "Sovereign OS Role Patcher Reference"
 description: "Detailed specification of scripts/patch_roles.py for on-the-fly sandbox compatibility patching."
-type: "reference"
+timestamp: "2026-08-15T00:00:00Z"
+topics: ["roles", "patcher", "sandbox", "ansible", "reference"]
 id: "docs/reference/patch-roles.md"
 dsom_governance:
   domain: "Automation"
   context_tier: "L3-TechnicalReference"
-tags:
-  - "reference"
-  - "roles"
-  - "patcher"
 related_links:
   - "docs/reference/index.md"
 nav_order: 70
@@ -33,9 +32,9 @@ python3 scripts/patch_roles.py
 
 ## ⚙️ Modifications Applied
 
-1. **Jinja2 Parameter Parsing**: Ensures `#jinja2: trim_blocks: True` syntax uses uppercase capitalized booleans instead of lowercase string quotes.
-2. **Strict Boolean Evaluation**: Patches registered string variables (e.g., `stdout` or list values) used in Ansible `when:` conditionals to explicitly validate string lengths.
-3. **Graceful Error Bypass**: Appends `ignore_errors: "{{ is_sandbox_jules | default(false) }}"` on container-restricted systemd and service modules.
+1. **Jinja2 Parameter Parsing**: Replaces double-quoted or single-quoted `trim_blocks`/`lstrip_blocks` directives in SSH templates with capitalized Python booleans (`#jinja2: trim_blocks: True, lstrip_blocks: True`).
+2. **Moduli Conditional Boolean Rewrite**: Patches `roles/dev-sec.ssh-hardening/tasks/hardening.yml` by rewriting `- sshd_register_moduli.stdout` to `- sshd_register_moduli.stdout | length > 0` to ensure strict boolean evaluation under modern Ansible Core.
+3. **Graceful Service Error Bypass**: Appends `ignore_errors: "{{ is_sandbox_jules | default(false) }}"` onto service or systemd tasks inside role YAML files.
 
 ---
 

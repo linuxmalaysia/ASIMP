@@ -1,16 +1,14 @@
 ---
+okf_version: "0.1"
+type: "reference"
 title: "Role update-ubuntu-ASIMP Reference"
 description: "Detailed specification of the update-ubuntu-ASIMP role upgrade pipeline and package integrity checking."
-type: "reference"
+timestamp: "2026-08-15T00:00:00Z"
+topics: ["upgrade", "debsums", "role", "ubuntu", "reference"]
 id: "docs/reference/update-ubuntu-asimp-role.md"
 dsom_governance:
   domain: "Infrastructure"
   context_tier: "L3-TechnicalReference"
-tags:
-  - "reference"
-  - "role"
-  - "upgrade"
-  - "debsums"
 related_links:
   - "docs/reference/index.md"
 nav_order: 140

@@ -1,16 +1,14 @@
 ---
+okf_version: "0.1"
+type: "architecture"
 title: "System Architecture & Security Posture"
 description: "Detailed system architecture, security pillars, zero-trust model, and dual-engine auditing pipelines of ASIMP."
-type: "architecture"
+timestamp: "2026-08-15T00:00:00Z"
+topics: ["architecture", "security", "openscap", "lynis", "sandbox"]
 id: "docs/explanation/system-architecture.md"
 dsom_governance:
   domain: "Infrastructure"
   context_tier: "L1-Overview"
-tags:
-  - "architecture"
-  - "security"
-  - "openscap"
-  - "lynis"
 related_links:
   - "docs/explanation/dsom-governance.md"
   - "docs/explanation/diataxis.md"
@@ -58,6 +56,9 @@ graph TD
 ## 🔒 Unprivileged Sandbox Compatibility (Google Jules Mode)
 
 When system-level privileges are constrained (such as running inside containerized, unprivileged Google Jules sandboxes):
-- The platform automatically detects `/home/jules` and sets `is_sandbox_jules: true`.
-- It changes `asimp_privilege_level` to `'limited'`, skipping heavy package upgrades and kernel-level sysctl manipulations that would fail under container namespaces.
-- Instead of crashing, it invokes `tools/mock-asimp.sh` to safely generate comparative mock compliance scorecard results inside `data/asimp_mock/`, allowing complete integration flow testing.
+
+- **Environment Detection**: The system detects sandbox mode by evaluating `$USER` / `$LOGNAME` equal to `jules` (or checking `/home/jules` existence) and testing whether `/etc/sysctl.conf` is unwritable/restricted, setting the `is_sandbox_jules: true` fact.
+- **Role Integration vs. Standalone Script**:
+  - **Ansible `reporting-ASIMP` Role**: During playbook runs, the role automatically bypasses live package installs and writes mock comparative scorecards directly into `data/asimp_mock/opt/report/openscap/`.
+  - **Standalone `tools/mock-asimp.sh` Utility**: Can be invoked directly as a standalone shell script in unprivileged CLI environments. It checks environment variables (`IS_JULES_MOCK` or `$USER == "jules"`) and Populates identical mock scorecards and report files under `data/asimp_mock/`.
+- **Safety Scaling**: Sets `asimp_privilege_level: 'limited'`, skipping heavy package upgrades and kernel-level sysctl manipulations that would fail under unprivileged container namespaces.

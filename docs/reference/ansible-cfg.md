@@ -1,15 +1,14 @@
 ---
+okf_version: "0.1"
+type: "reference"
 title: "Ansible Config Parameters Reference"
 description: "Detailed specification of ansible.cfg configurations and environmental switches."
-type: "reference"
+timestamp: "2026-08-15T00:00:00Z"
+topics: ["ansible", "config", "reference", "ansible-cfg"]
 id: "docs/reference/ansible-cfg.md"
 dsom_governance:
   domain: "Infrastructure"
   context_tier: "L3-TechnicalReference"
-tags:
-  - "reference"
-  - "ansible"
-  - "config"
 related_links:
   - "docs/reference/index.md"
 nav_order: 110
@@ -25,7 +24,7 @@ The `ansible.cfg` file configures play and task behaviors across local and remot
 ## ⚙️ Config Parameters & Tuning
 
 ### Core Settings
-- `stdout_callback = yaml`: Formats playbook outputs using human-readable YAML blocks.
+- `callback_result_format = yaml`: Formats playbook outputs using human-readable YAML blocks (active under ansible-core 2.13+).
 - `bin_ansible_callbacks = True`: Enforces execution metrics callbacks across multiple modules.
 - `roles_path = roles:common_roles`: Directs where roles and external Galaxy requirements are loaded.
 

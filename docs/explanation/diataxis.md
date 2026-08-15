@@ -1,15 +1,14 @@
 ---
+okf_version: "0.1"
+type: "concept"
 title: "Diátaxis Documentation Framework"
 description: "Overview of how the four documentation quadrants organize technical content for human developers and autonomous agents."
-type: "concept"
+timestamp: "2026-08-15T00:00:00Z"
+topics: ["diataxis-quadrant", "documentation", "dsom-protocol"]
 id: "docs/explanation/diataxis.md"
 dsom_governance:
   domain: "Automation"
   context_tier: "L1-Overview"
-tags:
-  - "diataxis-quadrant"
-  - "documentation"
-  - "dsom-protocol"
 related_links:
   - "docs/explanation/dsom-governance.md"
   - "docs/explanation/system-architecture.md"

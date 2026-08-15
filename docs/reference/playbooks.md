@@ -1,15 +1,14 @@
 ---
+okf_version: "0.1"
+type: "reference"
 title: "System Core Playbooks Reference"
 description: "Detailed specification of play.yml and play-localhost.yml orchestration entrypoints."
-type: "reference"
+timestamp: "2026-08-15T00:00:00Z"
+topics: ["playbooks", "ansible", "orchestration", "reference"]
 id: "docs/reference/playbooks.md"
 dsom_governance:
   domain: "Infrastructure"
   context_tier: "L3-TechnicalReference"
-tags:
-  - "reference"
-  - "playbook"
-  - "orchestration"
 related_links:
   - "docs/reference/index.md"
 nav_order: 120

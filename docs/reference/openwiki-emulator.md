@@ -1,15 +1,14 @@
 ---
+okf_version: "0.1"
+type: "reference"
 title: "OpenWiki Emulator Specification"
 description: "Technical reference for the lightweight, LangChain-compatible local conceptual memory indexer."
-type: "reference"
+timestamp: "2026-08-15T00:00:00Z"
+topics: ["openwiki", "ai", "emulator", "reference"]
 id: "docs/reference/openwiki-emulator.md"
 dsom_governance:
   domain: "AI"
   context_tier: "L3-TechnicalReference"
-tags:
-  - "reference"
-  - "openwiki"
-  - "ai"
 related_links:
   - "docs/reference/index.md"
 nav_order: 20

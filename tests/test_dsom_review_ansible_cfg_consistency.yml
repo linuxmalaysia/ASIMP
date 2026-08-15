@@ -1,17 +1,14 @@
 ---
 # Cross-file consistency/regression test between the ansible.cfg callback
-# setting changed in this PR (`callback_result_format = yaml` renamed to the
-# actually-supported `stdout_callback = yaml`) and its narrative description
+# setting (`callback_result_format = yaml`) and its narrative description
 # in docs/dsom_ansible_review.md.
 #
 # ansible.cfg's [defaults] section standardizes console output via
-# `stdout_callback = yaml` / `bin_ansible_callbacks = True`. This test reads
+# `callback_result_format = yaml` / `bin_ansible_callbacks = True`. This test reads
 # the *actual* callback key name configured in ansible.cfg and asserts that
 # docs/dsom_ansible_review.md's adoption narrative references that same,
 # real key -- guarding against the documentation drifting out of sync with
-# the setting it claims to describe (e.g. continuing to reference the
-# previous, non-functional `callback_result_format` key name after ansible.cfg
-# is renamed to the supported `stdout_callback` key).
+# the setting it claims to describe.
 #
 # Run with:
 #   ansible-playbook -i tests/inventory tests/test_dsom_review_ansible_cfg_consistency.yml
@@ -23,7 +20,7 @@
     repo_root: "{{ playbook_dir }}/.."
     cfg_path: "{{ repo_root }}/ansible.cfg"
     doc_path: "{{ repo_root }}/docs/dsom_ansible_review.md"
-    stdout_callback_key_regex: '^(\w+)\s*=\s*yaml\s*$'
+    callback_setting_key_regex: '^(\w+)\s*=\s*yaml\s*$'
 
   tasks:
     - name: Load raw content of ansible.cfg
@@ -36,7 +33,7 @@
 
     - name: Extract the actual callback setting key name configured to 'yaml' in ansible.cfg
       ansible.builtin.set_fact:
-        actual_callback_key: "{{ (cfg_content | regex_findall(stdout_callback_key_regex, multiline=True))[0] }}"
+        actual_callback_key: "{{ (cfg_content | regex_findall(callback_setting_key_regex, multiline=True))[0] }}"
 
     - name: Sanity-check that ansible.cfg configures exactly the expected, supported callback key
       ansible.builtin.assert:
