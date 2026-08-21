@@ -4,15 +4,9 @@
   gather_facts: true
   become: false
   tasks:
-    - name: Detect if running in Google Jules Sandbox
-      ansible.builtin.stat:
-        path: /home/jules
-      register: jules_home_stat
-      when: is_sandbox_jules is not defined
-
     - name: Set sandbox fact
       ansible.builtin.set_fact:
-        is_sandbox_jules: "{{ is_sandbox_jules | default(jules_home_stat.stat.exists | default(false)) }}"
+        is_sandbox_jules: "{{ is_sandbox_jules | default(false) }}"
 
     - name: Test write access - Create temporary file in /etc
       ansible.builtin.tempfile:
@@ -37,4 +31,7 @@
     - name: Apply SUSE/SLED Sysctl Hardening
       ansible.builtin.include_role:
         name: sysctl-suse-ASIMP
+      when:
+        - (ansible_distribution | default('') in ['SUSE', 'SLES', 'SLED', 'openSUSE']) or (ansible_os_family | default('') == 'Suse')
+        - (ansible_distribution_version | default('') == '15.7' or '15' in (ansible_distribution_version | default('')))
       become: "{{ asimp_privilege_level == 'full' }}"

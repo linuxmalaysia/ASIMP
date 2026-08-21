@@ -16,7 +16,7 @@ topics:
 
 The `sysctl-suse-ASIMP` Ansible role implements the network security sysctl recommendations from [SUSE Linux Enterprise Desktop (SLED) 15 SP7 Security and Hardening Guide](https://documentation.suse.com/sled/15-SP7/html/SLED-all/cha-sec-sysctl.html).
 
-It applies kernel network parameter hardening and automatically scales resource limits (`net.ipv4.tcp_max_syn_backlog` and `net.core.somaxconn`) dynamically based on node RAM and vCPU capacity, while inspecting root disk size for telemetry and storage safety checks.
+It applies kernel network parameter hardening and automatically scales resource limits (`net.ipv4.tcp_max_syn_backlog` and `net.core.somaxconn`) dynamically based on node RAM and vCPU capacity, while inspecting root disk size for telemetry.
 
 ---
 
