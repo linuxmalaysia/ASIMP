@@ -1,0 +1,38 @@
+---
+- name: Standalone SUSE/SLED Sysctl Network Hardening
+  hosts: all
+  gather_facts: true
+  become: true
+  tasks:
+    - name: Detect if running in Google Jules Sandbox
+      ansible.builtin.stat:
+        path: /home/jules
+      register: jules_home_stat
+
+    - name: Set sandbox fact
+      ansible.builtin.set_fact:
+        is_sandbox_jules: "{{ jules_home_stat.stat.exists }}"
+
+    - name: Test write access - Create temporary file in /etc
+      ansible.builtin.tempfile:
+        state: file
+        path: /etc
+        suffix: _asimp_write_test
+      register: r_write_tempfile
+      failed_when: false
+      ignore_errors: true
+
+    - name: Set dynamic privilege level and execution mode
+      ansible.builtin.set_fact:
+        asimp_privilege_level: "{{ 'limited' if (is_sandbox_jules | default(false) | bool or r_write_tempfile.path is not defined or r_write_tempfile.path | length == 0) else 'full' }}"
+
+    - name: Test write access - Clean up temporary file
+      ansible.builtin.file:
+        path: "{{ r_write_tempfile.path }}"
+        state: absent
+      when: r_write_tempfile.path is defined and r_write_tempfile.path | length > 0
+      ignore_errors: true
+
+    - name: Apply SUSE/SLED Sysctl Hardening
+      ansible.builtin.include_role:
+        name: sysctl-suse-ASIMP

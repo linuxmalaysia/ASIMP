@@ -12,6 +12,7 @@ roles/common_roles/
 roles/*
 !roles/reporting-ASIMP/
 !roles/update-ubuntu-ASIMP/
+!roles/sysctl-suse-ASIMP/
 !roles/lynis-ansible/
 
 # Ignore Vault credentials except the encrypted production secrets

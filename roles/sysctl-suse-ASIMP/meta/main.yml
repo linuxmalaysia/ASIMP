@@ -1,0 +1,12 @@
+---
+galaxy_info:
+  author: ASIMP Team
+  description: SUSE / SLED 15 SP7 Sysctl Network Hardening Role with Auto-Resource Scaling
+  company: ASIMP
+  license: GPL-3.0-only
+  min_ansible_version: "2.14"
+  platforms:
+    - name: GenericLinux
+      versions:
+        - all
+dependencies: []

@@ -1,0 +1,39 @@
+---
+- name: Test sysctl-suse-ASIMP role structure and calculation logic
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  tasks:
+    - name: Load sysctl-suse-ASIMP defaults
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/../roles/sysctl-suse-ASIMP/defaults/main.yml"
+        name: sysctl_defaults
+
+    - name: Assert defaults are properly configured
+      ansible.builtin.assert:
+        that:
+          - sysctl_defaults.suse_sysctl_config_file == '/etc/sysctl.d/99-suse-network-hardening.conf'
+          - sysctl_defaults.suse_sysctl_auto_calc_resources == true
+        fail_msg: "sysctl-suse-ASIMP defaults are invalid"
+
+    - name: Execute role task logic locally
+      ansible.builtin.include_role:
+        name: sysctl-suse-ASIMP
+      vars:
+        asimp_privilege_level: limited
+        is_sandbox_jules: true
+
+    - name: Assert resource calculations and dynamic limits are correctly derived
+      ansible.builtin.assert:
+        that:
+          - suse_sysctl_node_mem_mb is defined
+          - (suse_sysctl_node_mem_mb | int) > 0
+          - suse_sysctl_node_vcpus is defined
+          - (suse_sysctl_node_vcpus | int) > 0
+          - suse_sysctl_node_disk_gb is defined
+          - (suse_sysctl_node_disk_gb | float) >= 0
+          - suse_sysctl_tcp_max_syn_backlog_calc is defined
+          - (suse_sysctl_tcp_max_syn_backlog_calc | int) >= 4096
+          - suse_sysctl_somaxconn_calc is defined
+          - (suse_sysctl_somaxconn_calc | int) >= 1024
+        fail_msg: "Auto-calculation facts were not calculated properly"

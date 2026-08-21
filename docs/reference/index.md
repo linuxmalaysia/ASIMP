@@ -43,3 +43,4 @@ This section provides exhaustive, information-oriented reference specifications 
 * **[Role: reporting-ASIMP](reporting-asimp-role.md)**: Multi-OS compliance metrics parser and reporting system.
 * **[Role: update-ubuntu-ASIMP](update-ubuntu-asimp-role.md)**: OS upgrade pipeline and package integrity checking with `debsums`.
 * **[Role: lynis-ansible](lynis-ansible-role.md)**: Security assessment and hardening indices.
+* **[Role: sysctl-suse-ASIMP](sysctl-suse-asimp-role.md)**: SUSE/SLED 15 SP7 network sysctl hardening and resource auto-scaling.

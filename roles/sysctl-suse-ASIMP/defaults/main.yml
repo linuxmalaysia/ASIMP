@@ -1,0 +1,5 @@
+---
+suse_sysctl_config_file: /etc/sysctl.d/99-suse-network-hardening.conf
+suse_sysctl_auto_calc_resources: true
+suse_sysctl_override_tcp_max_syn_backlog: null
+suse_sysctl_override_somaxconn: null

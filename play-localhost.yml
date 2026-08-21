@@ -190,6 +190,15 @@
       when: asimp_privilege_level == 'full'
       become: true
 
+    - name: Apply SUSE/SLED Sysctl Network Hardening
+      block:
+        - name: Apply SUSE/SLED Sysctl Network Hardening
+          ansible.builtin.include_role:
+            name: sysctl-suse-ASIMP
+      ignore_errors: "{{ is_sandbox_jules }}"
+      when: asimp_privilege_level == 'full'
+      become: true
+
     - name: Run AFTER Hardening Audits (OpenSCAP & Lynis)
       block:
         - name: Run AFTER Hardening Audits (OpenSCAP & Lynis)
