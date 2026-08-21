@@ -16,7 +16,7 @@ topics:
 
 The `sysctl-suse-ASIMP` Ansible role implements the network security sysctl recommendations from [SUSE Linux Enterprise Desktop (SLED) 15 SP7 Security and Hardening Guide](https://documentation.suse.com/sled/15-SP7/html/SLED-all/cha-sec-sysctl.html).
 
-It applies kernel network parameter hardening and automatically scales resource limits (`net.ipv4.tcp_max_syn_backlog` and `net.core.somaxconn`) dynamically based on node RAM memory and vCPU capacity, while inspecting root disk size for telemetry and storage safety checks.
+It applies kernel network parameter hardening and automatically scales resource limits (`net.ipv4.tcp_max_syn_backlog` and `net.core.somaxconn`) dynamically based on node RAM and vCPU capacity, while inspecting root disk size for telemetry and storage safety checks.
 
 ---
 
@@ -42,7 +42,7 @@ The role applies the following standardized configuration in `/etc/sysctl.d/99-s
 | `net.ipv4.conf.all.accept_source_route` | `0` | Reject source routed packets for all interfaces |
 | `net.ipv4.tcp_syncookies` | `1` | Enable TCP SYN Cookie protection |
 | `net.ipv4.tcp_max_syn_backlog` | *Auto-calculated* | Dynamic queue size (base 4096, scales with RAM & vCPUs) |
-| `net.core.somaxconn` | *Auto-calculated* | Dynamic listen socket limit (base 1024, scales with vCPUs) |
+| `net.core.somaxconn` | *Auto-calculated* | Dynamic listen socket limit (base 1024, scales with RAM & vCPUs) |
 | `net.ipv4.icmp_echo_ignore_broadcasts` | `1` | Ignore ICMP broadcast pings |
 | `net.ipv4.icmp_ignore_bogus_error_responses` | `1` | Ignore invalid ICMP error responses |
 | `net.ipv4.conf.default.accept_redirects` | `0` | Disable ICMP redirect acceptance |

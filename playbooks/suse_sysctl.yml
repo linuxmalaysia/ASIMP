@@ -8,10 +8,11 @@
       ansible.builtin.stat:
         path: /home/jules
       register: jules_home_stat
+      when: is_sandbox_jules is not defined
 
     - name: Set sandbox fact
       ansible.builtin.set_fact:
-        is_sandbox_jules: "{{ jules_home_stat.stat.exists }}"
+        is_sandbox_jules: "{{ is_sandbox_jules | default(jules_home_stat.stat.exists | default(false)) }}"
 
     - name: Test write access - Create temporary file in /etc
       ansible.builtin.tempfile:

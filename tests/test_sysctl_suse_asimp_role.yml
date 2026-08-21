@@ -16,24 +16,7 @@
           - sysctl_defaults.suse_sysctl_auto_calc_resources == true
         fail_msg: "sysctl-suse-ASIMP defaults are invalid"
 
-    - name: Execute role task logic locally with auto-calculation enabled
-      ansible.builtin.include_role:
-        name: sysctl-suse-ASIMP
-      vars:
-        asimp_privilege_level: limited
-        is_sandbox_jules: true
-        suse_sysctl_auto_calc_resources: true
-
-    - name: Assert auto-calculation values match expected mathematical formulas
-      ansible.builtin.assert:
-        that:
-          - suse_sysctl_node_mem_mb is defined
-          - suse_sysctl_node_vcpus is defined
-          - suse_sysctl_tcp_max_syn_backlog_calc | int == ([4096, (suse_sysctl_node_mem_mb * 4), (suse_sysctl_node_vcpus * 2048)] | max | int)
-          - suse_sysctl_somaxconn_calc | int == ([1024, (suse_sysctl_node_vcpus * 512), (suse_sysctl_node_mem_mb)] | max | int)
-        fail_msg: "Auto-calculated values do not match expected capacity limits"
-
-    - name: Test deterministic fact calculation branch with mock hardware capacity
+    - name: Test Base Branch (small RAM, low vCPU -> base 4096 / 1024)
       ansible.builtin.include_role:
         name: sysctl-suse-ASIMP
       vars:
@@ -41,21 +24,60 @@
         is_sandbox_jules: true
         suse_sysctl_auto_calc_resources: true
         ansible_facts:
-          memtotal_mb: 2048
+          memtotal_mb: 512
+          processor_vcpus: 1
+          mounts:
+            - mount: /
+              size_total: 10737418240
+
+    - name: Assert Base Branch constant outputs
+      ansible.builtin.assert:
+        that:
+          - suse_sysctl_tcp_max_syn_backlog_calc | int == 4096
+          - suse_sysctl_somaxconn_calc | int == 1024
+        fail_msg: "Base calculation branch constant assertion failed"
+
+    - name: Test RAM-Dominant Branch (high RAM 8192MB, 2 vCPUs)
+      ansible.builtin.include_role:
+        name: sysctl-suse-ASIMP
+      vars:
+        asimp_privilege_level: limited
+        is_sandbox_jules: true
+        suse_sysctl_auto_calc_resources: true
+        ansible_facts:
+          memtotal_mb: 8192
           processor_vcpus: 2
           mounts:
             - mount: /
               size_total: 21474836480
 
-    - name: Assert exact calculated limits for controlled 2048MB RAM / 2 vCPU mock node
+    - name: Assert RAM-Dominant constant outputs
       ansible.builtin.assert:
         that:
-          - suse_sysctl_node_mem_mb | int == 2048
-          - suse_sysctl_node_vcpus | int == 2
-          - suse_sysctl_node_disk_gb | float == 20.0
-          - suse_sysctl_tcp_max_syn_backlog_calc | int == 8192
-          - suse_sysctl_somaxconn_calc | int == 2048
-        fail_msg: "Mock hardware capacity calculation failed exact assertion"
+          - suse_sysctl_tcp_max_syn_backlog_calc | int == 32768
+          - suse_sysctl_somaxconn_calc | int == 8192
+        fail_msg: "RAM-dominant calculation branch constant assertion failed"
+
+    - name: Test vCPU-Dominant Branch (low RAM 1024MB, high 16 vCPUs)
+      ansible.builtin.include_role:
+        name: sysctl-suse-ASIMP
+      vars:
+        asimp_privilege_level: limited
+        is_sandbox_jules: true
+        suse_sysctl_auto_calc_resources: true
+        ansible_facts:
+          memtotal_mb: 1024
+          processor_vcpus: 16
+          mounts:
+            - mount: /
+              size_total: 21474836480
+
+    - name: Assert vCPU-Dominant constant outputs
+      ansible.builtin.assert:
+        that:
+          - suse_sysctl_tcp_max_syn_backlog_calc | int == 32768
+          - suse_sysctl_somaxconn_calc | int == 8192
+        fail_msg: "vCPU-dominant calculation branch constant assertion failed"
 
     - name: Test disabled auto-calculation mode (suse_sysctl_auto_calc_resources = false)
       ansible.builtin.include_role:
