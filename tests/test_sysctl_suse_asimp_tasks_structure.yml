@@ -1,0 +1,129 @@
+---
+# Structural regression tests for roles/sysctl-suse-ASIMP/tasks/main.yml.
+#
+# These tests parse the real tasks file from the repository (rather than
+# executing it) and assert that the resource-calculation facts, the
+# templated configuration file deployment, and the privilege/sandbox
+# gating on the "apply" block are wired up with the exact expected module
+# names and arguments described in the PR. This guards against regressions
+# such as accidentally applying the sysctl config unconditionally, using
+# the wrong module, or dropping the sandbox/privilege safety gate.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_sysctl_suse_asimp_tasks_structure.yml
+- name: Verify roles/sysctl-suse-ASIMP/tasks/main.yml structure and safety gating
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    role_tasks_dir: "{{ repo_root }}/roles/sysctl-suse-ASIMP/tasks"
+    apply_block_name: "Apply SUSE SLED 15 SP7 Network Sysctl Hardening"
+    expected_apply_when:
+      - "asimp_privilege_level | default('full') == 'full'"
+      - "not (is_sandbox_jules | default(false) | bool)"
+    expected_main_task_names:
+      - "Calculate node hardware resources (Memory, CPU, Disk)"
+      - "Calculate sysctl parameters based on node hardware capacity or fixed defaults"
+      - "Display calculated resource metrics and sysctl values"
+      - "Apply SUSE SLED 15 SP7 Network Sysctl Hardening"
+    expected_apply_subtask_names:
+      - "Ensure /etc/sysctl.d directory exists"
+      - "Deploy SUSE 15 SP7 network sysctl configuration"
+      - "Apply sysctl configuration from 99-suse-network-hardening.conf"
+
+  tasks:
+    - name: Load roles/sysctl-suse-ASIMP/tasks/main.yml
+      ansible.builtin.set_fact:
+        main_tasks: "{{ lookup('file', role_tasks_dir + '/main.yml') | from_yaml }}"
+
+    - name: Extract task name list
+      ansible.builtin.set_fact:
+        main_task_names: "{{ main_tasks | map(attribute='name') | list }}"
+
+    - name: Assert the top-level tasks exist in the expected order
+      ansible.builtin.assert:
+        that:
+          - main_task_names == expected_main_task_names
+        fail_msg: "roles/sysctl-suse-ASIMP/tasks/main.yml must define exactly these four top-level tasks, in this order"
+
+    - name: Build a name-to-task lookup for the top-level tasks
+      ansible.builtin.set_fact:
+        main_tasks_by_name: "{{ dict(main_task_names | zip(main_tasks)) }}"
+
+    - name: Assert the hardware resource calculation reads the documented ansible_facts keys with sane defaults
+      ansible.builtin.assert:
+        that:
+          - main_tasks_by_name['Calculate node hardware resources (Memory, CPU, Disk)']['ansible.builtin.set_fact'].suse_sysctl_node_mem_mb == "{% raw %}{{ ansible_facts['memtotal_mb'] | default(1024) | int }}{% endraw %}"
+          - main_tasks_by_name['Calculate node hardware resources (Memory, CPU, Disk)']['ansible.builtin.set_fact'].suse_sysctl_node_vcpus == "{% raw %}{{ ansible_facts['processor_vcpus'] | default(1) | int }}{% endraw %}"
+        fail_msg: "The hardware resource calculation task must default memtotal_mb to 1024 and processor_vcpus to 1 when absent"
+
+    - name: Assert the root disk size calculation selects the '/' mount and defaults to 10GB when absent
+      ansible.builtin.assert:
+        that:
+          - "\"selectattr('mount', 'equalto', '/')\" in main_tasks_by_name['Calculate node hardware resources (Memory, CPU, Disk)']['ansible.builtin.set_fact'].suse_sysctl_node_disk_gb"
+          - "'10737418240' in main_tasks_by_name['Calculate node hardware resources (Memory, CPU, Disk)']['ansible.builtin.set_fact'].suse_sysctl_node_disk_gb"
+        fail_msg: "The disk size telemetry fact must select the '/' mount's size_total and default to 10737418240 bytes (10GB) when no mounts are reported"
+
+    - name: Assert the sysctl parameter calculation honors explicit overrides before falling back to auto-calc or fixed defaults
+      ansible.builtin.assert:
+        that:
+          - "'suse_sysctl_override_tcp_max_syn_backlog is not none' in main_tasks_by_name['Calculate sysctl parameters based on node hardware capacity or fixed defaults']['ansible.builtin.set_fact'].suse_sysctl_tcp_max_syn_backlog_calc"
+          - "'suse_sysctl_override_somaxconn is not none' in main_tasks_by_name['Calculate sysctl parameters based on node hardware capacity or fixed defaults']['ansible.builtin.set_fact'].suse_sysctl_somaxconn_calc"
+          - "'4096' in main_tasks_by_name['Calculate sysctl parameters based on node hardware capacity or fixed defaults']['ansible.builtin.set_fact'].suse_sysctl_tcp_max_syn_backlog_calc"
+          - "'1024' in main_tasks_by_name['Calculate sysctl parameters based on node hardware capacity or fixed defaults']['ansible.builtin.set_fact'].suse_sysctl_somaxconn_calc"
+        fail_msg: "The sysctl parameter calculation must check for an explicit override ('is not none') before auto-calculating or falling back to the fixed 4096/1024 defaults"
+
+    - name: Assert the 'Apply' block is gated on full privilege level and non-sandbox execution
+      ansible.builtin.assert:
+        that:
+          - "'block' in main_tasks_by_name[apply_block_name]"
+          - main_tasks_by_name[apply_block_name].when == expected_apply_when
+        fail_msg: "'{{ apply_block_name }}' must be a block gated on asimp_privilege_level == 'full' AND not is_sandbox_jules, so it never runs unprivileged or inside a sandbox"
+
+    - name: Build a name-to-task lookup for the sub-tasks nested inside the 'Apply' block
+      ansible.builtin.set_fact:
+        apply_subtasks_by_name: "{{ dict(main_tasks_by_name[apply_block_name].block | map(attribute='name') | zip(main_tasks_by_name[apply_block_name].block)) }}"
+
+    - name: Assert the sysctl.d directory is ensured with secure root-owned permissions
+      ansible.builtin.assert:
+        that:
+          - apply_subtasks_by_name['Ensure /etc/sysctl.d directory exists']['ansible.builtin.file'].path == '/etc/sysctl.d'
+          - apply_subtasks_by_name['Ensure /etc/sysctl.d directory exists']['ansible.builtin.file'].state == 'directory'
+          - apply_subtasks_by_name['Ensure /etc/sysctl.d directory exists']['ansible.builtin.file'].owner == 'root'
+          - apply_subtasks_by_name['Ensure /etc/sysctl.d directory exists']['ansible.builtin.file'].group == 'root'
+          - apply_subtasks_by_name['Ensure /etc/sysctl.d directory exists']['ansible.builtin.file'].mode == '0755'
+        fail_msg: "'Ensure /etc/sysctl.d directory exists' must create /etc/sysctl.d as a root:root 0755 directory"
+
+    - name: Assert the sysctl configuration is deployed from the correct template with secure permissions
+      ansible.builtin.assert:
+        that:
+          - apply_subtasks_by_name['Deploy SUSE 15 SP7 network sysctl configuration']['ansible.builtin.template'].src == '99-suse-network-hardening.conf.j2'
+          - apply_subtasks_by_name['Deploy SUSE 15 SP7 network sysctl configuration']['ansible.builtin.template'].dest == "{% raw %}{{ suse_sysctl_config_file }}{% endraw %}"
+          - apply_subtasks_by_name['Deploy SUSE 15 SP7 network sysctl configuration']['ansible.builtin.template'].owner == 'root'
+          - apply_subtasks_by_name['Deploy SUSE 15 SP7 network sysctl configuration']['ansible.builtin.template'].group == 'root'
+          - apply_subtasks_by_name['Deploy SUSE 15 SP7 network sysctl configuration']['ansible.builtin.template'].mode == '0644'
+          - apply_subtasks_by_name['Deploy SUSE 15 SP7 network sysctl configuration'].register == 'suse_sysctl_conf_template'
+        fail_msg: "'Deploy SUSE 15 SP7 network sysctl configuration' must template 99-suse-network-hardening.conf.j2 to the configurable suse_sysctl_config_file destination with root:root 0644 permissions, and register its result"
+
+    - name: Assert sysctl is only reloaded when the configuration file actually changed, using a safe argv form
+      ansible.builtin.assert:
+        that:
+          - apply_subtasks_by_name['Apply sysctl configuration from 99-suse-network-hardening.conf']['ansible.builtin.command'].argv == ['sysctl', '-p', "{% raw %}{{ suse_sysctl_config_file }}{% endraw %}"]
+          - apply_subtasks_by_name['Apply sysctl configuration from 99-suse-network-hardening.conf'].when == 'suse_sysctl_conf_template.changed'
+          - apply_subtasks_by_name['Apply sysctl configuration from 99-suse-network-hardening.conf'].changed_when == true
+        fail_msg: "'Apply sysctl configuration from 99-suse-network-hardening.conf' must run 'sysctl -p <config_file>' via the safe argv list form, only when the template actually changed"
+
+    - name: Assert the 'apply' block contains exactly the three expected sub-tasks, in order
+      ansible.builtin.assert:
+        that:
+          - (main_tasks_by_name[apply_block_name].block | map(attribute='name') | list) == expected_apply_subtask_names
+        fail_msg: "'{{ apply_block_name }}' must contain exactly the directory-creation, template-deployment, and sysctl-reload sub-tasks, in that order"
+
+    - name: Assert the display/debug task reports both node telemetry and the calculated sysctl values
+      ansible.builtin.assert:
+        that:
+          - main_tasks_by_name['Display calculated resource metrics and sysctl values']['ansible.builtin.debug'].msg | length == 6
+          - "main_tasks_by_name['Display calculated resource metrics and sysctl values']['ansible.builtin.debug'].msg | select('search', 'tcp_max_syn_backlog') | list | length == 1"
+          - "main_tasks_by_name['Display calculated resource metrics and sysctl values']['ansible.builtin.debug'].msg | select('search', 'somaxconn') | list | length == 1"
+        fail_msg: "The debug task must report exactly 6 telemetry/calculation lines, including the calculated tcp_max_syn_backlog and somaxconn values"

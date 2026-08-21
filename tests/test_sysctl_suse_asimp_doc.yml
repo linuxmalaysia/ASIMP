@@ -1,0 +1,179 @@
+---
+# Structural and content-correctness tests for the new
+# docs/reference/sysctl-suse-asimp-role.md reference page, and for the new
+# "Role: sysctl-suse-ASIMP" entry added to docs/reference/index.md.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_sysctl_suse_asimp_doc.yml
+- name: Verify docs/reference/sysctl-suse-asimp-role.md and its docs/reference/index.md entry
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    docs_reference_dir: "{{ repo_root }}/docs/reference"
+    expected_title: "SUSE/SLED Sysctl Hardening Role Reference"
+    expected_topics:
+      - asimp
+      - suse
+      - sysctl
+      - hardening
+      - performance
+      - security
+    required_headings:
+      - "## 📋 Features"
+      - "## ⚙️ Configured Kernel Parameters"
+      - "## 🚀 Standalone Execution"
+    expected_index_entry: "* **[Role: sysctl-suse-ASIMP](sysctl-suse-asimp-role.md)**: SUSE/SLED 15 SP7 network sysctl hardening and resource auto-scaling."
+    preceding_index_entry: "* **[Role: lynis-ansible](lynis-ansible-role.md)**: Security assessment and hardening indices."
+
+  tasks:
+    - name: Load raw content of docs/reference/sysctl-suse-asimp-role.md
+      ansible.builtin.set_fact:
+        doc_content: "{{ lookup('file', docs_reference_dir + '/sysctl-suse-asimp-role.md') }}"
+
+    - name: Assert the document begins with a '---' front matter delimiter
+      ansible.builtin.assert:
+        that:
+          - doc_content.startswith('---')
+        fail_msg: "docs/reference/sysctl-suse-asimp-role.md must start with a YAML front matter block delimited by '---' on the very first line"
+
+    - name: Assert the front matter block closes immediately before the document's main heading
+      ansible.builtin.assert:
+        that:
+          - (doc_content.split('---', 2) | length) == 3
+          - doc_content.split('---', 2)[2].lstrip().startswith('# ' + expected_title)
+        fail_msg: "docs/reference/sysctl-suse-asimp-role.md front matter must close with a second '---' immediately followed by the '# {{ expected_title }}' heading"
+
+    - name: Parse the YAML front matter block
+      ansible.builtin.set_fact:
+        doc_frontmatter: "{{ doc_content.split('---', 2)[1] | from_yaml }}"
+
+    - name: Assert the OKF metadata fields are present and correct
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.okf_version == "0.1"
+          - doc_frontmatter.type == "reference"
+          - doc_frontmatter.title == expected_title
+        fail_msg: "docs/reference/sysctl-suse-asimp-role.md frontmatter must declare okf_version '0.1', type 'reference', and the exact title"
+
+    - name: Assert the frontmatter timestamp is the exact, unmodified value
+      ansible.builtin.assert:
+        that:
+          - "'timestamp: \"2026-08-05T12:00:00Z\"' in doc_content"
+        fail_msg: "docs/reference/sysctl-suse-asimp-role.md frontmatter 'timestamp' must be exactly 2026-08-05T12:00:00Z"
+
+    - name: Assert the frontmatter topics list matches exactly, in order
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.topics == expected_topics
+        fail_msg: "docs/reference/sysctl-suse-asimp-role.md frontmatter 'topics' must list asimp, suse, sysctl, hardening, performance, security in that exact order"
+
+    - name: Assert the document title heading matches the frontmatter title
+      ansible.builtin.assert:
+        that:
+          - ("# " + expected_title) in doc_content
+        fail_msg: "docs/reference/sysctl-suse-asimp-role.md must contain a top-level heading matching its frontmatter title"
+
+    - name: Assert every required section heading is present
+      ansible.builtin.assert:
+        that:
+          - heading in doc_content
+        fail_msg: "docs/reference/sysctl-suse-asimp-role.md is missing required section heading: {{ heading }}"
+      loop: "{{ required_headings }}"
+      loop_control:
+        loop_var: heading
+
+    - name: Assert the role name and upstream SUSE hardening guide are documented
+      ansible.builtin.assert:
+        that:
+          - "'sysctl-suse-ASIMP' in doc_content"
+          - "'https://documentation.suse.com/sled/15-SP7/html/SLED-all/cha-sec-sysctl.html' in doc_content"
+        fail_msg: "docs/reference/sysctl-suse-asimp-role.md must document the sysctl-suse-ASIMP role name and link to the upstream SUSE SLED 15 SP7 hardening guide"
+
+    - name: Assert the auto-calculation gating and override variables are documented
+      ansible.builtin.assert:
+        that:
+          - "'suse_sysctl_auto_calc_resources' in doc_content"
+          - "'suse_sysctl_override_tcp_max_syn_backlog' in doc_content"
+          - "'suse_sysctl_override_somaxconn' in doc_content"
+        fail_msg: "docs/reference/sysctl-suse-asimp-role.md must document the suse_sysctl_auto_calc_resources gate and the two explicit override variables"
+
+    - name: Assert the sandbox/privilege safety protocol is documented
+      ansible.builtin.assert:
+        that:
+          - "'asimp_privilege_level' in doc_content"
+          - "'Google Jules' in doc_content"
+        fail_msg: "docs/reference/sysctl-suse-asimp-role.md must document the asimp_privilege_level gate and Google Jules sandbox safety behavior"
+
+    - name: Assert the standalone execution instructions reference the exact playbook invocation
+      ansible.builtin.assert:
+        that:
+          - "'ansible-playbook -i inventory/hosts.yml playbooks/suse_sysctl.yml' in doc_content"
+        fail_msg: "docs/reference/sysctl-suse-asimp-role.md must document the exact standalone invocation command for playbooks/suse_sysctl.yml"
+
+    - name: Assert the configured kernel parameters table documents the two auto-calculated parameters
+      ansible.builtin.assert:
+        that:
+          - "'| `net.ipv4.tcp_max_syn_backlog` | *Auto-calculated* | Dynamic queue size (base 4096, scales with RAM & vCPUs) |' in doc_content"
+          - "'| `net.core.somaxconn` | *Auto-calculated* | Dynamic listen socket limit (base 1024, scales with RAM & vCPUs) |' in doc_content"
+        fail_msg: "docs/reference/sysctl-suse-asimp-role.md must document net.ipv4.tcp_max_syn_backlog and net.core.somaxconn as auto-calculated table rows"
+
+    - name: Assert the configured kernel parameters table documents the fixed hardening directives with correct values
+      ansible.builtin.assert:
+        that:
+          - "'| `net.ipv4.conf.default.rp_filter` | `1` | Strict reverse path filtering |' in doc_content"
+          - "'| `net.ipv4.tcp_syncookies` | `1` | Enable TCP SYN Cookie protection |' in doc_content"
+          - "'| `net.ipv4.ip_forward` | `0` | Disable IPv4 packet forwarding |' in doc_content"
+          - "'| `net.ipv6.conf.all.forwarding` | `0` | Disable IPv6 packet forwarding |' in doc_content"
+          - "'| `net.ipv4.conf.all.log_martians` | `1` | Log martian packets |' in doc_content"
+        fail_msg: "docs/reference/sysctl-suse-asimp-role.md must document the fixed hardening directives with their exact documented values"
+
+    - name: Assert the kernel parameters table documents exactly 22 sysctl directives (matching the shipped template)
+      ansible.builtin.assert:
+        that:
+          - (doc_content | regex_findall('(?m)^\\| `net\\.')) | length == 22
+        fail_msg: "docs/reference/sysctl-suse-asimp-role.md kernel parameters table must document exactly 22 sysctl directives, matching every directive shipped in the role's Jinja2 template"
+
+    # --- docs/reference/index.md -----------------------------------------
+    - name: Load raw content of docs/reference/index.md
+      ansible.builtin.set_fact:
+        index_content: "{{ lookup('file', docs_reference_dir + '/index.md') }}"
+
+    - name: Assert the new sysctl-suse-ASIMP entry is present verbatim in docs/reference/index.md
+      ansible.builtin.assert:
+        that:
+          - expected_index_entry in index_content
+        fail_msg: "docs/reference/index.md must contain the exact entry for the new sysctl-suse-ASIMP role reference page"
+
+    - name: Assert the new entry appears after the pre-existing lynis-ansible entry
+      ansible.builtin.assert:
+        that:
+          - index_content.find(preceding_index_entry) < index_content.find(expected_index_entry)
+        fail_msg: "docs/reference/index.md must list the new sysctl-suse-ASIMP entry after the pre-existing lynis-ansible role entry"
+
+    - name: Assert the new entry appears exactly once
+      ansible.builtin.assert:
+        that:
+          - (index_content | regex_findall(expected_index_entry | regex_escape)) | length == 1
+        fail_msg: "docs/reference/index.md must contain the sysctl-suse-ASIMP entry exactly once"
+
+    - name: Assert the linked reference page exists on disk
+      ansible.builtin.stat:
+        path: "{{ docs_reference_dir }}/sysctl-suse-asimp-role.md"
+      register: sysctl_doc_stat
+
+    - name: Assert the linked reference page is a regular file
+      ansible.builtin.assert:
+        that:
+          - sysctl_doc_stat.stat.exists
+          - sysctl_doc_stat.stat.isreg
+        fail_msg: "docs/reference/index.md links to sysctl-suse-asimp-role.md, which must exist on disk as a regular file"
+
+    - name: Assert the pre-existing role reference entries were left untouched (regression guard)
+      ansible.builtin.assert:
+        that:
+          - "'* **[Role: reporting-ASIMP](reporting-asimp-role.md)**: Multi-OS compliance metrics parser and reporting system.' in index_content"
+          - "'* **[Role: update-ubuntu-ASIMP](update-ubuntu-asimp-role.md)**: OS upgrade pipeline and package integrity checking with `debsums`.' in index_content"
+          - preceding_index_entry in index_content
+        fail_msg: "docs/reference/index.md must retain the pre-existing reporting-ASIMP, update-ubuntu-ASIMP, and lynis-ansible role reference entries unmodified"
