@@ -1,0 +1,198 @@
+---
+# Structural regression tests for wiring the new sysctl-suse-ASIMP role into
+# the main ASIMP entry points (play.yml, play-localhost.yml, the standalone
+# playbooks/suse_sysctl.yml), the SUSE/SLED host-group expansion in play.yml,
+# and the .gitignore role allow-list.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_sysctl_suse_asimp_playbook_integration.yml
+- name: Verify sysctl-suse-ASIMP role wiring across playbooks and .gitignore
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    sysctl_task_name: "Apply SUSE/SLED Sysctl Network Hardening"
+    expected_full_mode_when: "asimp_privilege_level == 'full'"
+    expected_sandbox_ignore_errors: "{% raw %}{{ is_sandbox_jules }}{% endraw %}"
+    expected_hardening_hosts: "os_Ubuntu:os_Debian:os_CentOS:os_RedHat:os_Rocky:os_AlmaLinux:os_SLES:os_SLED:os_openSUSE:os_Suse"
+    expected_standalone_task_names:
+      - "Detect if running in Google Jules Sandbox"
+      - "Set sandbox fact"
+      - "Test write access - Create temporary file in /etc"
+      - "Set dynamic privilege level and execution mode"
+      - "Test write access - Clean up temporary file"
+      - "Apply SUSE/SLED Sysctl Hardening"
+
+  tasks:
+    - name: Load play.yml plays
+      ansible.builtin.set_fact:
+        play_yml_plays: "{{ lookup('file', repo_root + '/play.yml') | from_yaml }}"
+
+    - name: Load play-localhost.yml plays
+      ansible.builtin.set_fact:
+        play_localhost_plays: "{{ lookup('file', repo_root + '/play-localhost.yml') | from_yaml }}"
+
+    - name: Extract the hardening play from play.yml
+      ansible.builtin.set_fact:
+        play_yml_hardening_play: "{{ play_yml_plays | selectattr('name', 'equalto', 'Run ASIMP Security Hardening and Audits') | first }}"
+
+    - name: Extract the hardening play from play-localhost.yml
+      ansible.builtin.set_fact:
+        play_localhost_hardening_play: "{{ play_localhost_plays | selectattr('name', 'equalto', 'Run localhost ASIMP Security Hardening and Audits') | first }}"
+
+    - name: Assert play.yml's hardening play now targets the SUSE/SLED/openSUSE host groups in addition to the pre-existing OS families
+      ansible.builtin.assert:
+        that:
+          - play_yml_hardening_play.hosts == expected_hardening_hosts
+        fail_msg: "play.yml must expand the hardening play's 'hosts' line to include os_SLES, os_SLED, os_openSUSE, and os_Suse alongside the pre-existing Ubuntu/Debian/CentOS/RedHat/Rocky/AlmaLinux groups"
+
+    - name: Assert play-localhost.yml's hardening play still targets localhost (regression guard)
+      ansible.builtin.assert:
+        that:
+          - play_localhost_hardening_play.hosts == 'localhost'
+          - play_localhost_hardening_play.connection == 'local'
+        fail_msg: "play-localhost.yml's hardening play must remain scoped to hosts: localhost, connection: local, unaffected by the new SUSE host-group expansion"
+
+    - name: Extract task name lists for ordering checks
+      ansible.builtin.set_fact:
+        play_yml_task_names: "{{ play_yml_hardening_play.tasks | map(attribute='name') | list }}"
+        play_localhost_task_names: "{{ play_localhost_hardening_play.tasks | map(attribute='name') | list }}"
+
+    - name: Assert the new SUSE/SLED sysctl task exists in both playbooks
+      ansible.builtin.assert:
+        that:
+          - sysctl_task_name in play_yml_task_names
+          - sysctl_task_name in play_localhost_task_names
+        fail_msg: "The '{{ sysctl_task_name }}' task must exist in both play.yml and play-localhost.yml"
+
+    - name: Build a name-to-task lookup for play.yml
+      ansible.builtin.set_fact:
+        play_yml_tasks_by_name: "{{ dict(play_yml_task_names | zip(play_yml_hardening_play.tasks)) }}"
+
+    - name: Build a name-to-task lookup for play-localhost.yml
+      ansible.builtin.set_fact:
+        play_localhost_tasks_by_name: "{{ dict(play_localhost_task_names | zip(play_localhost_hardening_play.tasks)) }}"
+
+    - name: Assert the SUSE/SLED sysctl task is a block that includes the sysctl-suse-ASIMP role
+      ansible.builtin.assert:
+        that:
+          - "'block' in play_yml_tasks_by_name[sysctl_task_name]"
+          - play_yml_tasks_by_name[sysctl_task_name].block | length == 1
+          - play_yml_tasks_by_name[sysctl_task_name].block[0]['ansible.builtin.include_role'].name == 'sysctl-suse-ASIMP'
+          - "'block' in play_localhost_tasks_by_name[sysctl_task_name]"
+          - play_localhost_tasks_by_name[sysctl_task_name].block | length == 1
+          - play_localhost_tasks_by_name[sysctl_task_name].block[0]['ansible.builtin.include_role'].name == 'sysctl-suse-ASIMP'
+        fail_msg: "'{{ sysctl_task_name }}' must be a block containing a single ansible.builtin.include_role task for the sysctl-suse-ASIMP role"
+
+    - name: Assert the SUSE/SLED sysctl task is gated on full privilege level, becomes root, and tolerates sandbox failures
+      ansible.builtin.assert:
+        that:
+          - play_yml_tasks_by_name[sysctl_task_name].when == expected_full_mode_when
+          - play_yml_tasks_by_name[sysctl_task_name].become == true
+          - play_yml_tasks_by_name[sysctl_task_name].ignore_errors == expected_sandbox_ignore_errors
+          - play_localhost_tasks_by_name[sysctl_task_name].when == expected_full_mode_when
+          - play_localhost_tasks_by_name[sysctl_task_name].become == true
+          - play_localhost_tasks_by_name[sysctl_task_name].ignore_errors == expected_sandbox_ignore_errors
+        fail_msg: "'{{ sysctl_task_name }}' must require asimp_privilege_level == 'full', escalate with become: true, and set ignore_errors to the templated is_sandbox_jules fact, consistent with the other hardening roles"
+
+    - name: Assert both playbooks define an identical SUSE/SLED sysctl task
+      ansible.builtin.assert:
+        that:
+          - play_yml_tasks_by_name[sysctl_task_name] == play_localhost_tasks_by_name[sysctl_task_name]
+        fail_msg: "play.yml and play-localhost.yml must define the exact same SUSE/SLED sysctl hardening task so both entry points behave consistently"
+
+    - name: Assert the SUSE/SLED sysctl task runs after Lynis hardening and before the AFTER audits, in both playbooks
+      ansible.builtin.assert:
+        that:
+          - play_yml_task_names.index('Apply Lynis Hardening Configuration') < play_yml_task_names.index(sysctl_task_name)
+          - play_yml_task_names.index(sysctl_task_name) < play_yml_task_names.index('Run AFTER Hardening Audits (OpenSCAP & Lynis)')
+          - play_localhost_task_names.index('Apply Lynis Hardening Configuration') < play_localhost_task_names.index(sysctl_task_name)
+          - play_localhost_task_names.index(sysctl_task_name) < play_localhost_task_names.index('Run AFTER Hardening Audits (OpenSCAP & Lynis)')
+        fail_msg: "The SUSE/SLED sysctl hardening task must run after 'Apply Lynis Hardening Configuration' and before the AFTER-hardening audits, in both play.yml and play-localhost.yml"
+
+    # --- Standalone playbooks/suse_sysctl.yml -----------------------------
+    - name: Load playbooks/suse_sysctl.yml plays
+      ansible.builtin.set_fact:
+        suse_sysctl_playbook_plays: "{{ lookup('file', repo_root + '/playbooks/suse_sysctl.yml') | from_yaml }}"
+
+    - name: Assert the standalone playbook defines exactly one play targeting all hosts without privilege escalation by default
+      ansible.builtin.assert:
+        that:
+          - suse_sysctl_playbook_plays | length == 1
+          - suse_sysctl_playbook_plays[0].name == 'Standalone SUSE/SLED Sysctl Network Hardening'
+          - suse_sysctl_playbook_plays[0].hosts == 'all'
+          - suse_sysctl_playbook_plays[0].gather_facts == true
+          - suse_sysctl_playbook_plays[0].become == false
+        fail_msg: "playbooks/suse_sysctl.yml must define a single play named 'Standalone SUSE/SLED Sysctl Network Hardening' targeting hosts: all, with gather_facts: true and become: false"
+
+    - name: Build a name-to-task lookup for the standalone playbook
+      ansible.builtin.set_fact:
+        suse_sysctl_playbook_tasks: "{{ suse_sysctl_playbook_plays[0].tasks }}"
+        suse_sysctl_playbook_task_names: "{{ suse_sysctl_playbook_plays[0].tasks | map(attribute='name') | list }}"
+
+    - name: Assert the standalone playbook defines the expected tasks, in order
+      ansible.builtin.assert:
+        that:
+          - suse_sysctl_playbook_task_names == expected_standalone_task_names
+        fail_msg: "playbooks/suse_sysctl.yml must define its sandbox-detection, privilege-detection, and role-application tasks in the documented order"
+
+    - name: Build a name-to-task lookup for the standalone playbook's tasks
+      ansible.builtin.set_fact:
+        suse_sysctl_playbook_tasks_by_name: "{{ dict(suse_sysctl_playbook_task_names | zip(suse_sysctl_playbook_tasks)) }}"
+
+    - name: Assert the sandbox-detection tasks only probe when not already defined
+      ansible.builtin.assert:
+        that:
+          - suse_sysctl_playbook_tasks_by_name['Detect if running in Google Jules Sandbox']['ansible.builtin.stat'].path == '/home/jules'
+          - suse_sysctl_playbook_tasks_by_name['Detect if running in Google Jules Sandbox'].register == 'jules_home_stat'
+          - suse_sysctl_playbook_tasks_by_name['Detect if running in Google Jules Sandbox'].when == 'is_sandbox_jules is not defined'
+        fail_msg: "'Detect if running in Google Jules Sandbox' must stat /home/jules, register jules_home_stat, and only run when is_sandbox_jules is not already defined"
+
+    - name: Assert the write-access probe and privilege-level fact match the shared play.yml/play-localhost.yml logic
+      ansible.builtin.assert:
+        that:
+          - suse_sysctl_playbook_tasks_by_name['Test write access - Create temporary file in /etc']['ansible.builtin.tempfile'].path == '/etc'
+          - suse_sysctl_playbook_tasks_by_name['Test write access - Create temporary file in /etc'].register == 'r_write_tempfile'
+          - suse_sysctl_playbook_tasks_by_name['Test write access - Create temporary file in /etc'].failed_when == false
+          - suse_sysctl_playbook_tasks_by_name['Test write access - Create temporary file in /etc'].ignore_errors == true
+        fail_msg: "The standalone playbook's write-access probe must match the shared pattern used in play.yml/play-localhost.yml"
+
+    - name: Assert the standalone playbook applies the role with become templated from asimp_privilege_level
+      ansible.builtin.assert:
+        that:
+          - suse_sysctl_playbook_tasks_by_name['Apply SUSE/SLED Sysctl Hardening']['ansible.builtin.include_role'].name == 'sysctl-suse-ASIMP'
+          - suse_sysctl_playbook_tasks_by_name['Apply SUSE/SLED Sysctl Hardening'].become == "{% raw %}{{ asimp_privilege_level == 'full' }}{% endraw %}"
+        fail_msg: "'Apply SUSE/SLED Sysctl Hardening' must include the sysctl-suse-ASIMP role and dynamically set become based on the detected asimp_privilege_level"
+
+    - name: Assert the role is applied only after the privilege level has been fully determined
+      ansible.builtin.assert:
+        that:
+          - suse_sysctl_playbook_task_names.index('Set dynamic privilege level and execution mode') < suse_sysctl_playbook_task_names.index('Apply SUSE/SLED Sysctl Hardening')
+          - suse_sysctl_playbook_task_names.index('Test write access - Clean up temporary file') < suse_sysctl_playbook_task_names.index('Apply SUSE/SLED Sysctl Hardening')
+        fail_msg: "playbooks/suse_sysctl.yml must determine asimp_privilege_level and clean up the write-access probe before applying the sysctl-suse-ASIMP role"
+
+    # --- .gitignore role allow-list ---------------------------------------
+    - name: Load raw content of .gitignore
+      ansible.builtin.set_fact:
+        gitignore_content: "{{ lookup('file', repo_root + '/.gitignore') }}"
+
+    - name: Assert .gitignore explicitly un-ignores the new sysctl-suse-ASIMP role directory
+      ansible.builtin.assert:
+        that:
+          - "'!roles/sysctl-suse-ASIMP/' in gitignore_content"
+        fail_msg: ".gitignore must add '!roles/sysctl-suse-ASIMP/' so the new role's files are tracked by git despite the blanket 'roles/*' ignore rule"
+
+    - name: Assert the sysctl-suse-ASIMP allow-list entry appears after the blanket 'roles/*' ignore rule
+      ansible.builtin.assert:
+        that:
+          - gitignore_content.find('roles/*') < gitignore_content.find('!roles/sysctl-suse-ASIMP/')
+        fail_msg: "'!roles/sysctl-suse-ASIMP/' must be listed after the blanket 'roles/*' ignore pattern, otherwise git ignore-rule ordering would make it have no effect"
+
+    - name: Assert the other pre-existing role allow-list entries are still present (regression guard)
+      ansible.builtin.assert:
+        that:
+          - "'!roles/reporting-ASIMP/' in gitignore_content"
+          - "'!roles/update-ubuntu-ASIMP/' in gitignore_content"
+          - "'!roles/lynis-ansible/' in gitignore_content"
+        fail_msg: ".gitignore must retain the pre-existing allow-list entries for reporting-ASIMP, update-ubuntu-ASIMP, and lynis-ansible"
