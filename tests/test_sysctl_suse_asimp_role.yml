@@ -16,24 +16,76 @@
           - sysctl_defaults.suse_sysctl_auto_calc_resources == true
         fail_msg: "sysctl-suse-ASIMP defaults are invalid"
 
-    - name: Execute role task logic locally
+    - name: Execute role task logic locally with auto-calculation enabled
       ansible.builtin.include_role:
         name: sysctl-suse-ASIMP
       vars:
         asimp_privilege_level: limited
         is_sandbox_jules: true
+        suse_sysctl_auto_calc_resources: true
 
-    - name: Assert resource calculations and dynamic limits are correctly derived
+    - name: Assert auto-calculation values match expected mathematical formulas
       ansible.builtin.assert:
         that:
           - suse_sysctl_node_mem_mb is defined
-          - (suse_sysctl_node_mem_mb | int) > 0
           - suse_sysctl_node_vcpus is defined
-          - (suse_sysctl_node_vcpus | int) > 0
-          - suse_sysctl_node_disk_gb is defined
-          - (suse_sysctl_node_disk_gb | float) >= 0
-          - suse_sysctl_tcp_max_syn_backlog_calc is defined
-          - (suse_sysctl_tcp_max_syn_backlog_calc | int) >= 4096
-          - suse_sysctl_somaxconn_calc is defined
-          - (suse_sysctl_somaxconn_calc | int) >= 1024
-        fail_msg: "Auto-calculation facts were not calculated properly"
+          - suse_sysctl_tcp_max_syn_backlog_calc | int == ([4096, (suse_sysctl_node_mem_mb * 4), (suse_sysctl_node_vcpus * 2048)] | max | int)
+          - suse_sysctl_somaxconn_calc | int == ([1024, (suse_sysctl_node_vcpus * 512), (suse_sysctl_node_mem_mb)] | max | int)
+        fail_msg: "Auto-calculated values do not match expected capacity limits"
+
+    - name: Test deterministic fact calculation branch with mock hardware capacity
+      ansible.builtin.include_role:
+        name: sysctl-suse-ASIMP
+      vars:
+        asimp_privilege_level: limited
+        is_sandbox_jules: true
+        suse_sysctl_auto_calc_resources: true
+        ansible_facts:
+          memtotal_mb: 2048
+          processor_vcpus: 2
+          mounts:
+            - mount: /
+              size_total: 21474836480
+
+    - name: Assert exact calculated limits for controlled 2048MB RAM / 2 vCPU mock node
+      ansible.builtin.assert:
+        that:
+          - suse_sysctl_node_mem_mb | int == 2048
+          - suse_sysctl_node_vcpus | int == 2
+          - suse_sysctl_node_disk_gb | float == 20.0
+          - suse_sysctl_tcp_max_syn_backlog_calc | int == 8192
+          - suse_sysctl_somaxconn_calc | int == 2048
+        fail_msg: "Mock hardware capacity calculation failed exact assertion"
+
+    - name: Test disabled auto-calculation mode (suse_sysctl_auto_calc_resources = false)
+      ansible.builtin.include_role:
+        name: sysctl-suse-ASIMP
+      vars:
+        asimp_privilege_level: limited
+        is_sandbox_jules: true
+        suse_sysctl_auto_calc_resources: false
+        suse_sysctl_override_tcp_max_syn_backlog: null
+        suse_sysctl_override_somaxconn: null
+
+    - name: Assert exact non-auto fixed fallback defaults when auto-calculation is disabled
+      ansible.builtin.assert:
+        that:
+          - suse_sysctl_tcp_max_syn_backlog_calc | int == 4096
+          - suse_sysctl_somaxconn_calc | int == 1024
+        fail_msg: "Disabled auto-calculation mode failed fallback assertion"
+
+    - name: Test explicit parameter overrides
+      ansible.builtin.include_role:
+        name: sysctl-suse-ASIMP
+      vars:
+        asimp_privilege_level: limited
+        is_sandbox_jules: true
+        suse_sysctl_override_tcp_max_syn_backlog: 16384
+        suse_sysctl_override_somaxconn: 8192
+
+    - name: Assert explicit override limits are respected exactly
+      ansible.builtin.assert:
+        that:
+          - suse_sysctl_tcp_max_syn_backlog_calc | int == 16384
+          - suse_sysctl_somaxconn_calc | int == 8192
+        fail_msg: "Explicit parameter overrides were not applied"

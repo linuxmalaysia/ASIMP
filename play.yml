@@ -8,7 +8,7 @@
         key: os_{{ ansible_distribution }}
 
 - name: Run ASIMP Security Hardening and Audits
-  hosts: os_Ubuntu:os_Debian:os_CentOS:os_RedHat:os_Rocky:os_AlmaLinux
+  hosts: os_Ubuntu:os_Debian:os_CentOS:os_RedHat:os_Rocky:os_AlmaLinux:os_SLES:os_SLED:os_openSUSE:os_Suse
   gather_facts: true
   become: false
   vars:

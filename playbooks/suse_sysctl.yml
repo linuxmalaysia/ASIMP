@@ -2,7 +2,7 @@
 - name: Standalone SUSE/SLED Sysctl Network Hardening
   hosts: all
   gather_facts: true
-  become: true
+  become: false
   tasks:
     - name: Detect if running in Google Jules Sandbox
       ansible.builtin.stat:
@@ -36,3 +36,4 @@
     - name: Apply SUSE/SLED Sysctl Hardening
       ansible.builtin.include_role:
         name: sysctl-suse-ASIMP
+      become: "{{ asimp_privilege_level == 'full' }}"

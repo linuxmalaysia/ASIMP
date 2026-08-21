@@ -16,15 +16,16 @@ topics:
 
 The `sysctl-suse-ASIMP` Ansible role implements the network security sysctl recommendations from [SUSE Linux Enterprise Desktop (SLED) 15 SP7 Security and Hardening Guide](https://documentation.suse.com/sled/15-SP7/html/SLED-all/cha-sec-sysctl.html).
 
-It applies kernel network parameter hardening and automatically scales resource limits (`net.ipv4.tcp_max_syn_backlog` and `net.core.somaxconn`) dynamically based on node memory (RAM), vCPU count, and disk capacity.
+It applies kernel network parameter hardening and automatically scales resource limits (`net.ipv4.tcp_max_syn_backlog` and `net.core.somaxconn`) dynamically based on node RAM memory and vCPU capacity, while inspecting root disk size for telemetry and storage safety checks.
 
 ---
 
 ## 📋 Features
 
-- **Auto Resource Calculation**: Dynamically measures RAM (`ansible_facts['memtotal_mb']`), vCPU count (`ansible_facts['processor_vcpus']`), and root disk size (`ansible_facts['mounts']`) to calculate optimal network socket backlogs.
-- **Deduplicated Network Hardening**: Consolidates all SUSE/SLED 15 SP7 sysctl settings into `/etc/sysctl.d/99-suse-network-hardening.conf` without duplicate entries.
-- **Standalone or Integrated Playbook Execution**: Can be executed standalone via `playbooks/suse_sysctl.yml` or as part of the primary `play.yml` / `play-localhost.yml` pipeline after OpenSCAP and Lynis hardening steps.
+- **RAM & vCPU Auto Resource Calculation**: Dynamically measures RAM (`ansible_facts['memtotal_mb']`) and vCPU count (`ansible_facts['processor_vcpus']`) to calculate optimal network socket backlogs, while reporting root disk size (`ansible_facts['mounts']`) for node telemetry.
+- **Configurable Auto-Calculation Gating**: Automatic calculation can be toggled using `suse_sysctl_auto_calc_resources` (defaults to `true`), or explicitly overridden with `suse_sysctl_override_tcp_max_syn_backlog` and `suse_sysctl_override_somaxconn`.
+- **Deduplicated Network Hardening**: Consolidates SUSE/SLED network sysctl settings into `/etc/sysctl.d/99-suse-network-hardening.conf` without duplicate entries.
+- **Standalone or Integrated Playbook Execution**: Can be executed standalone via `playbooks/suse_sysctl.yml` or as part of `play.yml` / `play-localhost.yml` pipeline on SUSE-family hosts after OpenSCAP and Lynis hardening steps.
 - **Sandbox Safety Protocols**: Respects `asimp_privilege_level` ('full' vs 'limited') and gracefully skips unprivileged container failures in Google Jules sandboxes.
 
 ---
