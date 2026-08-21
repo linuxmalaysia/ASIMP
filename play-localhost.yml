@@ -196,7 +196,10 @@
           ansible.builtin.include_role:
             name: sysctl-suse-ASIMP
       ignore_errors: "{{ is_sandbox_jules }}"
-      when: asimp_privilege_level == 'full'
+      when:
+        - (ansible_distribution | default('') in ['SUSE', 'SLES', 'SLED', 'openSUSE']) or (ansible_os_family | default('') == 'Suse')
+        - (ansible_distribution_version | default('') == '15.7' or ansible_distribution_version | default('') == '15 SP7')
+        - asimp_privilege_level == 'full'
       become: true
 
     - name: Run AFTER Hardening Audits (OpenSCAP & Lynis)

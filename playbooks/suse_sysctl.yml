@@ -33,5 +33,5 @@
         name: sysctl-suse-ASIMP
       when:
         - (ansible_distribution | default('') in ['SUSE', 'SLES', 'SLED', 'openSUSE']) or (ansible_os_family | default('') == 'Suse')
-        - (ansible_distribution_version | default('') == '15.7' or '15' in (ansible_distribution_version | default('')))
+        - (ansible_distribution_version | default('') == '15.7' or ansible_distribution_version | default('') == '15 SP7')
       become: "{{ asimp_privilege_level == 'full' }}"

@@ -23,9 +23,9 @@ It applies kernel network parameter hardening and automatically scales resource 
 ## 📋 Features
 
 - **RAM & vCPU Auto Resource Calculation**: Dynamically measures RAM (`ansible_facts['memtotal_mb']`) and vCPU count (`ansible_facts['processor_vcpus']`) to calculate optimal network socket backlogs, while reporting root disk size (`ansible_facts['mounts']`) for node telemetry.
-- **Configurable Auto-Calculation Gating**: Automatic calculation can be toggled using `suse_sysctl_auto_calc_resources` (defaults to `true`), or explicitly overridden with `suse_sysctl_override_tcp_max_syn_backlog` and `suse_sysctl_override_somaxconn`.
+- **Configurable Auto-Calculation Gating**: Automatic calculation can be toggled using `suse_sysctl_auto_calc_resources` (defaults to `true`). Disabling auto-calculation uses fixed default fallback values of 4096 (`net.ipv4.tcp_max_syn_backlog`) and 1024 (`net.core.somaxconn`), while explicit overrides (`suse_sysctl_override_tcp_max_syn_backlog` and `suse_sysctl_override_somaxconn`) take precedence in both modes.
 - **Deduplicated Network Hardening**: Consolidates SUSE/SLED network sysctl settings into `/etc/sysctl.d/99-suse-network-hardening.conf` without duplicate entries.
-- **Standalone or Integrated Playbook Execution**: Can be executed standalone via `playbooks/suse_sysctl.yml` or as part of `play.yml` / `play-localhost.yml` pipeline on SUSE-family hosts after OpenSCAP and Lynis hardening steps.
+- **Standalone or Integrated Playbook Execution**: Scope is restricted to SUSE/SLED 15 SP7 systems. Can be executed standalone via `playbooks/suse_sysctl.yml` or as part of `play.yml` / `play-localhost.yml` pipeline on SUSE/SLED 15 SP7 hosts after OpenSCAP and Lynis hardening steps.
 - **Sandbox Safety Protocols**: Respects `asimp_privilege_level` ('full' vs 'limited') and gracefully skips unprivileged container failures in Google Jules sandboxes.
 
 ---
