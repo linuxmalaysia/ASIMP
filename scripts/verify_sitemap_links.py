@@ -237,6 +237,12 @@ def compare_file_contents(filepath_a: str, filepath_b: str, file_type: str) -> N
     print(f"[+] Deployed copy {filepath_b} is perfectly synchronized with root {filepath_a} ({file_type}).")
 
 def main() -> None:
+    """
+    Validate sitemap synchronization and verify sitemap and sampled GitBook URLs.
+    
+    The process exits with a failure status when files are missing, sitemap contents
+    differ, XML is malformed, or URL validation fails.
+    """
     print("[*] Starting Sitemap and Link Integrity Verification...")
 
     # 1. Compare docs/ sitemaps against root sitemaps to ensure perfect sync before URL verification
