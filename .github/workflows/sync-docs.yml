@@ -1,0 +1,66 @@
+name: Mintlify One-Way Docs Sync & Safety Guards Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - 'docs-source/**'
+      - '.agents/skills/**'
+      - 'skills/**'
+      - 'tools/build_mintlify_mdx.py'
+      - 'scripts/sync_docs.py'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run mode (preview plan without committing or pushing)'
+        type: boolean
+        default: true
+      allow_large_deletions:
+        description: 'Allow large deletions exceeding MAX_DELETIONS safety cap'
+        type: boolean
+        default: false
+      min_mdx_files:
+        description: 'Minimum .mdx file count floor (Guard B)'
+        type: string
+        default: '5'
+      max_deletions:
+        description: 'Maximum deletion count cap (Guard D)'
+        type: string
+        default: '10'
+
+jobs:
+  sync-mintlify-docs:
+    name: Build MDX & Sync Mintlify Docs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+
+      - name: Compile Markdown to Mintlify MDX
+        run: |
+          python tools/build_mintlify_mdx.py
+
+      - name: Execute Hardened One-Way Docs Sync with Safety Guards
+        env:
+          DOCS_REPO_TOKEN: ${{ secrets.DOCS_REPO_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          ALLOW_LARGE_DELETIONS: ${{ github.event.inputs.allow_large_deletions || 'false' }}
+          MIN_MDX_FILES: ${{ github.event.inputs.min_mdx_files || '5' }}
+          MAX_DELETIONS: ${{ github.event.inputs.max_deletions || '10' }}
+        run: |
+          python scripts/sync_docs.py

@@ -1,0 +1,104 @@
+---
+title: "Review & Adoption of DSOM Ansible Configuration Guide (v3.6.2)"
+description: "Topics: ansible, dsom, asimp, compatibility, review"
+---
+
+# Review & Adoption of DSOM Ansible Configuration Guide (v3.6.2)
+
+This document provides a comprehensive structural review and alignment strategy for adopting the **DSOM (Deep State of Mind) Ansible Configuration Guide (v3.6.2)** into the **ASIMP (Ansible System Integrity Management Platform)** repository.
+
+ASIMP is designed as a security hardening and auditing framework. Integrating DSOM's infrastructure guidelines allows ASIMP to align seamlessly with DSOM Ingestion Backbone environments.
+
+---
+
+## 🔍 Structural & Architectural Alignment
+
+ASIMP and DSOM share highly compatible Ansible philosophies, but they are designed for different scopes:
+
+* **ASIMP** is a systemic, multi-OS host hardening and compliance auditing framework ("Measure, Harden, Re-Measure").
+* **DSOM Ingestion Backbone** is a distributed, sovereign, high-throughput ingestion network (Kafka/Logstash) focusing on rootless workload orchestration via Quadlets.
+
+### 1. The Ansible Blueprint (`ansible.cfg`)
+
+| Feature | DSOM Spec | ASIMP Baseline | Adoption Decision / Action |
+| :--- | :--- | :--- | :--- |
+| **Pipelining** | Enabled to reduce latency | Enabled in `[ssh_connection]` | Aligned. Managed via `pipelining = True` in `ansible.cfg` to reduce SSH latency. |
+| **YAML Callback** | Standardized for high-fidelity audit | Standardized as default format | **Adopted:** Configured `callback_result_format = yaml` and `bin_ansible_callbacks = True` (Active ONLY with this supported configuration in ansible-core 2.13+). |
+| **Become Execution** | Enabled via `become: true` at task level | Programmatic fact `asimp_privilege_level` | Aligned. ASIMP elevates automatically where required. |
+
+---
+
+## 🛡️ Privilege Model: "Rootful Control, Rootless Application"
+
+DSOM v3.6.2 enforces a hybrid privilege blueprint:
+
+* **Rootful Control**: Host administration (Systemd Quadlet, network namespaces).
+* **Rootless Application**: Running Kafka/Logstash as `dsom-admin` (**UID 2001**).
+
+### ASIMP Integration Map:
+
+* ASIMP is fully compliant with this model through its dynamic privilege detection fact `asimp_privilege_level`.
+* On **limited** or unprivileged nodes (e.g., in sandboxed or containerized user environments), ASIMP skips destructive low-level remediations (such as writing sysctls or manipulating restricted hardware services like `auditd`) and shifts execution strictly to audit-only or fallback mode.
+* ASIMP's safety check suite ensures that whenever `asimp_privilege_level == 'full'`, a thorough **Pre-Remediation Safety Check** is run (verifying disk space, SSH syntax, fstab mounts) to guarantee that host-level control actions do not trigger service lockouts.
+
+---
+
+## 🔐 Sovereign Secrets Injection
+
+DSOM utilizes a **Runtime Injection Pattern** to avoid committing credentials:
+
+1. `inventory/hosts.yml` contains public configuration variables and placeholder structures.
+2. Production credentials live in git-ignored `vault/production_secrets.yml`.
+3. Commands load secrets dynamically at runtime:
+
+   ```bash
+   ansible-playbook -i inventory/hosts.yml playbooks/deploy.yml --extra-vars "@vault/production_secrets.yml"
+   ```
+
+### ASIMP Compatibility & Encryption Strategy:
+
+To guarantee complete secrecy, secrets management is protected through Ansible Vault:
+
+* **Ansible Vault-encrypted File**: All production credentials and SSH passwords are encrypted using Ansible Vault and stored securely at `vault/production_secrets.yml`.
+* **Version Control Exclusion**: The `vault/` directory is strictly ignored in version control via `.gitignore` (`vault/*`, `!vault/production_secrets.yml` to track only the encrypted template/vault) to prevent any plaintext password leaks.
+* **Vault Password Retrieval**: The vault password must never be committed to the repository. It is configured to be retrieved securely at runtime through a protected CI secret (e.g., `ANSIBLE_VAULT_PASSWORD` or `vault-pass-client` script connecting to a secure credentials manager).
+* **Task Log Protection**: Any credential-handling tasks in playbooks (like `play.yml`) and related roles must employ `no_log: true` to explicitly suppress output logging of sensitive fields, ensuring secrets are never leaked to logs or the standard output.
+* **Runtime Injection**: ASIMP's main playbook `play.yml` is ready to adopt this structure. By executing playbooks with the runtime variable injection pattern, teams can keep inventory tracking completely public while preserving absolute cryptographic separation of variables.
+* **Multi-Host Structure**: ASIMP's multi-host structure groups target nodes by OS family under `play.yml`. The runtime injection of target variables allows secure overlays to be passed directly without modifying the core auditing and hardening roles.
+
+---
+
+## 🔄 Proposed Alignment & Adoption Path
+
+To successfully deploy ASIMP alongside the DSOM Backbone, follow these implementation steps:
+
+```text
++--------------------------------------------------------------+
+| 1. Align Core Configuration (ansible.cfg Callback Updates)  | ==> COMPLETED (Used callback_result_format = yaml)
++--------------------------------------------------------------+
+                               |
+                               v
++--------------------------------------------------------------+
+| 2. Adopt Host Inventory Mapping (Keep hosts.yml public)      | ==> Adopt DSOM-compatible variable structure
++--------------------------------------------------------------+
+                               |
+                               v
++--------------------------------------------------------------+
+| 3. Apply Multi-OS Testing Matrix (Verify safety baselines)   | ==> Execute via Podman 5+ multi-OS containers
++--------------------------------------------------------------+
+```
+
+1. **Output Standardisation**: The YAML callback is active in our core configuration via `callback_result_format = yaml` in `ansible.cfg` (active only under this supported configuration), facilitating pristine logging of compliance deltas.
+2. **Pre-flight Assertions**: The pre-flight assertions implemented in ASIMP (verifying `sshd -t` and storage status) protect the DSOM orchestration host during hardening phases.
+3. **Telemetry & Feedback (Private & Restrictive Design)**:
+   * **Private Restrictive Per-Run Directory**: Telemetry gathered during "Measure" and "Re-Measure" phases is written to a private, highly restrictive per-run directory (e.g. `$HOME/.asimp/telemetry/` or `/run/user/$UID/asimp/` with `0700` permissions).
+   * **Atomic Telemetry Creation**: Files inside the restrictive directory are created atomically (using temporary filenames and moved atomically via rename operations) to avoid race conditions or hijacking.
+   * **Bridge Integration**: The private directory path is passed directly to the feedback bridge courier (`scripts/jules_gh_feedback.sh`) at runtime.
+   * **Cleanup on Exit**: An `always` execution task block or exit trap securely removes all telemetry files and directories upon script termination.
+   * **Retention & Redaction Rules**:
+     * **Host Identifiers & System Data**: Hostnames and IP addresses are completely redacted or replaced with generic aliases (e.g. `host_01`) before submission.
+     * **PR IDs & Failure Messages**: Failure traces are parsed, and any paths, local user names, or sensitive identifiers are scrubbed. Telemetry data is retained for a maximum of 24 hours.
+     * **Non-Sensitive Data Policy**: The telemetry contains strictly non-sensitive public metadata (e.g. task pass/fail counts, execution durations, standard software compliance percentages) and does not store or process any system credentials or configurations.
+
+---
+*Created by the ASIMP Architecture Team | OKF v0.1 Compliant | 2026-08-05*

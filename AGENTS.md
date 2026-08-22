@@ -38,6 +38,22 @@ It follows a strict **"Measure, Harden, Re-Measure"** workflow.
 
 ---
 
+## 🛡️ Mintlify One-Way Docs Sync & Safety Guards Mandate
+
+All documentation in `docs/` serves as the single source of truth for Mintlify deployment.
+- **Source of Truth**: `docs/` (standard Markdown `.md`).
+- **Compiler**: `tools/build_mintlify_mdx.py` automatically compiles `docs/` and `.agents/skills/` into Mintlify MDX files inside `docs-source/` and dynamically generates `docs-source/docs.json`.
+- **Sync Script**: `scripts/sync_docs.py` handles one-way synchronization from `docs-source/` to the downstream Mintlify docs repository (`linuxmalaysia/documentation-asimp-ansible-framework`).
+- **5 Strict Safety Guards**:
+  - **Guard A (Source & JSON Integrity)**: Validates that `docs-source/` exists and `docs-source/docs.json` contains valid JSON.
+  - **Guard B (Minimum File Count Floor)**: Requires at least `MIN_MDX_FILES` (default 5) `.mdx` files to exist in `docs-source/`.
+  - **Guard C (Navigation Integrity)**: Verifies that every page path declared in `docs.json` navigation has a corresponding `.mdx` file.
+  - **Guard D (Diff Preview & Deletion Cap)**: Computes file diffs against downstream and blocks synchronization if deleted files exceed `MAX_DELETIONS` (default 10) unless `ALLOW_LARGE_DELETIONS=true`.
+  - **Guard E (Dry-Run Mode)**: Supports `--dry-run` / `DRY_RUN=true` to preview synchronization actions without committing or pushing.
+- **Strict One-Way Directive**: Never configure or perform two-way synchronization. Never force-push (`git push --force`) to downstream repositories. All downstream changes must originate from the app repository.
+
+---
+
 ## 🌌 Google Antigravity & Google Jules Agent Skills
 
 ### Location & Structure

@@ -1,0 +1,24 @@
+---
+title: "Role update-ubuntu-ASIMP Reference"
+description: "Detailed specification of the update-ubuntu-ASIMP role upgrade pipeline and package integrity checking."
+---
+
+# Role `update-ubuntu-ASIMP` Reference
+
+The `update-ubuntu-ASIMP` role coordinates OS upgrades and package integrity monitoring via filesystem check utilities.
+
+---
+
+## ⚙️ Key Variables & Defaults
+
+| Variable | Default | Purpose |
+| :--- | :--- | :--- |
+| `upgrade_packages` | `true` | Enforces standard security package updates. |
+| `debsums_check` | `true` | Enables background file verification checks against original package checksums. |
+| `rpmsums_check` | `true` | Triggers RedHat file verification via `rpm -Va` command. |
+
+---
+
+## 🔒 Constraints & Limits
+
+Under sandbox contexts (`is_sandbox_jules: true`), the execution skips destructive system package upgrades and ignores errors on restricted filesystem checkers.

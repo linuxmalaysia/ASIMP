@@ -1,0 +1,32 @@
+---
+title: "Sovereign OS Role Patcher Reference"
+description: "Detailed specification of scripts/patch_roles.py for on-the-fly sandbox compatibility patching."
+---
+
+# Sovereign OS Role Patcher Reference
+
+`scripts/patch_roles.py` scans downloaded Ansible Galaxy roles and automatically applies unprivileged sandbox compatibility corrections.
+
+---
+
+## 🛠️ Execution Context
+
+```bash
+python3 scripts/patch_roles.py
+```
+*Processes files in `roles/` directory.*
+
+---
+
+## ⚙️ Modifications Applied
+
+1. **Jinja2 Parameter Parsing**: Replaces double-quoted or single-quoted `trim_blocks`/`lstrip_blocks` directives in SSH templates with capitalized Python booleans (`#jinja2: trim_blocks: True, lstrip_blocks: True`).
+2. **Moduli Conditional Boolean Rewrite**: Patches `roles/dev-sec.ssh-hardening/tasks/hardening.yml` by rewriting `- sshd_register_moduli.stdout` to `- sshd_register_moduli.stdout | length > 0` to ensure strict boolean evaluation under modern Ansible Core.
+3. **Graceful Service Error Bypass**: Appends `ignore_errors: "{{ is_sandbox_jules | default(false) }}"` onto service or systemd tasks inside role YAML files.
+
+---
+
+## 🔒 Exit Codes
+
+- `0`: Success.
+- `1`: Failure.
