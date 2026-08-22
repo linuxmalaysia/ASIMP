@@ -34,8 +34,9 @@ class TestMintlifyMDXBuilder(unittest.TestCase):
     def test_extract_title_and_description(self):
         fm = {"title": "FM Title"}
         body = "# Header Title\nFirst paragraph here."
-        title, desc = extract_title_and_description(fm, body, "Fallback")
+        title, sidebar, desc = extract_title_and_description(fm, body, "Fallback")
         self.assertEqual(title, "FM Title")
+        self.assertEqual(sidebar, "Fm Title")
         self.assertEqual(desc, "First paragraph here.")
 
     def test_convert_md_to_mdx(self):
@@ -43,6 +44,7 @@ class TestMintlifyMDXBuilder(unittest.TestCase):
         body = "Hello Mintlify!"
         mdx = convert_md_to_mdx(fm, body, "Fallback")
         self.assertTrue('title: "MDX Test"' in mdx)
+        self.assertTrue('sidebarTitle: "Mdx Test"' in mdx)
         self.assertTrue('description: "MDX Desc"' in mdx)
         self.assertTrue("Hello Mintlify!" in mdx)
 

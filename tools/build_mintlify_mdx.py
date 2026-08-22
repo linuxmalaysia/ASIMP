@@ -45,8 +45,27 @@ def parse_frontmatter(content: str) -> Tuple[Dict[str, Any], str]:
     return {}, content.strip()
 
 
-def extract_title_and_description(fm: Dict[str, Any], body: str, fallback_title: str) -> Tuple[str, str]:
-    """Determine document title and description from frontmatter or body.
+def synthesize_sidebar_title(title: str) -> str:
+    """Synthesize a 1-3 word Title Case sidebar label derived from title.
+
+    Args:
+        title (str): Document SEO title.
+
+    Returns:
+        str: Concise sidebar title label.
+    """
+    # Strip product name and trim after colon or dash
+    clean = re.sub(r"\bASIMP\b", "", title, flags=re.IGNORECASE)
+    clean = clean.split(":")[0].split("-")[0].strip()
+    words = [w for w in clean.split() if w.strip()]
+    if not words:
+        words = [w for w in title.split() if w.strip()]
+    sidebar_words = words[:3]
+    return " ".join(sidebar_words).title()
+
+
+def extract_title_and_description(fm: Dict[str, Any], body: str, fallback_title: str) -> Tuple[str, str, str]:
+    """Determine document title, sidebarTitle, and description from frontmatter or body.
 
     Args:
         fm (Dict[str, Any]): Extracted YAML frontmatter.
@@ -54,7 +73,7 @@ def extract_title_and_description(fm: Dict[str, Any], body: str, fallback_title:
         fallback_title (str): Fallback title string based on filename.
 
     Returns:
-        Tuple[str, str]: Derived title and description strings.
+        Tuple[str, str, str]: Derived title, sidebarTitle, and description strings.
     """
     title = fm.get("title")
     if not title:
@@ -64,6 +83,10 @@ def extract_title_and_description(fm: Dict[str, Any], body: str, fallback_title:
             title = match.group(1).strip()
         else:
             title = fallback_title
+
+    sidebar_title = fm.get("sidebarTitle")
+    if not sidebar_title:
+        sidebar_title = synthesize_sidebar_title(str(title))
 
     description = fm.get("description")
     if not description:
@@ -80,7 +103,7 @@ def extract_title_and_description(fm: Dict[str, Any], body: str, fallback_title:
     if not description:
         description = title
 
-    return str(title), str(description)
+    return str(title), str(sidebar_title), str(description)
 
 
 def convert_md_to_mdx(fm: Dict[str, Any], body: str, fallback_title: str) -> str:
@@ -94,13 +117,20 @@ def convert_md_to_mdx(fm: Dict[str, Any], body: str, fallback_title: str) -> str
     Returns:
         str: Compiled MDX document with sanitized frontmatter and content body.
     """
-    title, description = extract_title_and_description(fm, body, fallback_title)
+    title, sidebar_title, description = extract_title_and_description(fm, body, fallback_title)
 
-    # Sanitize title and description for YAML frontmatter
+    # Sanitize title, sidebarTitle, and description for YAML frontmatter
     clean_title = json.dumps(title)
+    clean_sidebar_title = json.dumps(sidebar_title)
     clean_desc = json.dumps(description)
 
-    mdx_frontmatter = f"---\ntitle: {clean_title}\ndescription: {clean_desc}\n---"
+    mdx_frontmatter = (
+        f"---\n"
+        f"title: {clean_title}\n"
+        f"sidebarTitle: {clean_sidebar_title}\n"
+        f"description: {clean_desc}\n"
+        f"---"
+    )
 
     mdx_body = body
 
