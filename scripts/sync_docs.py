@@ -30,7 +30,17 @@ DEFAULT_MAX_DELETIONS = 10
 
 
 def run_cmd(cmd: List[str], cwd: Path = None, env: Dict[str, str] = None) -> Tuple[int, str, str]:
-    """Execute shell command safely with UTF-8 encoding."""
+    """
+    Execute a command and capture its exit status, standard output, and standard error.
+    
+    Parameters:
+    	cmd (List[str]): Command and arguments to execute.
+    	cwd (Path): Working directory for the command.
+    	env (Dict[str, str]): Environment variables for the command.
+    
+    Returns:
+    	Tuple[int, str, str]: The exit code, standard output, and standard error.
+    """
     proc = subprocess.run(
         cmd,
         cwd=cwd,
@@ -45,7 +55,14 @@ def run_cmd(cmd: List[str], cwd: Path = None, env: Dict[str, str] = None) -> Tup
 
 
 def extract_pages_from_nav(nav_node: Any) -> List[str]:
-    """Recursively extract all page paths from docs.json navigation structure."""
+    """Collects page paths from a navigation structure.
+    
+    Parameters:
+    	nav_node (Any): Navigation data containing page paths and nested navigation entries.
+    
+    Returns:
+    	List[str]: Page paths found in the navigation structure.
+    """
     pages: List[str] = []
     if isinstance(nav_node, dict):
         if "pages" in nav_node and isinstance(nav_node["pages"], list):
@@ -64,9 +81,14 @@ def extract_pages_from_nav(nav_node: Any) -> List[str]:
 
 
 def guard_a_source_and_json_integrity(docs_source_dir: Path) -> Dict[str, Any]:
-    """Guard A: Source & JSON Integrity.
-
-    Fail if docs-source/ does not exist or docs-source/docs.json is missing/invalid JSON.
+    """
+    Validate the documentation source directory and its configuration file.
+    
+    Parameters:
+    	docs_source_dir (Path): Directory containing the documentation source files.
+    
+    Returns:
+    	Dict[str, Any]: Parsed contents of the directory's ``docs.json`` file.
     """
     print("[Guard A] Checking Source & JSON Integrity...")
     if not docs_source_dir.exists() or not docs_source_dir.is_dir():
@@ -88,9 +110,15 @@ def guard_a_source_and_json_integrity(docs_source_dir: Path) -> Dict[str, Any]:
 
 
 def guard_b_minimum_file_count_floor(docs_source_dir: Path, min_mdx_files: int) -> List[Path]:
-    """Guard B: Minimum File Count Floor.
-
-    Count .mdx files under docs-source/. Fail if count is below MIN_MDX_FILES.
+    """
+    Ensure the documentation source contains the required minimum number of MDX files.
+    
+    Parameters:
+        docs_source_dir (Path): Directory containing the documentation source files.
+        min_mdx_files (int): Minimum number of MDX files required.
+    
+    Returns:
+        List[Path]: Paths to all MDX files found recursively.
     """
     print(f"[Guard B] Checking Minimum File Count Floor (min: {min_mdx_files})...")
     mdx_files = list(docs_source_dir.rglob("*.mdx"))
@@ -104,9 +132,15 @@ def guard_b_minimum_file_count_floor(docs_source_dir: Path, min_mdx_files: int) 
 
 
 def guard_c_navigation_integrity(docs_source_dir: Path, docs_json_data: Dict[str, Any]) -> None:
-    """Guard C: Navigation Integrity.
-
-    Walk docs.json navigation. Assert every referenced page has a matching docs-source/<path>.mdx file.
+    """
+    Validate that every page referenced by the documentation navigation has a corresponding MDX file.
+    
+    Parameters:
+        docs_source_dir (Path): Directory containing the compiled MDX files.
+        docs_json_data (Dict[str, Any]): Parsed documentation configuration.
+    
+    Exits:
+        With status 1 if the navigation section is missing or references unavailable pages.
     """
     print("[Guard C] Checking Navigation Integrity...")
     nav = docs_json_data.get("navigation")
@@ -133,7 +167,16 @@ def guard_c_navigation_integrity(docs_source_dir: Path, docs_json_data: Dict[str
 
 
 def get_all_relative_files(base_dir: Path, exclude_git: bool = True) -> Set[Path]:
-    """Collect set of relative file paths in a directory."""
+    """
+    Collect relative paths for all files within a directory.
+    
+    Parameters:
+        base_dir (Path): Directory to search.
+        exclude_git (bool): Whether to omit files within `.git`.
+    
+    Returns:
+        Set[Path]: Relative file paths found beneath the directory.
+    """
     files = set()
     for root, dirs, filenames in os.walk(base_dir):
         rel_root = Path(root).relative_to(base_dir)
@@ -153,9 +196,18 @@ def guard_d_diff_preview_and_deletion_cap(
     max_deletions: int,
     allow_large_deletions: bool
 ) -> Tuple[List[Path], List[Path], List[Path]]:
-    """Guard D: Diff Preview & Deletion Cap.
-
-    Compute file diff (added/modified/deleted). Fail if deleted files exceed MAX_DELETIONS unless ALLOW_LARGE_DELETIONS=true.
+    """
+    Compare source and downstream files while enforcing the deletion limit.
+    
+    Parameters:
+        docs_source_dir (Path): Directory containing the source documentation files.
+        downstream_dir (Path): Directory containing the downstream files.
+        max_deletions (int): Maximum number of deleted files permitted.
+        allow_large_deletions (bool): Whether to permit deletions above the limit.
+    
+    Returns:
+        Tuple[List[Path], List[Path], List[Path]]: Added, modified, and deleted relative file paths.
+    
     """
     print(f"[Guard D] Computing diff and checking Deletion Cap (max deletions: {max_deletions}, allow large: {allow_large_deletions})...")
 
@@ -196,7 +248,11 @@ def guard_d_diff_preview_and_deletion_cap(
 
 
 def main() -> None:
-    """Main execution entry point for docs sync script."""
+    """
+    Run the documentation synchronization workflow, including validation, safety checks, and optional downstream repository updates.
+    
+    Command-line arguments and environment variables control dry-run mode, deletion limits, source and downstream locations, repository details, and synchronization settings.
+    """
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
 
