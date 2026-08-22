@@ -1,0 +1,103 @@
+---
+# Regression tests for the new "Mintlify One-Way Docs Sync & Safety Guards
+# Mandate" section added to AGENTS.md in this PR. The section documents the
+# docs/ -> docs-source/ compilation pipeline (tools/build_mintlify_mdx.py),
+# the downstream sync script (scripts/sync_docs.py), and its 5 strict
+# safety guards, matching the new .github/workflows/sync-docs.yml pipeline.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_agents_md_mintlify_sync_mandate.yml
+- name: Verify AGENTS.md Mintlify One-Way Docs Sync & Safety Guards Mandate section
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    agents_md_path: "{{ repo_root }}/AGENTS.md"
+    section_heading: "## 🛡️ Mintlify One-Way Docs Sync & Safety Guards Mandate"
+    following_section_heading: "## 🌌 Google Antigravity & Google Jules Agent Skills"
+    preceding_section_heading: "## 📁 Repository Structure"
+    required_snippets:
+      - "**Source of Truth**: `docs/` (standard Markdown `.md`)."
+      - "**Compiler**: `tools/build_mintlify_mdx.py` automatically compiles `docs/` and `.agents/skills/` into Mintlify MDX files inside `docs-source/` and dynamically generates `docs-source/docs.json`."
+      - "**Sync Script**: `scripts/sync_docs.py` handles one-way synchronization from `docs-source/` to the downstream Mintlify docs repository (`linuxmalaysia/documentation-asimp-ansible-framework`)."
+      - "**Guard A (Source & JSON Integrity)**: Validates that `docs-source/` exists and `docs-source/docs.json` contains valid JSON."
+      - "**Guard B (Minimum File Count Floor)**: Requires at least `MIN_MDX_FILES` (default 5) `.mdx` files to exist in `docs-source/`."
+      - "**Guard C (Navigation Integrity)**: Verifies that every page path declared in `docs.json` navigation has a corresponding `.mdx` file."
+      - "**Guard D (Diff Preview & Deletion Cap)**: Computes file diffs against downstream and blocks synchronization if deleted files exceed `MAX_DELETIONS` (default 10) unless `ALLOW_LARGE_DELETIONS=true`."
+      - "**Guard E (Dry-Run Mode)**: Supports `--dry-run` / `DRY_RUN=true` to preview synchronization actions without committing or pushing."
+      - "**Strict One-Way Directive**: Never configure or perform two-way synchronization. Never force-push (`git push --force`) to downstream repositories. All downstream changes must originate from the app repository."
+
+  tasks:
+    - name: Load raw content of AGENTS.md
+      ansible.builtin.set_fact:
+        agents_content: "{{ lookup('file', agents_md_path) }}"
+
+    - name: Assert the Mintlify sync mandate section heading is present exactly once
+      ansible.builtin.assert:
+        that:
+          - (agents_content | regex_findall(section_heading | regex_escape) | length) == 1
+        fail_msg: "AGENTS.md must contain the '{{ section_heading }}' heading exactly once"
+
+    - name: Assert every required guard/policy snippet is present verbatim
+      ansible.builtin.assert:
+        that:
+          - item in agents_content
+        fail_msg: "AGENTS.md Mintlify sync mandate section must contain the exact snippet: {{ item }}"
+      loop: "{{ required_snippets }}"
+      loop_control:
+        label: "{{ item[:60] }}"
+
+    - name: Assert all five guards (A through E) are documented in order
+      ansible.builtin.assert:
+        that:
+          - agents_content.find('Guard A') < agents_content.find('Guard B')
+          - agents_content.find('Guard B') < agents_content.find('Guard C')
+          - agents_content.find('Guard C') < agents_content.find('Guard D')
+          - agents_content.find('Guard D') < agents_content.find('Guard E')
+        fail_msg: "AGENTS.md must document Guards A, B, C, D, and E in that exact order"
+
+    - name: Assert the new section is inserted after Repository Structure and before Agent Skills
+      ansible.builtin.assert:
+        that:
+          - agents_content.find(preceding_section_heading) < agents_content.find(section_heading)
+          - agents_content.find(section_heading) < agents_content.find(following_section_heading)
+        fail_msg: "AGENTS.md must place the Mintlify sync mandate section between 'Repository Structure' and 'Google Antigravity & Google Jules Agent Skills'"
+
+    - name: Assert the pre-existing Google Antigravity & Google Jules Agent Skills section still exists
+      ansible.builtin.assert:
+        that:
+          - following_section_heading in agents_content
+        fail_msg: "AGENTS.md must retain the pre-existing 'Google Antigravity & Google Jules Agent Skills' section header"
+
+    - name: Assert the referenced compiler and sync script files exist on disk
+      ansible.builtin.stat:
+        path: "{{ repo_root }}/{{ item }}"
+      register: referenced_script_stat
+      loop:
+        - "tools/build_mintlify_mdx.py"
+        - "scripts/sync_docs.py"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Fail if any script referenced by the new AGENTS.md mandate is missing
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isreg
+        fail_msg: "AGENTS.md references a script that does not exist on disk"
+      loop: "{{ referenced_script_stat.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Assert the GitHub Actions workflow implementing this mandate exists
+      ansible.builtin.stat:
+        path: "{{ repo_root }}/.github/workflows/sync-docs.yml"
+      register: sync_workflow_stat
+
+    - name: Fail if the sync-docs.yml workflow file is missing
+      ansible.builtin.assert:
+        that:
+          - sync_workflow_stat.stat.exists
+          - sync_workflow_stat.stat.isreg
+        fail_msg: "The .github/workflows/sync-docs.yml pipeline implementing the AGENTS.md Mintlify sync mandate is missing"
