@@ -14,6 +14,7 @@ import xml.etree.ElementTree as ET
 import urllib.request
 import urllib.error
 import random
+from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse
 
 # Strict set of allowed hostnames to prevent SSRF and arbitrary redirection (satisfies CodeQL requirements)
@@ -285,17 +286,19 @@ def main() -> None:
 
     success = True
     print(f"[*] Verifying all {len(gh_pages_urls)} GitHub Pages URLs...")
-    for u in gh_pages_urls:
-        if not verify_github_pages_url(u):
-            success = False
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        gh_results = list(executor.map(verify_github_pages_url, gh_pages_urls))
+    if not all(gh_results):
+        success = False
 
     # 6. Verify GitBook URLs loaded from the separate validation inventory
     print(f"[*] Loading validation inventory of {len(GITBOOK_URLS)} GitBook URLs...")
     print(f"[*] Verifying a sample of 5 GitBook URLs from the inventory to check live routing...")
     random.seed(42) # Deterministic sample selection
     sample_gitbook = random.sample(GITBOOK_URLS, min(5, len(GITBOOK_URLS)))
-    for u in sample_gitbook:
-        is_ok, failure_type = check_url(u)
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        gb_results = list(executor.map(check_url, sample_gitbook))
+    for u, (is_ok, failure_type) in zip(sample_gitbook, gb_results):
         if is_ok:
             print(f"[+] GitBook inventory URL OK (Live): {u}")
         else:
