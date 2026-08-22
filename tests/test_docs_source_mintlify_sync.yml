@@ -1,0 +1,232 @@
+---
+# Regression tests for the new Mintlify docs sync source tree introduced in
+# this PR: docs-source/docs.json (the Mintlify navigation/config manifest)
+# and the batch of new docs-source/*.mdx files it references.
+#
+# These tests verify:
+#   1. docs-source/docs.json is valid JSON with the expected Mintlify
+#      $schema/theme/name/description keys.
+#   2. Every page path declared in docs.json's navigation has a
+#      corresponding .mdx file on disk (mirrors Guard C from
+#      scripts/sync_docs.py, but exercised directly against the real,
+#      checked-in docs-source/ tree rather than a synthetic fixture).
+#   3. There are no duplicate page entries across the navigation.
+#   4. A representative sample of the newly added .mdx files exist, carry
+#      valid YAML frontmatter with non-empty "title" and "description"
+#      fields, and contain their expected top-level heading.
+#   5. docs-source/README.mdx and docs-source/SUMMARY.mdx (the gateway and
+#      GitBook-style summary pages) contain their documented "do not edit
+#      here" sync notice / structure.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_docs_source_mintlify_sync.yml
+- name: Verify docs-source/docs.json and new Mintlify MDX pages introduced in this PR
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    docs_source_dir: "{{ repo_root }}/docs-source"
+    docs_json_path: "{{ docs_source_dir }}/docs.json"
+    new_mdx_pages:
+      - path: "README.mdx"
+        title: "ASIMP AI & Human Documentation Gateway"
+        heading: "# ASIMP AI & Human Documentation Gateway"
+      - path: "SUMMARY.mdx"
+        title: "GitBook & DSOM Summary Index"
+        heading: "# Summary"
+      - path: "ai_agents.mdx"
+        title: "ASIMP for AI Agents: Deep State of Mind (DSOM) Protocol Integration"
+        heading: "# ASIMP for AI Agents & The Deep State of Mind (DSOM) Protocol"
+      - path: "ansible_fqcn.mdx"
+        title: "Ansible Best Practices & FQCN Standards"
+        heading: "# Ansible Best Practices & FQCN Standards"
+      - path: "ansible_playbook_map.mdx"
+        title: "Ansible Playbook and Document Architecture Map"
+        heading: "# Ansible Playbook and Document Architecture Map"
+      - path: "architecture.mdx"
+        title: "Architecture & Design"
+        heading: "# Architecture & Design"
+      - path: "configuration.mdx"
+        title: "Configuration & Variables"
+        heading: "# Configuration & Variables"
+      - path: "dsom_ansible_review.mdx"
+        title: "Review & Adoption of DSOM Ansible Configuration Guide (v3.6.2)"
+        heading: "# Review & Adoption of DSOM Ansible Configuration Guide (v3.6.2)"
+      - path: "explanation/diataxis.mdx"
+        title: "Diátaxis Documentation Framework"
+        heading: "# Diátaxis Documentation Framework"
+      - path: "explanation/dsom-governance.mdx"
+        title: "Deep State of Mind (DSOM) Governance Framework"
+        heading: "# Deep State of Mind (DSOM) Governance Framework"
+      - path: "explanation/system-architecture.mdx"
+        title: "System Architecture & Security Posture"
+        heading: "# System Architecture & Security Posture"
+      - path: "how-to/index.mdx"
+        title: "Operational Recipes Index"
+        heading: "# Operational Recipes Index"
+      - path: "how-to/run-tool.mdx"
+        title: "Execute Tool Workflows"
+        heading: "# Execute Tool Workflows"
+      - path: "index.mdx"
+        title: "About ASIMP & Documentation"
+        heading: "# About ASIMP (Ansible System Integrity Management Platform)"
+      - path: "legal-notice.mdx"
+        title: "Legal Notice & Disclaimer"
+        heading: null
+      - path: "local_testing_matrix_spec.mdx"
+        title: "ASIMP Local Testing Matrix & Telemetry Spec"
+        heading: "# ASIMP Local Testing Matrix & Telemetry Specification"
+      - path: "lynis.mdx"
+        title: "Lynis Auditing & Playbook Analysis"
+        heading: "# Lynis Auditing & Playbook Analysis"
+      - path: "openscap.mdx"
+        title: "OpenSCAP Integration & Playbook Analysis"
+        heading: "# OpenSCAP Integration & Playbook Analysis"
+      - path: "output_asimp.mdx"
+        title: "Output of ASIMP Example Report"
+        heading: "# Output of ASIMP Example Report"
+      - path: "output_lynis.mdx"
+        title: "Output of Lynis Auditing Report"
+        heading: "# Output of Lynis Auditing Report"
+      - path: "output_openscap.mdx"
+        title: "Output of OpenSCAP Evaluation Report"
+        heading: "# Output of OpenSCAP Evaluation Report"
+      - path: "podman_rootless.mdx"
+        title: "Rootless Podman 5+ & Quadlet Orchestration"
+        heading: "# Rootless Podman 5+ & Quadlet Orchestration"
+
+  tasks:
+    - name: Assert docs-source/docs.json exists and is a regular file
+      ansible.builtin.stat:
+        path: "{{ docs_json_path }}"
+      register: docs_json_stat
+
+    - name: Fail fast if docs-source/docs.json is missing
+      ansible.builtin.assert:
+        that:
+          - docs_json_stat.stat.exists
+          - docs_json_stat.stat.isreg
+        fail_msg: "docs-source/docs.json must exist as a regular file (Guard A source integrity)"
+
+    - name: Load and parse docs-source/docs.json
+      ansible.builtin.set_fact:
+        docs_json_data: "{{ lookup('file', docs_json_path) | from_json }}"
+
+    - name: Assert top-level Mintlify manifest keys are present and correct
+      ansible.builtin.assert:
+        that:
+          - docs_json_data["$schema"] == "https://mintlify.com/docs.json"
+          - docs_json_data.theme == "aspen"
+          - docs_json_data.name == "Automated Linux Security Hardening Platform (ASIMP)"
+          - docs_json_data.description | length > 0
+        fail_msg: "docs-source/docs.json must declare the expected Mintlify $schema, theme, name, and a non-empty description"
+
+    - name: Flatten all navigation page paths declared in docs.json
+      ansible.builtin.set_fact:
+        nav_pages: "{{ docs_json_data.navigation.tabs | map(attribute='groups') | flatten | map(attribute='pages') | flatten }}"
+
+    - name: Assert navigation declares at least the minimum MDX file floor (Guard B parity)
+      ansible.builtin.assert:
+        that:
+          - nav_pages | length >= 5
+        fail_msg: "docs-source/docs.json navigation must declare at least 5 pages to satisfy Guard B's minimum file count floor"
+
+    - name: Assert no duplicate page paths exist across the navigation
+      ansible.builtin.assert:
+        that:
+          - nav_pages | length == (nav_pages | unique | length)
+        fail_msg: "docs-source/docs.json navigation must not declare the same page path more than once"
+
+    - name: Assert every navigation page has a corresponding .mdx file on disk (Guard C parity)
+      ansible.builtin.stat:
+        path: "{{ docs_source_dir }}/{{ item }}.mdx"
+      register: nav_page_stat
+      loop: "{{ nav_pages }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Fail if any navigation-declared page is missing its .mdx source file
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isreg
+        fail_msg: "docs-source/{{ item.item }}.mdx is declared in docs.json navigation but is missing from disk"
+      loop: "{{ nav_page_stat.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Assert each new MDX page introduced by this PR exists on disk
+      ansible.builtin.stat:
+        path: "{{ docs_source_dir }}/{{ item.path }}"
+      register: new_mdx_stat
+      loop: "{{ new_mdx_pages }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: Fail if any new MDX page is missing or not a regular file
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isreg
+        fail_msg: "A new docs-source MDX page introduced by this PR is missing from disk"
+      loop: "{{ new_mdx_stat.results }}"
+      loop_control:
+        label: "{{ item.item.path }}"
+
+    - name: Load raw content of each new MDX page
+      ansible.builtin.set_fact:
+        mdx_raw_content: "{{ mdx_raw_content | default({}) | combine({item.path: lookup('file', docs_source_dir + '/' + item.path)}) }}"
+      loop: "{{ new_mdx_pages }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: Parse YAML frontmatter for each new MDX page
+      ansible.builtin.set_fact:
+        mdx_frontmatter: "{{ mdx_frontmatter | default({}) | combine({item.path: (mdx_raw_content[item.path].split('---', 2)[1] | from_yaml)}) }}"
+      loop: "{{ new_mdx_pages }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: Assert every new MDX page declares a non-empty frontmatter title matching the documented value
+      ansible.builtin.assert:
+        that:
+          - mdx_frontmatter[item.path].title is defined
+          - mdx_frontmatter[item.path].title == item.title
+        fail_msg: "{{ item.path }} frontmatter 'title' must equal '{{ item.title }}'"
+      loop: "{{ new_mdx_pages }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: Assert every new MDX page declares a non-empty frontmatter description
+      ansible.builtin.assert:
+        that:
+          - mdx_frontmatter[item.path].description is defined
+          - mdx_frontmatter[item.path].description | length > 0
+        fail_msg: "{{ item.path }} frontmatter must declare a non-empty 'description'"
+      loop: "{{ new_mdx_pages }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: Assert every new MDX page contains its expected top-level heading
+      ansible.builtin.assert:
+        that:
+          - item.heading in mdx_raw_content[item.path]
+        fail_msg: "{{ item.path }} must contain its expected top-level heading '{{ item.heading }}'"
+      loop: "{{ new_mdx_pages }}"
+      loop_control:
+        label: "{{ item.path }}"
+      when: item.heading is not none
+
+    - name: Assert docs-source/README.mdx documents the one-way sync notice
+      ansible.builtin.assert:
+        that:
+          - "'Auto-synced from `ASIMP/docs-source/`' in mdx_raw_content['README.mdx']"
+          - "'Do NOT edit here or via Mintlify web editor.' in mdx_raw_content['README.mdx']"
+        fail_msg: "docs-source/README.mdx must warn readers that it is auto-synced and must not be edited directly"
+
+    - name: Assert docs-source/SUMMARY.mdx links back to the README as the system overview entry
+      ansible.builtin.assert:
+        that:
+          - "'[System Overview](README.md)' in mdx_raw_content['SUMMARY.mdx']"
+        fail_msg: "docs-source/SUMMARY.mdx must list the System Overview entry linking to README.md"
