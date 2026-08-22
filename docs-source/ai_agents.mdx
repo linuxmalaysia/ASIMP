@@ -1,0 +1,128 @@
+---
+title: "ASIMP for AI Agents: Deep State of Mind (DSOM) Protocol Integration"
+description: "Topics: ai, agents, dsom, asimp, openwiki, cognitive-twin"
+---
+
+# ASIMP for AI Agents & The Deep State of Mind (DSOM) Protocol
+
+The Ansible System Integrity Management Platform (ASIMP) fully supports autonomous and semi-autonomous AI agents (such as Google Jules, Google Antigravity, Cursor, and Claude Code). To ensure high-efficiency, zero context window loss, and precise multi-agent synchronization, ASIMP adopts and implements the **Deep State of Mind (DSOM) For My AI Protocol**.
+
+This document outlines how ASIMP integrates with AI agents, leverages the repository's `.agents/` structured skill folder and the root `AGENTS.md` file, and establishes a robust Cognitive Twin pattern that prevents session-to-session memory loss and minimizes token bloat.
+
+---
+
+## 🏛️ Architectural Overview & The DSOM Philosophy
+
+In standard repository operations, AI assistants suffer from two major architectural bottlenecks:
+1. **Context Window Amnesia**: When a user closes a chat session or reboots a terminal client, the AI's episodic memory is destroyed. It has no memory of past technical discussions, structural reasoning, or pending action items.
+2. **Context Window Token Bloat**: When an AI crawls a large repository blindly, it ingests massive codebases, logs, and documentation files, spending tens of thousands of tokens of unnecessary context overhead on every request.
+
+ASIMP resolves these constraints by standardizing on the DSOM framework. Under this protocol, the AI acts as a **Cognitive Twin** to the human operator, maintaining structured spatial, conceptual, and procedural memories on the local filesystem.
+
+```
+       +--------------------------------------------------------+
+       |                  AI AGENT (COGNITIVE TWIN)             |
+       +--------------------------------------------------------+
+                               |
+         +---------------------+---------------------+
+         |                                           |
+         v                                           v
++-----------------------------+             +-----------------------------+
+|   PROCEDURAL MEMORY         |             |   CONCEPTUAL & SPATIAL MEMORY|
+|   (Skills & Workflows)      |             |   (The OpenWiki Knowledge Graph)|
+|   - .agents/skills/             |             |   - openwiki/                   |
+|   - AGENTS.md                   |             |   - .agents/brain/ (Mock/Live)  |
++-----------------------------+             +-----------------------------+
+```
+
+---
+
+## 🧭 Spatial and Episodic Memory: `.agents/brain`
+
+The **Sovereign Markdown Palace** is the cornerstone of DSOM's persistent spatial memory. Instead of storing state in a closed database, DSOM records past mental states directly in the file system, typically structured inside `.agents/brain/`.
+
+### 1. Spatial Memory & RAG-Style Retrieval
+To prevent token-expensive full-repository scanning, the AI's memory is organized into logical "Wings," "Halls," and "Rooms." Rather than reading the entire project on reboot, the agent:
+- Reads the master `palace_registry.md` index file.
+- Navigates strictly to the relevant sub-folder (e.g., `openwiki/architecture/` or `.agents/skills/`).
+- Discloses detailed documentation progressively, reading only what is necessary to complete the task.
+
+### 2. Episodic Memory Reanimation
+During daily operations, the AI and human cooperate in two critical rituals:
+- **Start of Day (SOD)**: The agent reads the handover manifest or active task state inside the spatial memory, instantaneously aligning its cognitive context with past decisions.
+- **End of Day (EOD)**: The agent compiles the task status, pending items, and architectural decisions into a semantic compaction manifest, writing it to `walkthrough.md` or `task.md` to persist the state for the next session.
+
+*Note: In ASIMP’s Google Jules sandbox environment, the native `reporting-ASIMP` role acts as a bridge, generating matches to comparative scorecards and `SECURITY_AUDIT_REPORT.md` inside `data/asimp_mock/` to bypass host privilege limitations while preserving spatial verification capabilities.*
+
+---
+
+## 🧠 Procedural Memory: `AGENTS.md` & `.agents/skills`
+
+AI instructions are stratified systematically to guarantee identical rules, security guardrails, and quality gates across all execution contexts.
+
+### 1. The Gateway: `AGENTS.md`
+Located at the root of the ASIMP repository, `AGENTS.md` acts as the Gateway File for AI crawlers. It summarizes:
+- The host-level **"Measure, Harden, Re-Measure"** auditing workflow.
+- Strict development parameters (Fully Qualified Collection Names, Jinja2 conditional booleans, template overrides).
+- Pointers to editor-specific rule configurations.
+
+### 2. Editor-Specific Guardrails
+Depending on the AI client you are operating, specialized rules are injected:
+- **`CLAUDE.md`** (Claude Code): CLI-specific commands, test suites, and styling preferences.
+- **`.cursorrules`** (Cursor): Autocomplete limits, local search settings, and chat boundaries.
+- **`.clinerules`** (Cline / Roo-Cline): Write-access confirmations and environment-safe hooks.
+- **`.windsurfrules`** (Windsurf): Code-agent terminal interaction boundaries.
+- **`.github/copilot-instructions.md`** (Copilot): Context and security guidelines.
+
+### 3. Procedural Agent Skills (`.agents/skills/`)
+ASIMP leverages Google Antigravity-compatible Agent Skills. Each skill represents a highly optimized, domain-specific execution workflow:
+- **Jules Sandbox Mode (`jules-sandbox-mode`)**: Directs unprivileged mock runs to write identical outputs under `data/asimp_mock/`.
+- **Ansible FQCN & Idempotency (`ansible-fqcn-idempotency`)**: Enforces the use of fully qualified collection names and strict idempotency handling.
+- **Jinja2 Template Overrides (`jinja2-template-overrides`)**: Handles syntax rules for Jinja2 parameters.
+
+---
+
+## 🌐 The Conceptual Memory: OpenWiki Integration
+
+ASIMP integrates with LangChain’s OpenWiki specification via the **Native Python OpenWiki Emulator** (`tools/openwiki_emulator.py`).
+
+### 1. High-Density Concept Nodes
+Rather than parsing heavy databases, the emulator converts raw Markdown files from `docs/` and `.agents/` into a structured, lightweight knowledge graph under `./openwiki/`. This graph condenses complex engineering schemas into a highly dense semantic hierarchy:
+- `quickstart.md`
+- `_skeleton.md`
+- Sub-categories for architecture, governance, memory, and automation.
+
+### 2. Token-Optimized Knowledge Retrieval
+Local AI agents read the generated `./openwiki/.last-update.json` and `./openwiki/_skeleton.md` files to understand the topology of the repository in less than 50 tokens. This completely bypasses external LLM API rate limits (Error 429) and provides:
+- Reclaimed disk space (~135MB node_modules replaced by a 3KB Python script).
+- Zero Node.js compilation friction in containerized user workspaces.
+
+---
+
+## 🛠️ Multi-Agent Swarm Orchestration
+
+When scaling ASIMP development or multi-OS hardening pipelines with autonomous agents, the platform enforces strict **Multi-Agent Swarm Protocols**:
+1. **The Lead Agent**: Handles the execution flow, coordinates changes, and validates the integrity of YAML/Jinja2 files.
+2. **The Verification Agent**: Run in parallel, auditing the proposed code changes against the pre-commit checks and regression tests.
+3. **The Collaboration Sync**: Synchronizes facts natively. For example, Google Jules and Antigravity collaborate by maintaining the unified temporal audit logs.
+
+---
+
+## 🔗 References & Learning Map
+
+To fully master the implementation of DSOM in your ASIMP workspace, consult these core references:
+- **[DSOM Project Entry Points & Benefits](https://linuxmalaysia.github.io/deep-state-of-mind-for-my-ai/START-HERE/)**: Master topological entry blueprint.
+- **[DSOM Efficiency Protocols](https://linuxmalaysia.github.io/deep-state-of-mind-for-my-ai/governance/DSOM-EFFICIENCY-PROTOCOLS/)**: RAG-style spatial memory and progressive disclosure strategies.
+- **[OpenWiki Integration Blueprint](https://linuxmalaysia.github.io/deep-state-of-mind-for-my-ai/governance/OPENWIKI-INTEGRATION-GUIDE/)**: Building custom lightweight concept graphs in Python.
+
+---
+
+```json
+{
+  "protocol": "DSOM",
+  "version": "1.0.0",
+  "status": "active",
+  "framework": "ASIMP",
+  "agent_support": "Google Jules / Antigravity / Cursor / Claude Code"
+}
+```

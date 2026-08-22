@@ -1,0 +1,128 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "aspen",
+  "name": "Automated Linux Security Hardening Platform (ASIMP)",
+  "colors": {
+    "primary": "#eb0404",
+    "light": "#8b0404",
+    "dark": "#db3131"
+  },
+  "favicon": "https://media.brand.dev/a694c066-2152-4a30-98c8-68562ca26cc9.png",
+  "logo": {
+    "light": "https://media.brand.dev/497513f9-6ee4-47f8-ac70-8d3024e53056.webp",
+    "dark": "https://media.brand.dev/497513f9-6ee4-47f8-ac70-8d3024e53056.webp"
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/linuxmalaysia/ASIMP"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Product Guide",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "README",
+              "SUMMARY",
+              "index"
+            ]
+          },
+          {
+            "group": "Core Architecture & Config",
+            "pages": [
+              "ansible_fqcn",
+              "ansible_playbook_map",
+              "architecture",
+              "configuration",
+              "local_testing_matrix_spec",
+              "podman_rootless",
+              "troubleshooting"
+            ]
+          },
+          {
+            "group": "Tutorials",
+            "pages": [
+              "tutorials/01-getting-started"
+            ]
+          },
+          {
+            "group": "How-To Guides",
+            "pages": [
+              "how-to/index",
+              "how-to/run-tool"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/add-asimp-footer",
+              "reference/add-okf-frontmatter",
+              "reference/ansible-cfg",
+              "reference/index",
+              "reference/jules-gh-feedback",
+              "reference/llms-txt2ctx",
+              "reference/lynis-ansible-role",
+              "reference/mock-asimp",
+              "reference/openwiki-emulator",
+              "reference/patch-roles",
+              "reference/playbooks",
+              "reference/prepare-docs",
+              "reference/reporting-asimp-role",
+              "reference/sysctl-suse-asimp-role",
+              "reference/update-ubuntu-asimp-role",
+              "reference/verify-sitemap-links"
+            ]
+          },
+          {
+            "group": "Explanation & Architecture",
+            "pages": [
+              "explanation/diataxis",
+              "explanation/dsom-governance",
+              "explanation/system-architecture"
+            ]
+          },
+          {
+            "group": "Security Engines & Auditing",
+            "pages": [
+              "lynis",
+              "openscap",
+              "output_asimp",
+              "output_lynis",
+              "output_openscap",
+              "security_posture_assessment"
+            ]
+          },
+          {
+            "group": "Governance & AI Protocol",
+            "pages": [
+              "ai_agents",
+              "dsom_ansible_review",
+              "legal-notice",
+              "sop_knowledge_first_discovery"
+            ]
+          },
+          {
+            "group": "Agent Skills",
+            "pages": [
+              "skills/ai-agent-instructions",
+              "skills/ansible-boolean-conditionals",
+              "skills/ansible-fqcn-idempotency",
+              "skills/ansible-galaxy-roles",
+              "skills/ansible-testing-linting",
+              "skills/asimp-core-workflow",
+              "skills/jekyll-docs-deployment",
+              "skills/jinja2-template-overrides",
+              "skills/jules-sandbox-mode",
+              "skills/ubuntu-scap-auditing"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "description": "ASIMP is an open-source, Ansible-powered framework for automated Linux security hardening, compliance auditing, and system integrity monitoring."
+}

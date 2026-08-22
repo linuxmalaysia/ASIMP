@@ -1,0 +1,48 @@
+---
+title: "Ansible Playbook and Document Architecture Map"
+description: "Topics: asimp, playbook, roles, architecture, mapping"
+---
+
+# Ansible Playbook and Document Architecture Map
+
+A cohesive architectural dictionary linking automated playbook files with their core roles, unprivileged services, and deployment/operational documentation.
+
+---
+
+## 🧭 Master Playbook and Document Matrix
+
+The following index maps playbooks, roles, and support files in ASIMP to their corresponding documentation sections:
+
+| Playbook / Script | Primary Purpose | Services & Tasks Managed | Related Documentation |
+| :--- | :--- | :--- | :--- |
+| `play.yml` | Multi-host remote execution | Dual-engine baseline checks, upgrades, system hardening, and verification | `docs/openscap.md`, `docs/lynis.md`, `docs/configuration.md` |
+| `play-localhost.yml` | Localhost execution | Hardening and audit on localhost with dynamic privilege level checking | `docs/index.md`, `docs/troubleshooting.md`, `docs/dsom_ansible_review.md` |
+| `playbooks/matrix_test.yml` | Local multi-OS testing matrix | Parallel Podman 5+ container orchestration for Ubuntu, Debian, and AlmaLinux | `docs/local_testing_matrix_spec.md` |
+| `tests/test_*.yml` | Playbook-level regression tests | Validates layout metadata, navbar entries, footers, and execution logic | `docs/local_testing_matrix_spec.md`, `docs/dsom_ansible_review.md` |
+| `scripts/verify_sitemap_links.py` | Pre-merge links validation | Crawls local documents and verifies GitBook links and sitemap integrity | `docs/_layouts/default.html` |
+
+---
+
+## 🛡️ 1. Security Operations: Hardening & Auditing
+
+OS-level security hardening is managed via `play.yml` or `play-localhost.yml`, integrating baseline policy validations alongside preventative break-prevention checks:
+
+```yaml
+# Pre-Remediation Safety Gate Check Block
+- name: Verify no critical risk factors that would break the system
+  ansible.builtin.assert:
+    that:
+      - asimp_risk_level not in ['CRITICAL_RISK', 'HIGH_RISK']
+    fail_msg: "Pre-Remediation Safety Check failed: High risk of system breakage detected. Aborting!"
+```
+
+By validating SSH key status, listening ports, and filesystem availability, the playbook safely drops back to simulations (Audits) in unprivileged containers/Google Jules sandboxes.
+
+---
+
+## 📊 2. Continuous Integration & Local Verification
+
+To guarantee that updates do not introduce package or systemd configuration crashes, diagnostic pipelines are triggered automatically:
+
+- **Continuous Integration (CI/CD)**: `playbooks/matrix_test.yml` spins up sandboxed environments locally to execute syntax checks and structural evaluations.
+- **Developer Feedback Loop**: Test summaries and detailed telemetry are compiled atomically and exported back to developers securely to maintain maximum workspace transparency.
