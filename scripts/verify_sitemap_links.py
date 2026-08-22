@@ -237,12 +237,6 @@ def compare_file_contents(filepath_a: str, filepath_b: str, file_type: str) -> N
     print(f"[+] Deployed copy {filepath_b} is perfectly synchronized with root {filepath_a} ({file_type}).")
 
 def main() -> None:
-    """
-    Validate sitemap synchronization and verify sitemap and sampled GitBook URLs.
-    
-    The process exits with a failure status when files are missing, sitemap contents
-    differ, XML is malformed, or URL validation fails.
-    """
     print("[*] Starting Sitemap and Link Integrity Verification...")
 
     # 1. Compare docs/ sitemaps against root sitemaps to ensure perfect sync before URL verification
@@ -299,7 +293,7 @@ def main() -> None:
 
     # 6. Verify GitBook URLs loaded from the separate validation inventory
     print(f"[*] Loading validation inventory of {len(GITBOOK_URLS)} GitBook URLs...")
-    print(f"[*] Verifying a sample of 5 GitBook URLs from the inventory to check live routing...")
+    print("[*] Verifying a sample of 5 GitBook URLs from the inventory to check live routing...")
     random.seed(42) # Deterministic sample selection
     sample_gitbook = random.sample(GITBOOK_URLS, min(5, len(GITBOOK_URLS)))
     with ThreadPoolExecutor(max_workers=5) as executor:

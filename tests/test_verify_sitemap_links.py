@@ -86,6 +86,47 @@ class TestVerifySitemapLinks(unittest.TestCase):
         except SystemExit:
             self.fail("compare_file_contents exited unexpectedly on matching files")
 
+    @patch("verify_sitemap_links.check_url")
+    def test_main_success(self, mock_check_url: MagicMock) -> None:
+        mock_check_url.return_value = (True, "OK")
+        os.makedirs("docs", exist_ok=True)
+        sitemap_txt = "https://linuxmalaysia.github.io/ASIMP/\n"
+        sitemap_xml = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://linuxmalaysia.github.io/ASIMP/</loc></url></urlset>'
+
+        with open("sitemap.txt", "w") as f:
+            f.write(sitemap_txt)
+        with open("docs/sitemap.txt", "w") as f:
+            f.write(sitemap_txt)
+        with open("sitemap.xml", "w") as f:
+            f.write(sitemap_xml)
+        with open("docs/sitemap.xml", "w") as f:
+            f.write(sitemap_xml)
+
+        try:
+            verify_sitemap_links.main()
+        except SystemExit as exc:
+            self.fail(f"verify_sitemap_links.main() exited unexpectedly with code {exc.code}")
+
+    @patch("verify_sitemap_links.check_url")
+    def test_main_failure_nonzero_exit(self, mock_check_url: MagicMock) -> None:
+        mock_check_url.return_value = (False, "HTTPError:500")
+        os.makedirs("docs", exist_ok=True)
+        sitemap_txt = "https://linuxmalaysia.github.io/ASIMP/broken.html\n"
+        sitemap_xml = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://linuxmalaysia.github.io/ASIMP/broken.html</loc></url></urlset>'
+
+        with open("sitemap.txt", "w") as f:
+            f.write(sitemap_txt)
+        with open("docs/sitemap.txt", "w") as f:
+            f.write(sitemap_txt)
+        with open("sitemap.xml", "w") as f:
+            f.write(sitemap_xml)
+        with open("docs/sitemap.xml", "w") as f:
+            f.write(sitemap_xml)
+
+        with self.assertRaises(SystemExit) as cm:
+            verify_sitemap_links.main()
+        self.assertNotEqual(cm.exception.code, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
