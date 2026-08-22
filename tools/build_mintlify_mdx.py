@@ -24,7 +24,15 @@ OUTPUT_DIR = PROJECT_ROOT / "docs-source"
 
 
 def parse_frontmatter(content: str) -> Tuple[Dict[str, Any], str]:
-    """Extract YAML frontmatter and body from Markdown text."""
+    """Extract YAML frontmatter and body from Markdown text.
+
+    Args:
+        content (str): Raw markdown string content.
+
+    Returns:
+        Tuple[Dict[str, Any], str]: A tuple containing frontmatter metadata dictionary
+        and cleaned markdown body.
+    """
     if content.startswith("---"):
         parts = content.split("---", 2)
         if len(parts) >= 3:
@@ -38,16 +46,15 @@ def parse_frontmatter(content: str) -> Tuple[Dict[str, Any], str]:
 
 
 def extract_title_and_description(fm: Dict[str, Any], body: str, fallback_title: str) -> Tuple[str, str]:
-    """
-    Determine a document's title and description from its frontmatter or body content.
-    
-    Parameters:
-        fm (Dict[str, Any]): Frontmatter metadata.
-        body (str): Document body used to derive missing metadata.
-        fallback_title (str): Title used when the frontmatter and body contain no title.
-    
+    """Determine document title and description from frontmatter or body.
+
+    Args:
+        fm (Dict[str, Any]): Extracted YAML frontmatter.
+        body (str): Markdown document body.
+        fallback_title (str): Fallback title string based on filename.
+
     Returns:
-        Tuple[str, str]: The document title and description.
+        Tuple[str, str]: Derived title and description strings.
     """
     title = fm.get("title")
     if not title:
@@ -77,14 +84,15 @@ def extract_title_and_description(fm: Dict[str, Any], body: str, fallback_title:
 
 
 def convert_md_to_mdx(fm: Dict[str, Any], body: str, fallback_title: str) -> str:
-    """
-    Convert Markdown content and YAML frontmatter into Mintlify-compatible MDX.
-    
-    Parameters:
-        fallback_title (str): Title to use when the source content does not provide one.
-    
+    """Convert Markdown content and YAML frontmatter into valid Mintlify MDX format.
+
+    Args:
+        fm (Dict[str, Any]): Parsed frontmatter metadata.
+        body (str): Markdown content body.
+        fallback_title (str): Fallback title string.
+
     Returns:
-        str: MDX content with normalized title and description frontmatter.
+        str: Compiled MDX document with sanitized frontmatter and content body.
     """
     title, description = extract_title_and_description(fm, body, fallback_title)
 
@@ -100,10 +108,11 @@ def convert_md_to_mdx(fm: Dict[str, Any], body: str, fallback_title: str) -> str
 
 
 def discover_files() -> List[Tuple[Path, str]]:
-    """Discover Markdown files and map each source path to its output MDX path.
-    
+    """Discover all .md files in docs/, skills/, and .agents/skills/.
+
     Returns:
-        List[Tuple[Path, str]]: Source paths paired with relative target MDX paths.
+        List[Tuple[Path, str]]: List of tuples containing source Path objects
+        and target relative MDX file paths.
     """
     discovered: List[Tuple[Path, str]] = []
 
@@ -137,14 +146,13 @@ def discover_files() -> List[Tuple[Path, str]]:
 
 
 def categorize_page(page_path: str) -> str:
-    """
-    Assign a documentation page to its navigation group based on its path.
-    
-    Parameters:
-        page_path (str): Documentation page path to categorize.
-    
+    """Categorize a page path into a navigation group.
+
+    Args:
+        page_path (str): Relative page path.
+
     Returns:
-        str: Navigation group name assigned to the page.
+        str: Navigation group name.
     """
     norm = page_path.replace("\\", "/")
 
@@ -169,14 +177,13 @@ def categorize_page(page_path: str) -> str:
 
 
 def build_docs_json(pages_rel: List[str]) -> Dict[str, Any]:
-    """
-    Builds the Mintlify documentation configuration with pages organized into navigation groups.
-    
-    Parameters:
-        pages_rel (List[str]): Relative paths of documentation pages to include.
-    
+    """Construct docs.json dictionary with navigation structure.
+
+    Args:
+        pages_rel (List[str]): List of relative page paths.
+
     Returns:
-        Dict[str, Any]: Mintlify configuration containing branding, repository navigation, metadata, and ordered page groups.
+        Dict[str, Any]: Complete docs.json configuration dictionary.
     """
     groups_dict: Dict[str, List[str]] = {}
 
