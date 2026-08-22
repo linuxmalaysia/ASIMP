@@ -38,7 +38,17 @@ def parse_frontmatter(content: str) -> Tuple[Dict[str, Any], str]:
 
 
 def extract_title_and_description(fm: Dict[str, Any], body: str, fallback_title: str) -> Tuple[str, str]:
-    """Determine document title and description from frontmatter or body."""
+    """
+    Determine a document's title and description from its frontmatter or body content.
+    
+    Parameters:
+        fm (Dict[str, Any]): Frontmatter metadata.
+        body (str): Document body used to derive missing metadata.
+        fallback_title (str): Title used when the frontmatter and body contain no title.
+    
+    Returns:
+        Tuple[str, str]: The document title and description.
+    """
     title = fm.get("title")
     if not title:
         # Search for first H1 in body
@@ -67,7 +77,15 @@ def extract_title_and_description(fm: Dict[str, Any], body: str, fallback_title:
 
 
 def convert_md_to_mdx(fm: Dict[str, Any], body: str, fallback_title: str) -> str:
-    """Convert Markdown content and YAML frontmatter into valid Mintlify MDX format."""
+    """
+    Convert Markdown content and YAML frontmatter into Mintlify-compatible MDX.
+    
+    Parameters:
+        fallback_title (str): Title to use when the source content does not provide one.
+    
+    Returns:
+        str: MDX content with normalized title and description frontmatter.
+    """
     title, description = extract_title_and_description(fm, body, fallback_title)
 
     # Sanitize title and description for YAML frontmatter
@@ -82,9 +100,10 @@ def convert_md_to_mdx(fm: Dict[str, Any], body: str, fallback_title: str) -> str
 
 
 def discover_files() -> List[Tuple[Path, str]]:
-    """Discover all .md files in docs/, skills/, and .agents/skills/.
-
-    Returns list of (source_path, target_rel_mdx_path).
+    """Discover Markdown files and map each source path to its output MDX path.
+    
+    Returns:
+        List[Tuple[Path, str]]: Source paths paired with relative target MDX paths.
     """
     discovered: List[Tuple[Path, str]] = []
 
@@ -118,7 +137,15 @@ def discover_files() -> List[Tuple[Path, str]]:
 
 
 def categorize_page(page_path: str) -> str:
-    """Categorize a page path into a navigation group."""
+    """
+    Assign a documentation page to its navigation group based on its path.
+    
+    Parameters:
+        page_path (str): Documentation page path to categorize.
+    
+    Returns:
+        str: Navigation group name assigned to the page.
+    """
     norm = page_path.replace("\\", "/")
 
     if norm.startswith("tutorials/"):
@@ -142,7 +169,15 @@ def categorize_page(page_path: str) -> str:
 
 
 def build_docs_json(pages_rel: List[str]) -> Dict[str, Any]:
-    """Construct docs.json dictionary with navigation structure."""
+    """
+    Builds the Mintlify documentation configuration with pages organized into navigation groups.
+    
+    Parameters:
+        pages_rel (List[str]): Relative paths of documentation pages to include.
+    
+    Returns:
+        Dict[str, Any]: Mintlify configuration containing branding, repository navigation, metadata, and ordered page groups.
+    """
     groups_dict: Dict[str, List[str]] = {}
 
     group_order = [
