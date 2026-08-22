@@ -8,7 +8,7 @@
         key: os_{{ ansible_distribution }}
 
 - name: Run ASIMP Security Hardening and Audits
-  hosts: os_Ubuntu:os_Debian:os_CentOS:os_RedHat:os_Rocky:os_AlmaLinux
+  hosts: os_Ubuntu:os_Debian:os_CentOS:os_RedHat:os_Rocky:os_AlmaLinux:os_SLES:os_SLED:os_openSUSE:os_Suse
   gather_facts: true
   become: false
   vars:
@@ -194,6 +194,18 @@
             lynis_audit_system_linux: true
       ignore_errors: "{{ is_sandbox_jules }}"
       when: asimp_privilege_level == 'full'
+      become: true
+
+    - name: Apply SUSE/SLED Sysctl Network Hardening
+      block:
+        - name: Apply SUSE/SLED Sysctl Network Hardening
+          ansible.builtin.include_role:
+            name: sysctl-suse-ASIMP
+      ignore_errors: "{{ is_sandbox_jules }}"
+      when:
+        - (ansible_distribution | default('') in ['SUSE', 'SLES', 'SLED', 'openSUSE']) or (ansible_os_family | default('') == 'Suse')
+        - (ansible_distribution_version | default('') == '15.7' or ansible_distribution_version | default('') == '15 SP7')
+        - asimp_privilege_level == 'full'
       become: true
 
     - name: Run AFTER Hardening Audits (OpenSCAP & Lynis)

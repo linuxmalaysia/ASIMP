@@ -1,0 +1,52 @@
+---
+- name: Calculate node hardware resources (Memory, CPU, Disk)
+  ansible.builtin.set_fact:
+    suse_sysctl_node_mem_mb: "{{ ansible_facts['memtotal_mb'] | default(1024) | int }}"
+    suse_sysctl_node_vcpus: "{{ ansible_facts['processor_vcpus'] | default(1) | int }}"
+    suse_sysctl_node_disk_gb: "{{ ((ansible_facts['mounts'] | default([]) | selectattr('mount', 'equalto', '/') | map(attribute='size_total') | first | default(10737418240)) / (1024 * 1024 * 1024)) | round(2) }}"
+
+- name: Calculate sysctl parameters based on node hardware capacity or fixed defaults
+  ansible.builtin.set_fact:
+    suse_sysctl_tcp_max_syn_backlog_calc: "{{ (suse_sysctl_override_tcp_max_syn_backlog | int) if (suse_sysctl_override_tcp_max_syn_backlog is defined and suse_sysctl_override_tcp_max_syn_backlog is not none) else (([4096, (suse_sysctl_node_mem_mb * 4), (suse_sysctl_node_vcpus * 2048)] | max | int) if (suse_sysctl_auto_calc_resources | default(true) | bool) else 4096) }}"
+    suse_sysctl_somaxconn_calc: "{{ (suse_sysctl_override_somaxconn | int) if (suse_sysctl_override_somaxconn is defined and suse_sysctl_override_somaxconn is not none) else (([1024, (suse_sysctl_node_vcpus * 512), (suse_sysctl_node_mem_mb)] | max | int) if (suse_sysctl_auto_calc_resources | default(true) | bool) else 1024) }}"
+
+- name: Display calculated resource metrics and sysctl values
+  ansible.builtin.debug:
+    msg:
+      - "Node Memory: {{ suse_sysctl_node_mem_mb }} MB"
+      - "Node vCPUs: {{ suse_sysctl_node_vcpus }}"
+      - "Node Root Disk Size: {{ suse_sysctl_node_disk_gb }} GB (reported for telemetry & storage safety)"
+      - "Auto-calculation enabled: {{ suse_sysctl_auto_calc_resources | default(true) | bool }}"
+      - "Calculated net.ipv4.tcp_max_syn_backlog: {{ suse_sysctl_tcp_max_syn_backlog_calc }}"
+      - "Calculated net.core.somaxconn: {{ suse_sysctl_somaxconn_calc }}"
+
+- name: Apply SUSE SLED 15 SP7 Network Sysctl Hardening
+  block:
+    - name: Ensure /etc/sysctl.d directory exists
+      ansible.builtin.file:
+        path: /etc/sysctl.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Deploy SUSE 15 SP7 network sysctl configuration
+      ansible.builtin.template:
+        src: 99-suse-network-hardening.conf.j2
+        dest: "{{ suse_sysctl_config_file }}"
+        owner: root
+        group: root
+        mode: '0644'
+      register: suse_sysctl_conf_template
+
+    - name: Apply sysctl configuration from 99-suse-network-hardening.conf
+      ansible.builtin.command:
+        argv:
+          - sysctl
+          - -p
+          - "{{ suse_sysctl_config_file }}"
+      when: suse_sysctl_conf_template.changed
+      changed_when: true
+  when:
+    - asimp_privilege_level | default('full') == 'full'
+    - not (is_sandbox_jules | default(false) | bool)

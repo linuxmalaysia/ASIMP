@@ -1,0 +1,37 @@
+---
+- name: Standalone SUSE/SLED Sysctl Network Hardening
+  hosts: all
+  gather_facts: true
+  become: false
+  tasks:
+    - name: Set sandbox fact
+      ansible.builtin.set_fact:
+        is_sandbox_jules: "{{ is_sandbox_jules | default(false) }}"
+
+    - name: Test write access - Create temporary file in /etc
+      ansible.builtin.tempfile:
+        state: file
+        path: /etc
+        suffix: _asimp_write_test
+      register: r_write_tempfile
+      failed_when: false
+      ignore_errors: true
+
+    - name: Set dynamic privilege level and execution mode
+      ansible.builtin.set_fact:
+        asimp_privilege_level: "{{ 'limited' if (is_sandbox_jules | default(false) | bool or r_write_tempfile.path is not defined or r_write_tempfile.path | length == 0) else 'full' }}"
+
+    - name: Test write access - Clean up temporary file
+      ansible.builtin.file:
+        path: "{{ r_write_tempfile.path }}"
+        state: absent
+      when: r_write_tempfile.path is defined and r_write_tempfile.path | length > 0
+      ignore_errors: true
+
+    - name: Apply SUSE/SLED Sysctl Hardening
+      ansible.builtin.include_role:
+        name: sysctl-suse-ASIMP
+      when:
+        - (ansible_distribution | default('') in ['SUSE', 'SLES', 'SLED', 'openSUSE']) or (ansible_os_family | default('') == 'Suse')
+        - (ansible_distribution_version | default('') == '15.7' or ansible_distribution_version | default('') == '15 SP7')
+      become: "{{ asimp_privilege_level == 'full' }}"
