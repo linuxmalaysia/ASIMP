@@ -30,6 +30,9 @@ on:
         type: string
         default: '10'
 
+permissions:
+  contents: read
+
 jobs:
   sync-mintlify-docs:
     name: Build MDX & Sync Mintlify Docs
