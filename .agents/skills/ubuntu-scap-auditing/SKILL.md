@@ -14,6 +14,7 @@ metadata:
   version: "1.0.0"
   project: ASIMP
 okf_version: "0.1"
+sidebarTitle: "Ubuntu Dynamic SCAP"
 topics: [scap, openscap, ubuntu, auditing, oval, compliance]
 ---
 

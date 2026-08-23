@@ -2,6 +2,7 @@
 okf_version: "0.1"
 type: "reference"
 title: "Google OKF Frontmatter Patcher Reference"
+sidebarTitle: "Google OKF Frontmatter Patcher Reference"
 description: "Detailed specification of scripts/add_okf_frontmatter.py for Google OKF v0.1 YAML compliance."
 timestamp: "2026-08-15T00:00:00Z"
 topics: ["okf", "frontmatter", "patcher", "reference"]

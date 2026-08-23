@@ -40,6 +40,13 @@ class TestMintlifyMDXBuilder(unittest.TestCase):
         self.assertEqual(sidebar, "Fm Title")
         self.assertEqual(desc, "First paragraph here.")
 
+    def test_extract_title_and_description_explicit_sidebar_title(self):
+        fm = {"title": "Full Page Title", "sidebarTitle": "Custom Sidebar"}
+        body = "Body content."
+        title, sidebar, desc = extract_title_and_description(fm, body, "Fallback")
+        self.assertEqual(title, "Full Page Title")
+        self.assertEqual(sidebar, "Custom Sidebar")
+
     def test_convert_md_to_mdx(self):
         fm = {"title": "MDX Test", "description": "MDX Desc"}
         body = "Hello Mintlify!"
@@ -49,6 +56,11 @@ class TestMintlifyMDXBuilder(unittest.TestCase):
         self.assertTrue('description: "MDX Desc"' in mdx)
         self.assertTrue("Hello Mintlify!" in mdx)
 
+    def test_convert_md_to_mdx_explicit_sidebar_title(self):
+        fm = {"title": "MDX Test", "sidebarTitle": "Explicit Label", "description": "MDX Desc"}
+        body = "Hello Mintlify!"
+        mdx = convert_md_to_mdx(fm, body, "Fallback")
+        self.assertTrue('sidebarTitle: "Explicit Label"' in mdx)
     def test_synthesize_sidebar_title_short_title_unchanged(self):
         self.assertEqual(synthesize_sidebar_title("Architecture & Design"), "Architecture & Design")
 

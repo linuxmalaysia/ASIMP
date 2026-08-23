@@ -2,6 +2,7 @@
 okf_version: "0.1"
 type: "reference"
 title: "Sovereign OS Role Patcher Reference"
+sidebarTitle: "Sovereign OS Role Patcher"
 description: "Detailed specification of scripts/patch_roles.py for on-the-fly sandbox compatibility patching."
 timestamp: "2026-08-15T00:00:00Z"
 topics: ["roles", "patcher", "sandbox", "ansible", "reference"]
