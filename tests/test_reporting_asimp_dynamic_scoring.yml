@@ -147,11 +147,12 @@
     - name: Assert the real BEFORE OpenSCAP scan only runs when oscap is present and never hard-fails
       ansible.builtin.assert:
         that:
-          - "'oscap xccdf eval' in before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox']['ansible.builtin.shell']"
+          - "'ansible.builtin.command' in before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox']"
+          - before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox']['ansible.builtin.command'].argv == ['oscap', 'xccdf', 'eval', '--profile', "{% raw %}{{ openscap_profile }}{% endraw %}", '--results', "{% raw %}{{ openscap_report_dir }}{% endraw %}/ssg-results-before.xml", "{% raw %}{{ sandbox_datastream_path }}{% endraw %}"]
           - before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox'].register == 'r_sandbox_oscap_run_before'
           - before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox'].failed_when == false
           - "'oscap_present_before' in before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox'].when"
-        fail_msg: "'Execute real BEFORE OpenSCAP scan inside sandbox' must be gated on oscap_present_before and tolerate a non-zero exit code"
+        fail_msg: "'Execute real BEFORE OpenSCAP scan inside sandbox' must use ansible.builtin.command with structured argv, gated on oscap_present_before and tolerate a non-zero exit code"
 
     - name: Assert the four changed OpenSCAP score parser tasks use command with structured argv and expected registration/gating
       ansible.builtin.assert:

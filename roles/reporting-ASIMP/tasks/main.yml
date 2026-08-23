@@ -299,11 +299,16 @@
       register: r_pre_scan_lynis_before
 
     - name: Execute real BEFORE OpenSCAP scan inside sandbox
-      ansible.builtin.shell: >
-        oscap xccdf eval
-        --profile {{ openscap_profile }}
-        --results {{ openscap_report_dir }}/ssg-results-before.xml
-        {{ sandbox_datastream_path }}
+      ansible.builtin.command:
+        argv:
+          - oscap
+          - xccdf
+          - eval
+          - --profile
+          - "{{ openscap_profile }}"
+          - --results
+          - "{{ openscap_report_dir }}/ssg-results-before.xml"
+          - "{{ sandbox_datastream_path }}"
       register: r_sandbox_oscap_run_before
       failed_when: false
       changed_when: false
