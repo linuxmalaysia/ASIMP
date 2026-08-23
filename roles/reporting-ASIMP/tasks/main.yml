@@ -608,11 +608,16 @@
       register: r_pre_scan_lynis_after
 
     - name: Execute real AFTER OpenSCAP scan inside sandbox
-      ansible.builtin.shell: >
-        oscap xccdf eval
-        --profile {{ openscap_profile }}
-        --results {{ openscap_report_dir }}/ssg-results-after.xml
-        {{ sandbox_datastream_path }}
+      ansible.builtin.command:
+        argv:
+          - oscap
+          - xccdf
+          - eval
+          - --profile
+          - "{{ openscap_profile }}"
+          - --results
+          - "{{ openscap_report_dir }}/ssg-results-after.xml"
+          - "{{ sandbox_datastream_path }}"
       register: r_sandbox_oscap_run_after
       failed_when: false
       changed_when: false
