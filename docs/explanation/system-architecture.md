@@ -2,6 +2,7 @@
 okf_version: "0.1"
 type: "architecture"
 title: "System Architecture & Security Posture"
+sidebarTitle: "System Architecture"
 description: "Detailed system architecture, security pillars, zero-trust model, and dual-engine auditing pipelines of ASIMP."
 timestamp: "2026-08-15T00:00:00Z"
 topics: ["architecture", "security", "openscap", "lynis", "sandbox"]

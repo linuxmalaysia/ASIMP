@@ -2,6 +2,7 @@
 okf_version: "0.1"
 type: reference
 title: SUSE/SLED Sysctl Hardening Role Reference
+sidebarTitle: "SUSE/SLED Sysctl Hardening"
 timestamp: "2026-08-05T12:00:00Z"
 topics:
   - asimp

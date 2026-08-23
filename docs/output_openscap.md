@@ -2,6 +2,7 @@
 okf_version: "0.1"
 type: report
 title: "Output of OpenSCAP Evaluation Report"
+sidebarTitle: "Output of OpenSCAP Evaluation Report"
 timestamp: "2026-08-05T23:54:50Z"
 topics: [openscap, compliance, cis, output, report]
 ---

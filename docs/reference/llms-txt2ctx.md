@@ -2,6 +2,7 @@
 okf_version: "0.1"
 type: "reference"
 title: "LLM XML Context Compiler Reference"
+sidebarTitle: "LLMs.txt XML Context Compiler"
 description: "Detailed specification of scripts/llms_txt2ctx.py for converting llms.txt to LLM context."
 timestamp: "2026-08-15T00:00:00Z"
 topics: ["llms-txt", "xml-compiler", "python", "reference"]
