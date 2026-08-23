@@ -54,10 +54,12 @@ def synthesize_sidebar_title(title: str) -> str:
     Returns:
         str: Concise sidebar title label.
     """
-    # Strip product name and trim after colon or dash
-    clean = re.sub(r"\bASIMP\b", "", title, flags=re.IGNORECASE)
-    clean = clean.split(":")[0].split("-")[0].strip()
-    words = [w for w in clean.split() if w.strip()]
+    # Strip product name and strip leading separators before splitting
+    clean = re.sub(r"\bASIMP\b", "", title, flags=re.IGNORECASE).strip()
+    clean_base = re.split(r"[:\-]", clean)[0].strip()
+    words = [w for w in clean_base.split() if w.strip()]
+    if not words:
+        words = [w for w in clean.split() if w.strip()]
     if not words:
         words = [w for w in title.split() if w.strip()]
     sidebar_words = words[:3]

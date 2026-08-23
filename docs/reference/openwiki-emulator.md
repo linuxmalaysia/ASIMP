@@ -2,6 +2,7 @@
 okf_version: "0.1"
 type: "reference"
 title: "OpenWiki Emulator Specification"
+sidebarTitle: "OpenWiki Emulator Specification"
 description: "Technical reference for the lightweight, LangChain-compatible local conceptual memory indexer."
 timestamp: "2026-08-15T00:00:00Z"
 topics: ["openwiki", "ai", "emulator", "reference"]

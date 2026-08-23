@@ -3,6 +3,7 @@ layout: default
 okf_version: "0.1"
 type: documentation
 title: "Lynis Auditing & Playbook Analysis"
+sidebarTitle: "Lynis Auditing & Playbook Analysis"
 timestamp: "2026-08-05T12:00:00Z"
 topics: [lynis, security, compliance, audit, playbooks, ansible]
 ---

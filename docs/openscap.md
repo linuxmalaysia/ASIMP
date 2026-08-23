@@ -3,6 +3,7 @@ layout: default
 okf_version: "0.1"
 type: documentation
 title: "OpenSCAP Integration & Playbook Analysis"
+sidebarTitle: "OpenSCAP Integration & Playbook Analysis"
 timestamp: "2026-08-05T12:00:00Z"
 topics: [openscap, security, compliance, audit, playbooks, ansible]
 ---
