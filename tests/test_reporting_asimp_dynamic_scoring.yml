@@ -147,11 +147,40 @@
     - name: Assert the real BEFORE OpenSCAP scan only runs when oscap is present and never hard-fails
       ansible.builtin.assert:
         that:
-          - "'oscap xccdf eval' in before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox']['ansible.builtin.shell']"
+          - "'ansible.builtin.command' in before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox']"
+          - before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox']['ansible.builtin.command'].argv == ['oscap', 'xccdf', 'eval', '--profile', "{% raw %}{{ openscap_profile }}{% endraw %}", '--results', "{% raw %}{{ openscap_report_dir }}{% endraw %}/ssg-results-before.xml", "{% raw %}{{ sandbox_datastream_path }}{% endraw %}"]
           - before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox'].register == 'r_sandbox_oscap_run_before'
           - before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox'].failed_when == false
           - "'oscap_present_before' in before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox'].when"
-        fail_msg: "'Execute real BEFORE OpenSCAP scan inside sandbox' must be gated on oscap_present_before and tolerate a non-zero exit code"
+        fail_msg: "'Execute real BEFORE OpenSCAP scan inside sandbox' must use ansible.builtin.command with structured argv, gated on oscap_present_before and tolerate a non-zero exit code"
+
+    - name: Assert the real BEFORE OpenSCAP scan has no leftover shell key and uses a structured list-type argv of the expected length
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.shell' not in before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox']"
+          - (before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox']['ansible.builtin.command'].argv | type_debug) == 'list'
+          - before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox']['ansible.builtin.command'].argv | length == 8
+        fail_msg: "'Execute real BEFORE OpenSCAP scan inside sandbox' must no longer define an ansible.builtin.shell key, and its ansible.builtin.command must use a structured (list) argv of exactly 8 elements"
+
+    - name: Assert the real BEFORE OpenSCAP scan is gated on both oscap_present_before and sandbox_oscap_supported, and never reports changed
+      ansible.builtin.assert:
+        that:
+          - before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox'].when == ['oscap_present_before', 'sandbox_oscap_supported']
+          - before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox'].changed_when == false
+        fail_msg: "'Execute real BEFORE OpenSCAP scan inside sandbox' must be gated on the exact ['oscap_present_before', 'sandbox_oscap_supported'] when-list and set changed_when: false"
+
+    - name: Assert the real BEFORE OpenSCAP scan's argv contains no shell metacharacters (regression guard for the command-injection fix)
+      ansible.builtin.assert:
+        that:
+          - item not in (before_tasks_by_name['Execute real BEFORE OpenSCAP scan inside sandbox']['ansible.builtin.command'].argv | join(' '))
+        fail_msg: >-
+          'Execute real BEFORE OpenSCAP scan inside sandbox' now runs via ansible.builtin.command with a
+          structured argv, which does not invoke a shell. None of its argv elements may rely on the shell
+          metacharacter '{{ item }}', or it would be passed as a literal argument rather than being
+          interpreted, indicating the command-injection fix regressed.
+      loop: "{{ shell_metacharacters }}"
+      loop_control:
+        label: "{{ item }}"
 
     - name: Assert the four changed OpenSCAP score parser tasks use command with structured argv and expected registration/gating
       ansible.builtin.assert:
@@ -314,6 +343,15 @@
           - after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox'].failed_when == false
           - "'oscap_present_after' in after_tasks_by_name['Parse real AFTER OpenSCAP compliance score inside sandbox'].when"
         fail_msg: "'Parse real AFTER OpenSCAP compliance score inside sandbox' must invoke parse_openscap_score.py via ansible.builtin.command (not ansible.builtin.shell) and register r_sandbox_oscap_parsed_after"
+
+    - name: Assert the sibling 'Execute real AFTER OpenSCAP scan inside sandbox' task is unaffected by this change (regression guard)
+      ansible.builtin.assert:
+        that:
+          - "'ansible.builtin.shell' in after_tasks_by_name['Execute real AFTER OpenSCAP scan inside sandbox']"
+          - "'oscap xccdf eval' in after_tasks_by_name['Execute real AFTER OpenSCAP scan inside sandbox']['ansible.builtin.shell']"
+          - "'ansible.builtin.command' not in after_tasks_by_name['Execute real AFTER OpenSCAP scan inside sandbox']"
+          - after_tasks_by_name['Execute real AFTER OpenSCAP scan inside sandbox'].register == 'r_sandbox_oscap_run_after'
+        fail_msg: "'Execute real AFTER OpenSCAP scan inside sandbox' must remain an ansible.builtin.shell task, unaffected by the BEFORE scan's shell->command conversion in this PR"
 
     - name: Build a name-to-task lookup for tasks nested inside the real-OS 'Run BEFORE hardening evaluation' block
       ansible.builtin.set_fact:
