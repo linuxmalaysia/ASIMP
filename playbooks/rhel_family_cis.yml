@@ -23,6 +23,14 @@
           - execution_mode in ['report', 'remediate']
         fail_msg: "execution_mode must be set to 'report' or 'remediate', got '{{ execution_mode }}'"
 
+    - name: Enterprise Linux - Validate supported OS distribution and major version
+      ansible.builtin.assert:
+        that:
+          - ansible_os_family == 'RedHat'
+          - ansible_distribution | lower in ['redhat', 'rhel', 'almalinux', 'rocky', 'oraclelinux', 'ol', 'centos']
+          - ansible_distribution_major_version | string in ['8', '9', '10']
+        fail_msg: "Unsupported OS: {{ ansible_distribution }} {{ ansible_distribution_major_version }}. Only RHEL, AlmaLinux, Rocky Linux, and Oracle Linux versions 8, 9, and 10 are supported."
+
     - name: Enterprise Linux - Check Sandbox Mode
       ansible.builtin.stat:
         path: /home/jules
@@ -213,19 +221,31 @@
             - { path: '/etc/shadow', mode: '0000' }
             - { path: '/etc/group', mode: '0644' }
             - { path: '/etc/gshadow', mode: '0000' }
+          register: file_perm_res
           ignore_errors: yes
 
-        - name: Mode 2 - Phase 2 - Enforce CIS Level 2 Storage Partition Mount Options
+        - name: Mode 2 - Phase 2 - Persist CIS Level 2 Mount Options in /etc/fstab
           ansible.posix.mount:
             path: "{{ item }}"
-            state: remounted
+            state: present
             opts: "defaults,nodev,nosuid,noexec"
           loop:
             - "/tmp"
             - "/var/tmp"
             - "/dev/shm"
           when: not is_sandbox_jules
-          ignore_errors: yes
+          register: mount_fstab_res
+
+        - name: Mode 2 - Phase 2 - Remount Storage Partitions with CIS Level 2 Options
+          ansible.posix.mount:
+            path: "{{ item }}"
+            state: remounted
+          loop:
+            - "/tmp"
+            - "/var/tmp"
+            - "/dev/shm"
+          when: not is_sandbox_jules
+          register: mount_remount_res
 
         - name: Mode 2 - Phase 2 - Apply CIS Level 2 SSH Daemon Hardening
           ansible.builtin.lineinfile:
@@ -239,7 +259,24 @@
             - { regexp: '^#?MaxAuthTries', line: 'MaxAuthTries 4' }
             - { regexp: '^#?ClientAliveInterval', line: 'ClientAliveInterval 300' }
             - { regexp: '^#?ClientAliveCountMax', line: 'ClientAliveCountMax 0' }
+          register: sshd_config_res
           ignore_errors: yes
+
+        - name: Mode 2 - Phase 2 - Validate SSH Configuration
+          ansible.builtin.command: sshd -t
+          register: sshd_validate_res
+          changed_when: false
+          failed_when: false
+
+        - name: Mode 2 - Phase 2 - Reload SSH Service on Valid Configuration
+          ansible.builtin.service:
+            name: sshd
+            state: reloaded
+          when:
+            - not is_sandbox_jules
+            - sshd_validate_res.rc == 0
+            - sshd_config_res.changed | default(false)
+          register: sshd_reload_res
 
         - name: Mode 2 - Phase 2 - Apply CIS Level 2 PAM Password Complexity Policy
           ansible.builtin.lineinfile:
@@ -250,6 +287,7 @@
           loop:
             - { regexp: '^#?minlen', line: 'minlen = 14' }
             - { regexp: '^#?minclass', line: 'minclass = 4' }
+          register: pam_pwquality_res
           ignore_errors: yes
 
         - name: Mode 2 - Phase 2 - Apply CIS Level 2 Crypto Policy
@@ -300,6 +338,10 @@
           register: mode2_after_score
           changed_when: false
 
+        - name: Mode 2 - Evaluate Remediation and Verification Success
+          ansible.builtin.set_fact:
+            phase2_remediation_success: "{{ not (file_perm_res.failed | default(false) or sshd_config_res.failed | default(false) or pam_pwquality_res.failed | default(false)) }}"
+
         - name: Mode 2 - Display Comparative Compliance Scorecard
           ansible.builtin.debug:
             msg:
@@ -309,5 +351,5 @@
               - "Post-Hardening Score (Phase 3): {{ mode2_after_score.stdout }}%"
               - "Before Report: {{ openscap_report_dir }}/cis-l2-before-report.html"
               - "After Report: {{ openscap_report_dir }}/cis-l2-after-report.html"
-              - "System Configuration State: {{ 'ENFORCED & VERIFIED' if mode2_after_score.stdout != 'UNAVAILABLE' else 'REMEDIATED (UNVERIFIED / SCAN UNAVAILABLE)' }}"
+              - "System Configuration State: {{ 'ENFORCED & VERIFIED' if (phase2_remediation_success and mode2_after_score.stdout != 'UNAVAILABLE') else ('REMEDIATED (UNVERIFIED / SCAN UNAVAILABLE)' if mode2_after_score.stdout == 'UNAVAILABLE' else 'REMEDIATED (PARTIAL / ERRORS DETECTED)') }}"
       when: execution_mode == "remediate"

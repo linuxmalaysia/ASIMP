@@ -107,12 +107,33 @@ In **Reporting Only** mode, Ansible evaluates target host security posture witho
           - execution_mode in ['report', 'remediate']
         fail_msg: "execution_mode must be set to 'report' or 'remediate'"
 
-    - name: Stat Preferred and Fallback DataStreams
+    - name: Compute Preferred and Fallback DataStream Paths
+      ansible.builtin.set_fact:
+        preferred_datastream_path: >-
+          {%- if ansible_distribution | lower == 'rocky' -%}
+          /usr/share/xml/scap/ssg/content/ssg-rocky{{ ansible_distribution_major_version }}-ds.xml
+          {%- elif ansible_distribution | lower == 'almalinux' -%}
+          /usr/share/xml/scap/ssg/content/ssg-almalinux{{ ansible_distribution_major_version }}-ds.xml
+          {%- elif ansible_distribution | lower in ['oraclelinux', 'ol'] -%}
+          /usr/share/xml/scap/ssg/content/ssg-ol{{ ansible_distribution_major_version }}-ds.xml
+          {%- else -%}
+          /usr/share/xml/scap/ssg/content/ssg-rhel{{ ansible_distribution_major_version }}-ds.xml
+          {%- endif -%}
+        rhel_fallback_datastream_path: "/usr/share/xml/scap/ssg/content/ssg-rhel{{ ansible_distribution_major_version }}-ds.xml"
+
+    - name: Stat Preferred DataStream Path
       ansible.builtin.stat:
-        path: "{{ item }}"
-      loop:
-        - "{{ preferred_datastream_path }}"
-        - "{{ rhel_fallback_datastream_path }}"
+        path: "{{ preferred_datastream_path }}"
+      register: preferred_ds_stat
+
+    - name: Stat RHEL Fallback DataStream Path
+      ansible.builtin.stat:
+        path: "{{ rhel_fallback_datastream_path }}"
+      register: rhel_fallback_ds_stat
+
+    - name: Select Active SCAP DataStream
+      ansible.builtin.set_fact:
+        openscap_datastream: "{{ preferred_datastream_path if preferred_ds_stat.stat.exists else (rhel_fallback_datastream_path if rhel_fallback_ds_stat.stat.exists else '') }}"
 
     - name: Ensure OpenSCAP report output directory exists
       ansible.builtin.file:
