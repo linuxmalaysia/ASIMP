@@ -26,6 +26,7 @@
       - ansible-galaxy-roles
       - ansible-testing-linting
       - asimp-core-workflow
+      - el-cis-level2-hardening
       - jekyll-docs-deployment
       - jinja2-template-overrides
       - jules-sandbox-mode

@@ -74,6 +74,13 @@
         - "autofs"
         - "clamav"
         - "register: jules_home_stat"
+      el-cis-level2-hardening:
+        - "ssg-rhel8-ds.xml"
+        - "xccdf_org.ssgproject.content_profile_cis"
+        - "execution_mode: \"report\""
+        - "execution_mode: \"remediate\""
+        - "/opt/report/openscap"
+        - "UNAVAILABLE"
       ubuntu-scap-auditing:
         - "ssg-ubuntu2404-ds.xml"
         - "ComplianceAsCode/content"
