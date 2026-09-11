@@ -27,7 +27,7 @@
       ansible.builtin.assert:
         that:
           - ansible_os_family == 'RedHat'
-          - ansible_distribution | lower in ['redhat', 'rhel', 'almalinux', 'rocky', 'oraclelinux', 'ol', 'centos']
+          - ansible_distribution | lower in ['redhat', 'rhel', 'almalinux', 'rocky', 'oraclelinux', 'ol']
           - ansible_distribution_major_version | string in ['8', '9', '10']
         fail_msg: "Unsupported OS: {{ ansible_distribution }} {{ ansible_distribution_major_version }}. Only RHEL, AlmaLinux, Rocky Linux, and Oracle Linux versions 8, 9, and 10 are supported."
 
@@ -151,7 +151,9 @@
             {{ openscap_report_dir }}/cis-l2-results.xml
           changed_when: true
           failed_when: false
-          when: openscap_datastream | length > 0
+          when:
+            - openscap_datastream | length > 0
+            - generate_remediation_artifacts | default(true) | bool
 
         - name: Mode 1 - Generate Standalone Ansible Remediation Playbook
           ansible.builtin.shell: >
@@ -162,7 +164,9 @@
             {{ openscap_report_dir }}/cis-l2-results.xml
           changed_when: true
           failed_when: false
-          when: openscap_datastream | length > 0
+          when:
+            - openscap_datastream | length > 0
+            - generate_remediation_artifacts | default(true) | bool
 
         - name: Mode 1 - Parse Compliance Audit Score
           ansible.builtin.command:
