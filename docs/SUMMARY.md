@@ -21,6 +21,7 @@ topics: ["summary", "gitbook", "dsom", "diataxis"]
 ## How-To Guides
 * [Operational Recipes Index](how-to/index.md)
 * [Execute Tool Workflows](how-to/run-tool.md)
+* [Enterprise Linux CIS Level 2 Guide](rhel_family_cis.md)
 
 ## Reference Material
 * [Component & Tool Index](reference/index.md)

@@ -28,7 +28,8 @@
             "pages": [
               "README",
               "SUMMARY",
-              "index"
+              "index",
+              "rhel_family_cis"
             ]
           },
           {

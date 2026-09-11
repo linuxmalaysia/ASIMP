@@ -1,0 +1,119 @@
+---
+# Structural and content-correctness tests for the Enterprise Linux CIS Level 2
+# Audit & Hardening documentation page (docs/rhel_family_cis.md) and playbook.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_rhel_family_cis_doc.yml
+
+- name: Verify Enterprise Linux CIS Level 2 Guide and Playbook
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    doc_path: "{{ repo_root }}/docs/rhel_family_cis.md"
+    playbook_path: "{{ repo_root }}/playbooks/rhel_family_cis.yml"
+    expected_title: "Enterprise Linux CIS Level 2 Audit & Hardening Guide"
+    expected_topics:
+      - openscap
+      - rhel
+      - almalinux
+      - rockylinux
+      - oraclelinux
+      - cis
+      - level2
+      - audit
+      - remediation
+      - ansible
+    required_headings:
+      - "## 🧭 Scope & OS DataStream Matrix"
+      - "## 📊 Architectural Paradigm: Mode Separation"
+      - "## 📋 Mode 1: Reporting Only (Audit & Assessment)"
+      - "## ⚡ Mode 2: Doing (Automated Hardening & Enforcement)"
+      - "## 🚀 Ansible Playbook Execution Guide"
+      - "## 🐳 Unprivileged Sandbox & Fallback Strategy"
+
+  tasks:
+    - name: Load raw content of docs/rhel_family_cis.md
+      ansible.builtin.set_fact:
+        doc_content: "{{ lookup('file', doc_path) }}"
+
+    - name: Assert the document begins with a '---' front matter delimiter
+      ansible.builtin.assert:
+        that:
+          - doc_content.startswith('---')
+        fail_msg: "docs/rhel_family_cis.md must start with a YAML front matter block delimited by '---' on the very first line"
+
+    - name: Parse the YAML front matter block
+      ansible.builtin.set_fact:
+        doc_frontmatter: "{{ doc_content.split('---', 2)[1] | from_yaml }}"
+
+    - name: Assert the OKF metadata fields are present and correct
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.okf_version == "0.1"
+          - doc_frontmatter.type == "documentation"
+          - doc_frontmatter.title == expected_title
+          - doc_frontmatter.sidebarTitle == "Enterprise Linux CIS L2"
+        fail_msg: "docs/rhel_family_cis.md frontmatter must declare okf_version '0.1', type 'documentation', title, and sidebarTitle"
+
+    - name: Assert the frontmatter topics list matches expected topics
+      ansible.builtin.assert:
+        that:
+          - doc_frontmatter.topics == expected_topics
+        fail_msg: "docs/rhel_family_cis.md frontmatter topics must match expected list"
+
+    - name: Assert required headings are present in the document
+      ansible.builtin.assert:
+        that:
+          - heading in doc_content
+        fail_msg: "docs/rhel_family_cis.md is missing required section heading: {{ heading }}"
+      loop: "{{ required_headings }}"
+      loop_control:
+        loop_var: heading
+
+    - name: Assert distributions and versions are explicitly documented
+      ansible.builtin.assert:
+        that:
+          - "'RHEL 8' in doc_content"
+          - "'RHEL 9' in doc_content"
+          - "'RHEL 10' in doc_content"
+          - "'AlmaLinux 8' in doc_content"
+          - "'AlmaLinux 9' in doc_content"
+          - "'AlmaLinux 10' in doc_content"
+          - "'Rocky Linux 8' in doc_content"
+          - "'Rocky Linux 9' in doc_content"
+          - "'Rocky Linux 10' in doc_content"
+          - "'Oracle Linux 8' in doc_content"
+          - "'Oracle Linux 9' in doc_content"
+          - "'Oracle Linux 10' in doc_content"
+        fail_msg: "docs/rhel_family_cis.md must document RHEL 8/9/10, AlmaLinux 8/9/10, Rocky Linux 8/9/10, and Oracle Linux 8/9/10"
+
+    - name: Assert datastreams and profiles are documented
+      ansible.builtin.assert:
+        that:
+          - "'ssg-rhel8-ds.xml' in doc_content"
+          - "'ssg-almalinux8-ds.xml' in doc_content"
+          - "'ssg-rocky8-ds.xml' in doc_content"
+          - "'ssg-ol8-ds.xml' in doc_content"
+          - "'xccdf_org.ssgproject.content_profile_cis' in doc_content"
+        fail_msg: "docs/rhel_family_cis.md must document the SSG datastream paths and CIS Level 2 profile identifier"
+
+    - name: Assert Mode 1 (Reporting Only) and Mode 2 (Doing) are clearly separated
+      ansible.builtin.assert:
+        that:
+          - "'execution_mode: \"report\"' in doc_content"
+          - "'execution_mode: \"remediate\"' in doc_content"
+        fail_msg: "docs/rhel_family_cis.md must detail both reporting mode and remediation mode variables"
+
+    - name: Assert playbook file exists on disk
+      ansible.builtin.stat:
+        path: "{{ playbook_path }}"
+      register: pb_stat
+
+    - name: Assert playbook exists and is a regular file
+      ansible.builtin.assert:
+        that:
+          - pb_stat.stat.exists
+          - pb_stat.stat.isreg
+        fail_msg: "playbooks/rhel_family_cis.yml must exist on disk"
