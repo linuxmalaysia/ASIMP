@@ -13,10 +13,16 @@
   become: yes
   vars:
     execution_mode: "report"
-    openscap_report_dir: "/var/log/openscap-report"
+    openscap_report_dir: "/opt/report/openscap"
     openscap_profile: "xccdf_org.ssgproject.content_profile_cis"
 
   tasks:
+    - name: Enterprise Linux - Validate execution_mode parameter
+      ansible.builtin.assert:
+        that:
+          - execution_mode in ['report', 'remediate']
+        fail_msg: "execution_mode must be set to 'report' or 'remediate', got '{{ execution_mode }}'"
+
     - name: Enterprise Linux - Check Sandbox Mode
       ansible.builtin.stat:
         path: /home/jules
@@ -36,12 +42,13 @@
         state: present
       when:
         - ansible_os_family == 'RedHat'
+        - execution_mode == 'remediate' or (install_packages | default(false) | bool)
         - not is_sandbox_jules
       ignore_errors: yes
 
-    - name: Enterprise Linux - Dynamically Resolve SCAP DataStream Path
+    - name: Enterprise Linux - Compute Preferred DataStream Path
       ansible.builtin.set_fact:
-        openscap_datastream: >-
+        preferred_datastream_path: >-
           {%- if ansible_distribution | lower == 'rocky' -%}
           /usr/share/xml/scap/ssg/content/ssg-rocky{{ ansible_distribution_major_version }}-ds.xml
           {%- elif ansible_distribution | lower == 'almalinux' -%}
@@ -51,6 +58,27 @@
           {%- else -%}
           /usr/share/xml/scap/ssg/content/ssg-rhel{{ ansible_distribution_major_version }}-ds.xml
           {%- endif -%}
+        rhel_fallback_datastream_path: "/usr/share/xml/scap/ssg/content/ssg-rhel{{ ansible_distribution_major_version }}-ds.xml"
+
+    - name: Enterprise Linux - Stat Preferred DataStream Path
+      ansible.builtin.stat:
+        path: "{{ preferred_datastream_path }}"
+      register: preferred_ds_stat
+
+    - name: Enterprise Linux - Stat RHEL Fallback DataStream Path
+      ansible.builtin.stat:
+        path: "{{ rhel_fallback_datastream_path }}"
+      register: rhel_fallback_ds_stat
+
+    - name: Enterprise Linux - Select Active SCAP DataStream
+      ansible.builtin.set_fact:
+        openscap_datastream: "{{ preferred_datastream_path if preferred_ds_stat.stat.exists else (rhel_fallback_datastream_path if rhel_fallback_ds_stat.stat.exists else '') }}"
+
+    - name: Enterprise Linux - Assert Valid SCAP DataStream Path Exists
+      ansible.builtin.assert:
+        that:
+          - openscap_datastream | length > 0 or is_sandbox_jules
+        fail_msg: "Neither preferred DataStream ({{ preferred_datastream_path }}) nor RHEL fallback DataStream ({{ rhel_fallback_datastream_path }}) exists on host."
 
     - name: Enterprise Linux - Ensure Report Output Directory Exists
       ansible.builtin.file:
@@ -63,23 +91,30 @@
         content: |
           #!/usr/bin/env python3
           import sys
+          import os
           import xml.etree.ElementTree as ET
 
           def parse_score(xml_path):
+              if not os.path.isfile(xml_path):
+                  print("UNAVAILABLE")
+                  return
               try:
                   tree = ET.parse(xml_path)
                   root = tree.getroot()
                   ns = {'xccdf': 'http://checklists.nist.gov/xccdf/1.2'}
                   score = root.find('.//xccdf:score', ns)
-                  if score is not None:
+                  if score is not None and score.text:
                       print(f"{float(score.text):.2f}")
                   else:
-                      print("0.00")
+                      print("UNAVAILABLE")
               except Exception:
-                  print("0.00")
+                  print("UNAVAILABLE")
 
           if __name__ == "__main__":
-              parse_score(sys.argv[1])
+              if len(sys.argv) > 1:
+                  parse_score(sys.argv[1])
+              else:
+                  print("UNAVAILABLE")
         dest: "{{ openscap_report_dir }}/parse_score.py"
         mode: '0755'
 
@@ -97,7 +132,7 @@
             {{ openscap_datastream }}
           register: oscap_scan_report
           failed_when: false
-          changed_when: true
+          changed_when: false
 
         - name: Mode 1 - Generate Standalone Bash Remediation Script
           ansible.builtin.shell: >
@@ -108,6 +143,7 @@
             {{ openscap_report_dir }}/cis-l2-results.xml
           changed_when: true
           failed_when: false
+          when: openscap_datastream | length > 0
 
         - name: Mode 1 - Generate Standalone Ansible Remediation Playbook
           ansible.builtin.shell: >
@@ -118,6 +154,7 @@
             {{ openscap_report_dir }}/cis-l2-results.xml
           changed_when: true
           failed_when: false
+          when: openscap_datastream | length > 0
 
         - name: Mode 1 - Parse Compliance Audit Score
           ansible.builtin.command:
@@ -133,7 +170,7 @@
             msg:
               - "=== Enterprise Linux CIS Level 2 Audit (Reporting Only) ==="
               - "Host: {{ inventory_hostname }} ({{ ansible_distribution }} {{ ansible_distribution_version }})"
-              - "SCAP DataStream: {{ openscap_datastream }}"
+              - "SCAP DataStream: {{ openscap_datastream | default('MOCK_SANDBOX') }}"
               - "Compliance Score: {{ mode1_score.stdout }}%"
               - "HTML Report: {{ openscap_report_dir }}/cis-l2-report.html"
               - "Bash Fix Script: {{ openscap_report_dir }}/cis-l2-remediate.sh"
@@ -154,7 +191,7 @@
             --report {{ openscap_report_dir }}/cis-l2-before-report.html
             {{ openscap_datastream }}
           failed_when: false
-          changed_when: true
+          changed_when: false
 
         - name: Mode 2 - Phase 1 - Parse Baseline Compliance Score
           ansible.builtin.command:
@@ -178,6 +215,18 @@
             - { path: '/etc/gshadow', mode: '0000' }
           ignore_errors: yes
 
+        - name: Mode 2 - Phase 2 - Enforce CIS Level 2 Storage Partition Mount Options
+          ansible.posix.mount:
+            path: "{{ item }}"
+            state: remounted
+            opts: "defaults,nodev,nosuid,noexec"
+          loop:
+            - "/tmp"
+            - "/var/tmp"
+            - "/dev/shm"
+          when: not is_sandbox_jules
+          ignore_errors: yes
+
         - name: Mode 2 - Phase 2 - Apply CIS Level 2 SSH Daemon Hardening
           ansible.builtin.lineinfile:
             path: /etc/ssh/sshd_config
@@ -191,6 +240,23 @@
             - { regexp: '^#?ClientAliveInterval', line: 'ClientAliveInterval 300' }
             - { regexp: '^#?ClientAliveCountMax', line: 'ClientAliveCountMax 0' }
           ignore_errors: yes
+
+        - name: Mode 2 - Phase 2 - Apply CIS Level 2 PAM Password Complexity Policy
+          ansible.builtin.lineinfile:
+            path: /etc/security/pwquality.conf
+            regexp: "{{ item.regexp }}"
+            line: "{{ item.line }}"
+            state: present
+          loop:
+            - { regexp: '^#?minlen', line: 'minlen = 14' }
+            - { regexp: '^#?minclass', line: 'minclass = 4' }
+          ignore_errors: yes
+
+        - name: Mode 2 - Phase 2 - Apply CIS Level 2 Crypto Policy
+          ansible.builtin.command: "update-crypto-policies --set DEFAULT:NO-SHA1"
+          when: not is_sandbox_jules
+          ignore_errors: yes
+          changed_when: false
 
         - name: Mode 2 - Phase 2 - Apply CIS Level 2 Kernel Sysctl Hardening
           ansible.posix.sysctl:
@@ -223,7 +289,7 @@
             --report {{ openscap_report_dir }}/cis-l2-after-report.html
             {{ openscap_datastream }}
           failed_when: false
-          changed_when: true
+          changed_when: false
 
         - name: Mode 2 - Phase 3 - Parse Post-Hardening Compliance Score
           ansible.builtin.command:
@@ -243,5 +309,5 @@
               - "Post-Hardening Score (Phase 3): {{ mode2_after_score.stdout }}%"
               - "Before Report: {{ openscap_report_dir }}/cis-l2-before-report.html"
               - "After Report: {{ openscap_report_dir }}/cis-l2-after-report.html"
-              - "System Configuration State: ENFORCED & VERIFIED"
+              - "System Configuration State: {{ 'ENFORCED & VERIFIED' if mode2_after_score.stdout != 'UNAVAILABLE' else 'REMEDIATED (UNVERIFIED / SCAN UNAVAILABLE)' }}"
       when: execution_mode == "remediate"

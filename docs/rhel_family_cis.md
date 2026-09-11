@@ -74,7 +74,7 @@ ASIMP strictly separates operations into two distinct execution modes, controlle
   [Mode A: Reporting Only]                          [Mode B: Doing]
   execution_mode: "report"                          execution_mode: "remediate"
   ------------------------                          ---------------------------
-  1. Install Scanner & Datastreams                  1. Baseline Scan (Phase 1)
+  1. Audit Existing Environment                     1. Baseline Scan (Phase 1)
   2. Run `oscap xccdf eval`                        2. Apply Ansible Hardening (Phase 2)
   3. Parse Score (XML -> % Score)                  3. Post Scan (Phase 3)
   4. Generate Bash & Ansible Fixes                  4. Comparative Scorecard
@@ -98,32 +98,21 @@ In **Reporting Only** mode, Ansible evaluates target host security posture witho
   become: yes
   vars:
     execution_mode: "report"
-    openscap_report_dir: "/var/log/openscap-report"
+    openscap_report_dir: "/opt/report/openscap"
 
   tasks:
-    - name: Ensure OpenSCAP and SSG packages are present via DNF
-      ansible.builtin.dnf:
-        name:
-          - openscap-scanner
-          - scap-security-guide
-          - python3
-          - curl
-        state: present
-      when: ansible_os_family == 'RedHat'
+    - name: Validate execution_mode parameter
+      ansible.builtin.assert:
+        that:
+          - execution_mode in ['report', 'remediate']
+        fail_msg: "execution_mode must be set to 'report' or 'remediate'"
 
-    - name: Dynamically resolve SCAP DataStream for RHEL family host
-      ansible.builtin.set_fact:
-        openscap_datastream: >-
-          {%- if ansible_distribution | lower == 'rocky' -%}
-          /usr/share/xml/scap/ssg/content/ssg-rocky{{ ansible_distribution_major_version }}-ds.xml
-          {%- elif ansible_distribution | lower == 'almalinux' -%}
-          /usr/share/xml/scap/ssg/content/ssg-almalinux{{ ansible_distribution_major_version }}-ds.xml
-          {%- elif ansible_distribution | lower in ['oraclelinux', 'ol'] -%}
-          /usr/share/xml/scap/ssg/content/ssg-ol{{ ansible_distribution_major_version }}-ds.xml
-          {%- else -%}
-          /usr/share/xml/scap/ssg/content/ssg-rhel{{ ansible_distribution_major_version }}-ds.xml
-          {%- endif -%}
-        openscap_profile: "xccdf_org.ssgproject.content_profile_cis"
+    - name: Stat Preferred and Fallback DataStreams
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - "{{ preferred_datastream_path }}"
+        - "{{ rhel_fallback_datastream_path }}"
 
     - name: Ensure OpenSCAP report output directory exists
       ansible.builtin.file:
@@ -140,7 +129,7 @@ In **Reporting Only** mode, Ansible evaluates target host security posture witho
         {{ openscap_datastream }}
       register: oscap_scan_raw
       failed_when: false
-      changed_when: true
+      changed_when: false
 
     - name: Generate standalone Bash Remediation Script
       ansible.builtin.shell: >
@@ -161,40 +150,6 @@ In **Reporting Only** mode, Ansible evaluates target host security posture witho
         {{ openscap_report_dir }}/cis-l2-results.xml
       changed_when: true
       failed_when: false
-
-    - name: Write OpenSCAP score parser script
-      ansible.builtin.copy:
-        content: |
-          #!/usr/bin/env python3
-          import sys
-          import xml.etree.ElementTree as ET
-
-          def parse_score(xml_path):
-              try:
-                  tree = ET.parse(xml_path)
-                  root = tree.getroot()
-                  ns = {'xccdf': 'http://checklists.nist.gov/xccdf/1.2'}
-                  score = root.find('.//xccdf:score', ns)
-                  if score is not None:
-                      print(f"{float(score.text):.2f}")
-                  else:
-                      print("0.00")
-              except Exception:
-                  print("0.00")
-
-          if __name__ == "__main__":
-              parse_score(sys.argv[1])
-        dest: "{{ openscap_report_dir }}/parse_score.py"
-        mode: '0755'
-
-    - name: Parse compliance score from XML results
-      ansible.builtin.command:
-        argv:
-          - python3
-          - "{{ openscap_report_dir }}/parse_score.py"
-          - "{{ openscap_report_dir }}/cis-l2-results.xml"
-      register: parsed_cis_score
-      changed_when: false
 
     - name: Display Reporting Mode Summary
       ansible.builtin.debug:
@@ -225,11 +180,11 @@ In **Doing** mode (`execution_mode: "remediate"`), ASIMP enforces CIS Level 2 se
 
 2. **Bootloader & Crypto Policies**:
    - Enforces bootloader password protection on GRUB2 configuration.
-   - Sets system-wide cryptographic policies to `DEFAULT:NO-SHA1` or `FIPS` on EL 8, 9, and 10.
+   - Sets system-wide cryptographic policies to `DEFAULT:NO-SHA1` or `FIPS` on EL 8, 9, and 10 via `update-crypto-policies`.
 
 3. **Access Control & SSH Service Hardening**:
    - Restricts SSH daemon (`sshd_config`): `PermitRootLogin no`, `PasswordAuthentication no`, `MaxAuthTries 4`, `ClientAliveInterval 300`, `ClientAliveCountMax 0`.
-   - Sets PAM password complexity policy via `pam_pwquality` (minimum length 14, 4 character classes).
+   - Sets PAM password complexity policy via `pam_pwquality` (`minlen = 14`, `minclass = 4`).
 
 4. **Kernel Parameter Hardening (`sysctl`)**:
    - `net.ipv4.ip_forward = 0`
@@ -241,55 +196,6 @@ In **Doing** mode (`execution_mode: "remediate"`), ASIMP enforces CIS Level 2 se
 5. **System Auditing & Logging (`auditd`)**:
    - Enables and starts `auditd` service.
    - Enforces audit rules for time adjustments, user/group modifications, system call monitoring, and privilege escalation events.
-
-### Ansible Task Snippets for Doing Mode
-
-{% raw %}
-
-```yaml
-- name: Enterprise Linux | Mode 2: Doing (Hardening Tasks)
-  block:
-    - name: CIS L2 | Enforce restrictive permissions on sensitive system files
-      ansible.builtin.file:
-        path: "{{ item.path }}"
-        owner: root
-        group: root
-        mode: "{{ item.mode }}"
-      loop:
-        - { path: '/etc/passwd', mode: '0644' }
-        - { path: '/etc/shadow', mode: '0000' }
-        - { path: '/etc/group', mode: '0644' }
-        - { path: '/etc/gshadow', mode: '0000' }
-
-    - name: CIS L2 | Enforce SSH Daemon Hardening Parameters
-      ansible.builtin.lineinfile:
-        path: /etc/ssh/sshd_config
-        regexp: "{{ item.regexp }}"
-        line: "{{ item.line }}"
-        state: present
-        validate: 'sshd -t -f %s'
-      loop:
-        - { regexp: '^#?PermitRootLogin', line: 'PermitRootLogin no' }
-        - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
-        - { regexp: '^#?MaxAuthTries', line: 'MaxAuthTries 4' }
-        - { regexp: '^#?ClientAliveInterval', line: 'ClientAliveInterval 300' }
-        - { regexp: '^#?ClientAliveCountMax', line: 'ClientAliveCountMax 0' }
-
-    - name: CIS L2 | Apply Kernel Network Hardening (sysctl)
-      ansible.posix.sysctl:
-        name: "{{ item.key }}"
-        value: "{{ item.value }}"
-        state: present
-        reload: yes
-      loop:
-        - { key: 'net.ipv4.ip_forward', value: '0' }
-        - { key: 'net.ipv4.conf.all.accept_redirects', value: '0' }
-        - { key: 'net.ipv4.conf.all.send_redirects', value: '0' }
-        - { key: 'net.ipv4.conf.all.rp_filter', value: '1' }
-        - { key: 'net.ipv4.tcp_syncookies', value: '1' }
-```
-
-{% endraw %}
 
 ---
 
