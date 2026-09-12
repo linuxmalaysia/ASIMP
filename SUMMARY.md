@@ -19,6 +19,7 @@ topics: ["asimp", "summary", "documentation", "index"]
 * [AI Agents & DSOM Integration](docs/ai_agents.html)
 * [OpenSCAP Integration & Playbooks](docs/openscap.md)
 * [Lynis Auditing & Playbooks](docs/lynis.md)
+* [Enterprise Linux CIS Level 2 Guide](docs/rhel_family_cis.md)
 * [Configuration & Variables](docs/configuration.md)
 * [Troubleshooting & Fallbacks](docs/troubleshooting.md)
 * [Legal Notice](docs/legal-notice.md)

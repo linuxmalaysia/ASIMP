@@ -49,6 +49,7 @@ Explore the different sections of our system design, setup guides, and troublesh
 - **[Ansible Best Practices & FQCN Standards](ansible_fqcn.html)**: Guidelines for Fully Qualified Collection Names (FQCN), task idempotency checks, and privilege strategies.
 - **[Ansible Playbook and Document Architecture Map](ansible_playbook_map.html)**: Architectural dictionary linking playbook files with their core roles and operational documents.
 - **[Local Knowledge-First & Metadata Discovery](sop_knowledge_first_discovery.html)**: SOP guidelines for unprivileged and agentic spatial discovery and context preservation.
+- **[Enterprise Linux CIS Level 2 Guide](rhel_family_cis.html)**: Complete guide and playbooks for RHEL, AlmaLinux, Rocky Linux, and Oracle Linux 8, 9, 10.
 
 ---
 

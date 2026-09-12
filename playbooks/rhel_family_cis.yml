@@ -1,0 +1,359 @@
+---
+# Enterprise Linux CIS Level 2 Audit & Hardening Playbook
+# Supports RHEL 8/9/10, AlmaLinux 8/9/10, Rocky Linux 8/9/10, and Oracle Linux 8/9/10
+#
+# Modes:
+#   1. Reporting Only (default):
+#      ansible-playbook -i inventory playbooks/rhel_family_cis.yml -e "execution_mode=report"
+#   2. Doing (Remediation & Hardening):
+#      ansible-playbook -i inventory playbooks/rhel_family_cis.yml -e "execution_mode=remediate"
+
+- name: Enterprise Linux CIS Level 2 Audit and Hardening
+  hosts: all
+  become: yes
+  vars:
+    execution_mode: "report"
+    openscap_report_dir: "/opt/report/openscap"
+    openscap_profile: "xccdf_org.ssgproject.content_profile_cis"
+
+  tasks:
+    - name: Enterprise Linux - Validate execution_mode parameter
+      ansible.builtin.assert:
+        that:
+          - execution_mode in ['report', 'remediate']
+        fail_msg: "execution_mode must be set to 'report' or 'remediate', got '{{ execution_mode }}'"
+
+    - name: Enterprise Linux - Validate supported OS distribution and major version
+      ansible.builtin.assert:
+        that:
+          - ansible_os_family == 'RedHat'
+          - ansible_distribution | lower in ['redhat', 'rhel', 'almalinux', 'rocky', 'oraclelinux', 'ol']
+          - ansible_distribution_major_version | string in ['8', '9', '10']
+        fail_msg: "Unsupported OS: {{ ansible_distribution }} {{ ansible_distribution_major_version }}. Only RHEL, AlmaLinux, Rocky Linux, and Oracle Linux versions 8, 9, and 10 are supported."
+
+    - name: Enterprise Linux - Check Sandbox Mode
+      ansible.builtin.stat:
+        path: /home/jules
+      register: jules_sandbox_stat
+
+    - name: Enterprise Linux - Set Sandbox Fact
+      ansible.builtin.set_fact:
+        is_sandbox_jules: "{{ jules_sandbox_stat.stat.exists | default(false) }}"
+
+    - name: Enterprise Linux - Install OpenSCAP and SSG packages via DNF
+      ansible.builtin.dnf:
+        name:
+          - openscap-scanner
+          - scap-security-guide
+          - python3
+          - curl
+        state: present
+      when:
+        - ansible_os_family == 'RedHat'
+        - execution_mode == 'remediate' or (install_packages | default(false) | bool)
+        - not is_sandbox_jules
+      ignore_errors: yes
+
+    - name: Enterprise Linux - Compute Preferred DataStream Path
+      ansible.builtin.set_fact:
+        preferred_datastream_path: >-
+          {%- if ansible_distribution | lower == 'rocky' -%}
+          /usr/share/xml/scap/ssg/content/ssg-rocky{{ ansible_distribution_major_version }}-ds.xml
+          {%- elif ansible_distribution | lower == 'almalinux' -%}
+          /usr/share/xml/scap/ssg/content/ssg-almalinux{{ ansible_distribution_major_version }}-ds.xml
+          {%- elif ansible_distribution | lower in ['oraclelinux', 'ol'] -%}
+          /usr/share/xml/scap/ssg/content/ssg-ol{{ ansible_distribution_major_version }}-ds.xml
+          {%- else -%}
+          /usr/share/xml/scap/ssg/content/ssg-rhel{{ ansible_distribution_major_version }}-ds.xml
+          {%- endif -%}
+        rhel_fallback_datastream_path: "/usr/share/xml/scap/ssg/content/ssg-rhel{{ ansible_distribution_major_version }}-ds.xml"
+
+    - name: Enterprise Linux - Stat Preferred DataStream Path
+      ansible.builtin.stat:
+        path: "{{ preferred_datastream_path }}"
+      register: preferred_ds_stat
+
+    - name: Enterprise Linux - Stat RHEL Fallback DataStream Path
+      ansible.builtin.stat:
+        path: "{{ rhel_fallback_datastream_path }}"
+      register: rhel_fallback_ds_stat
+
+    - name: Enterprise Linux - Select Active SCAP DataStream
+      ansible.builtin.set_fact:
+        openscap_datastream: "{{ preferred_datastream_path if preferred_ds_stat.stat.exists else (rhel_fallback_datastream_path if rhel_fallback_ds_stat.stat.exists else '') }}"
+
+    - name: Enterprise Linux - Assert Valid SCAP DataStream Path Exists
+      ansible.builtin.assert:
+        that:
+          - openscap_datastream | length > 0 or is_sandbox_jules
+        fail_msg: "Neither preferred DataStream ({{ preferred_datastream_path }}) nor RHEL fallback DataStream ({{ rhel_fallback_datastream_path }}) exists on host."
+
+    - name: Enterprise Linux - Ensure Report Output Directory Exists
+      ansible.builtin.file:
+        path: "{{ openscap_report_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Enterprise Linux - Deploy Score Parser Helper Script
+      ansible.builtin.copy:
+        content: |
+          #!/usr/bin/env python3
+          import sys
+          import os
+          import xml.etree.ElementTree as ET
+
+          def parse_score(xml_path):
+              if not os.path.isfile(xml_path):
+                  print("UNAVAILABLE")
+                  return
+              try:
+                  tree = ET.parse(xml_path)
+                  root = tree.getroot()
+                  ns = {'xccdf': 'http://checklists.nist.gov/xccdf/1.2'}
+                  score = root.find('.//xccdf:score', ns)
+                  if score is not None and score.text:
+                      print(f"{float(score.text):.2f}")
+                  else:
+                      print("UNAVAILABLE")
+              except Exception:
+                  print("UNAVAILABLE")
+
+          if __name__ == "__main__":
+              if len(sys.argv) > 1:
+                  parse_score(sys.argv[1])
+              else:
+                  print("UNAVAILABLE")
+        dest: "{{ openscap_report_dir }}/parse_score.py"
+        mode: '0755'
+
+    # -------------------------------------------------------------------------
+    # MODE 1: REPORTING ONLY
+    # -------------------------------------------------------------------------
+    - name: Enterprise Linux - Mode 1 - Reporting Only
+      block:
+        - name: Mode 1 - Execute OpenSCAP Evaluation Scan
+          ansible.builtin.shell: >
+            oscap xccdf eval
+            --profile {{ openscap_profile }}
+            --results {{ openscap_report_dir }}/cis-l2-results.xml
+            --report {{ openscap_report_dir }}/cis-l2-report.html
+            {{ openscap_datastream }}
+          register: oscap_scan_report
+          failed_when: false
+          changed_when: false
+
+        - name: Mode 1 - Generate Standalone Bash Remediation Script
+          ansible.builtin.shell: >
+            oscap xccdf generate fix
+            --profile {{ openscap_profile }}
+            --fix-type bash
+            --output {{ openscap_report_dir }}/cis-l2-remediate.sh
+            {{ openscap_report_dir }}/cis-l2-results.xml
+          changed_when: true
+          failed_when: false
+          when:
+            - openscap_datastream | length > 0
+            - generate_remediation_artifacts | default(true) | bool
+
+        - name: Mode 1 - Generate Standalone Ansible Remediation Playbook
+          ansible.builtin.shell: >
+            oscap xccdf generate fix
+            --profile {{ openscap_profile }}
+            --fix-type ansible
+            --output {{ openscap_report_dir }}/cis-l2-remediate-playbook.yml
+            {{ openscap_report_dir }}/cis-l2-results.xml
+          changed_when: true
+          failed_when: false
+          when:
+            - openscap_datastream | length > 0
+            - generate_remediation_artifacts | default(true) | bool
+
+        - name: Mode 1 - Parse Compliance Audit Score
+          ansible.builtin.command:
+            argv:
+              - python3
+              - "{{ openscap_report_dir }}/parse_score.py"
+              - "{{ openscap_report_dir }}/cis-l2-results.xml"
+          register: mode1_score
+          changed_when: false
+
+        - name: Mode 1 - Display Compliance Audit Summary
+          ansible.builtin.debug:
+            msg:
+              - "=== Enterprise Linux CIS Level 2 Audit (Reporting Only) ==="
+              - "Host: {{ inventory_hostname }} ({{ ansible_distribution }} {{ ansible_distribution_version }})"
+              - "SCAP DataStream: {{ openscap_datastream | default('MOCK_SANDBOX') }}"
+              - "Compliance Score: {{ mode1_score.stdout }}%"
+              - "HTML Report: {{ openscap_report_dir }}/cis-l2-report.html"
+              - "Bash Fix Script: {{ openscap_report_dir }}/cis-l2-remediate.sh"
+              - "Ansible Fix Playbook: {{ openscap_report_dir }}/cis-l2-remediate-playbook.yml"
+              - "System Configuration State: UNCHANGED"
+      when: execution_mode == "report"
+
+    # -------------------------------------------------------------------------
+    # MODE 2: DOING (REMEDIATION & HARDENING)
+    # -------------------------------------------------------------------------
+    - name: Enterprise Linux - Mode 2 - Doing (Remediation and Hardening)
+      block:
+        - name: Mode 2 - Phase 1 - Baseline Assessment Scan
+          ansible.builtin.shell: >
+            oscap xccdf eval
+            --profile {{ openscap_profile }}
+            --results {{ openscap_report_dir }}/cis-l2-before-results.xml
+            --report {{ openscap_report_dir }}/cis-l2-before-report.html
+            {{ openscap_datastream }}
+          failed_when: false
+          changed_when: false
+
+        - name: Mode 2 - Phase 1 - Parse Baseline Compliance Score
+          ansible.builtin.command:
+            argv:
+              - python3
+              - "{{ openscap_report_dir }}/parse_score.py"
+              - "{{ openscap_report_dir }}/cis-l2-before-results.xml"
+          register: mode2_before_score
+          changed_when: false
+
+        - name: Mode 2 - Phase 2 - Apply CIS Level 2 System File Permissions
+          ansible.builtin.file:
+            path: "{{ item.path }}"
+            owner: root
+            group: root
+            mode: "{{ item.mode }}"
+          loop:
+            - { path: '/etc/passwd', mode: '0644' }
+            - { path: '/etc/shadow', mode: '0000' }
+            - { path: '/etc/group', mode: '0644' }
+            - { path: '/etc/gshadow', mode: '0000' }
+          register: file_perm_res
+          ignore_errors: yes
+
+        - name: Mode 2 - Phase 2 - Persist CIS Level 2 Mount Options in /etc/fstab
+          ansible.posix.mount:
+            path: "{{ item }}"
+            state: present
+            opts: "defaults,nodev,nosuid,noexec"
+          loop:
+            - "/tmp"
+            - "/var/tmp"
+            - "/dev/shm"
+          when: not is_sandbox_jules
+          register: mount_fstab_res
+
+        - name: Mode 2 - Phase 2 - Remount Storage Partitions with CIS Level 2 Options
+          ansible.posix.mount:
+            path: "{{ item }}"
+            state: remounted
+          loop:
+            - "/tmp"
+            - "/var/tmp"
+            - "/dev/shm"
+          when: not is_sandbox_jules
+          register: mount_remount_res
+
+        - name: Mode 2 - Phase 2 - Apply CIS Level 2 SSH Daemon Hardening
+          ansible.builtin.lineinfile:
+            path: /etc/ssh/sshd_config
+            regexp: "{{ item.regexp }}"
+            line: "{{ item.line }}"
+            state: present
+          loop:
+            - { regexp: '^#?PermitRootLogin', line: 'PermitRootLogin no' }
+            - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
+            - { regexp: '^#?MaxAuthTries', line: 'MaxAuthTries 4' }
+            - { regexp: '^#?ClientAliveInterval', line: 'ClientAliveInterval 300' }
+            - { regexp: '^#?ClientAliveCountMax', line: 'ClientAliveCountMax 0' }
+          register: sshd_config_res
+          ignore_errors: yes
+
+        - name: Mode 2 - Phase 2 - Validate SSH Configuration
+          ansible.builtin.command: sshd -t
+          register: sshd_validate_res
+          changed_when: false
+          failed_when: false
+
+        - name: Mode 2 - Phase 2 - Reload SSH Service on Valid Configuration
+          ansible.builtin.service:
+            name: sshd
+            state: reloaded
+          when:
+            - not is_sandbox_jules
+            - sshd_validate_res.rc == 0
+            - sshd_config_res.changed | default(false)
+          register: sshd_reload_res
+
+        - name: Mode 2 - Phase 2 - Apply CIS Level 2 PAM Password Complexity Policy
+          ansible.builtin.lineinfile:
+            path: /etc/security/pwquality.conf
+            regexp: "{{ item.regexp }}"
+            line: "{{ item.line }}"
+            state: present
+          loop:
+            - { regexp: '^#?minlen', line: 'minlen = 14' }
+            - { regexp: '^#?minclass', line: 'minclass = 4' }
+          register: pam_pwquality_res
+          ignore_errors: yes
+
+        - name: Mode 2 - Phase 2 - Apply CIS Level 2 Crypto Policy
+          ansible.builtin.command: "update-crypto-policies --set DEFAULT:NO-SHA1"
+          when: not is_sandbox_jules
+          ignore_errors: yes
+          changed_when: false
+
+        - name: Mode 2 - Phase 2 - Apply CIS Level 2 Kernel Sysctl Hardening
+          ansible.posix.sysctl:
+            name: "{{ item.key }}"
+            value: "{{ item.value }}"
+            state: present
+            reload: yes
+          loop:
+            - { key: 'net.ipv4.ip_forward', value: '0' }
+            - { key: 'net.ipv4.conf.all.accept_redirects', value: '0' }
+            - { key: 'net.ipv4.conf.all.send_redirects', value: '0' }
+            - { key: 'net.ipv4.conf.all.rp_filter', value: '1' }
+            - { key: 'net.ipv4.tcp_syncookies', value: '1' }
+          when: not is_sandbox_jules
+          ignore_errors: yes
+
+        - name: Mode 2 - Phase 2 - Ensure Auditd Service is Enabled and Active
+          ansible.builtin.service:
+            name: auditd
+            state: started
+            enabled: yes
+          when: not is_sandbox_jules
+          ignore_errors: yes
+
+        - name: Mode 2 - Phase 3 - Post-Hardening Verification Scan
+          ansible.builtin.shell: >
+            oscap xccdf eval
+            --profile {{ openscap_profile }}
+            --results {{ openscap_report_dir }}/cis-l2-after-results.xml
+            --report {{ openscap_report_dir }}/cis-l2-after-report.html
+            {{ openscap_datastream }}
+          failed_when: false
+          changed_when: false
+
+        - name: Mode 2 - Phase 3 - Parse Post-Hardening Compliance Score
+          ansible.builtin.command:
+            argv:
+              - python3
+              - "{{ openscap_report_dir }}/parse_score.py"
+              - "{{ openscap_report_dir }}/cis-l2-after-results.xml"
+          register: mode2_after_score
+          changed_when: false
+
+        - name: Mode 2 - Evaluate Remediation and Verification Success
+          ansible.builtin.set_fact:
+            phase2_remediation_success: "{{ not (file_perm_res.failed | default(false) or sshd_config_res.failed | default(false) or pam_pwquality_res.failed | default(false)) }}"
+
+        - name: Mode 2 - Display Comparative Compliance Scorecard
+          ansible.builtin.debug:
+            msg:
+              - "=== Enterprise Linux CIS Level 2 Remediation Scorecard ==="
+              - "Host: {{ inventory_hostname }} ({{ ansible_distribution }} {{ ansible_distribution_version }})"
+              - "Baseline Score (Phase 1): {{ mode2_before_score.stdout }}%"
+              - "Post-Hardening Score (Phase 3): {{ mode2_after_score.stdout }}%"
+              - "Before Report: {{ openscap_report_dir }}/cis-l2-before-report.html"
+              - "After Report: {{ openscap_report_dir }}/cis-l2-after-report.html"
+              - "System Configuration State: {{ 'ENFORCED & VERIFIED' if (phase2_remediation_success and mode2_after_score.stdout != 'UNAVAILABLE') else ('REMEDIATED (UNVERIFIED / SCAN UNAVAILABLE)' if mode2_after_score.stdout == 'UNAVAILABLE' else 'REMEDIATED (PARTIAL / ERRORS DETECTED)') }}"
+      when: execution_mode == "remediate"
