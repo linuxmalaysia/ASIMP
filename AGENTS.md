@@ -74,6 +74,7 @@ The following table lists the available agent skills present in this repository:
 | `ansible-galaxy-roles` | `ansible-galaxy-roles` | Instructions for managing and installing Ansible Galaxy external role dependencies. |
 | `ansible-testing-linting` | `ansible-testing-linting` | Guidelines on running ansible-playbook syntax checks and ansible-lint. |
 | `asimp-core-workflow` | `asimp-core-workflow` | Highlights Phase 1, Phase 2, and Phase 3 of the core ASIMP workflow. |
+| `el-cis-level2-hardening` | `el-cis-level2-hardening` | Guides on Enterprise Linux CIS Level 2 auditing and hardening profiles. |
 | `jekyll-docs-deployment` | `jekyll-docs-deployment` | Procedures for pre-processing docs and managing GitHub Pages deployments. |
 | `jinja2-template-overrides` | `jinja2-template-overrides` | Rules for setting Jinja2 block trim headers with capitalized booleans. |
 | `jules-sandbox-mode` | `jules-sandbox-mode` | Handling of sandboxed, unprivileged execution environments. |

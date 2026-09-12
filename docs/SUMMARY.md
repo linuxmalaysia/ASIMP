@@ -22,6 +22,9 @@ topics: ["summary", "gitbook", "dsom", "diataxis"]
 * [Operational Recipes Index](how-to/index.md)
 * [Execute Tool Workflows](how-to/run-tool.md)
 * [Enterprise Linux CIS Level 2 Guide](rhel_family_cis.md)
+* [Ubuntu 24.04/26.04 LTS Guide](ubuntu_lts_hardening.md)
+* [Debian Hardening Guide](debian_hardening.md)
+* [openSUSE Hardening Guide](opensuse_hardening.md)
 
 ## Reference Material
 * [Component & Tool Index](reference/index.md)

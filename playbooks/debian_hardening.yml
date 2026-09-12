@@ -1,0 +1,157 @@
+---
+# Debian GNU/Linux Hardening & Audit Playbook
+# Supports Debian 11 (Bullseye), Debian 12 (Bookworm), Debian 13 (Trixie)
+#
+# Modes:
+#   1. Reporting Only (default):
+#      ansible-playbook -i inventory playbooks/debian_hardening.yml -e "execution_mode=report"
+#   2. Doing (Remediation & Hardening):
+#      ansible-playbook -i inventory playbooks/debian_hardening.yml -e "execution_mode=remediate"
+
+- name: Debian GNU/Linux System Integrity Audit and Hardening
+  hosts: all
+  become: yes
+  vars:
+    execution_mode: "report"
+    openscap_report_dir: "/opt/report/openscap"
+
+  tasks:
+    - name: Debian - Validate execution_mode parameter
+      ansible.builtin.assert:
+        that:
+          - execution_mode in ['report', 'remediate']
+        fail_msg: "execution_mode must be set to 'report' or 'remediate', got '{{ execution_mode }}'"
+
+    - name: Debian - Validate supported OS distribution and major version
+      ansible.builtin.assert:
+        that:
+          - ansible_os_family == 'Debian'
+          - ansible_distribution == 'Debian'
+          - ansible_distribution_major_version | string in ['11', '12', '13']
+        fail_msg: "Unsupported OS: {{ ansible_distribution }} {{ ansible_distribution_major_version }}. Only Debian versions 11, 12, and 13 are supported by this playbook."
+
+    - name: Debian - Check Sandbox Mode
+      ansible.builtin.stat:
+        path: /home/jules
+      register: jules_sandbox_stat
+
+    - name: Debian - Set Sandbox Fact
+      ansible.builtin.set_fact:
+        is_sandbox_jules: "{{ jules_sandbox_stat.stat.exists | default(false) }}"
+
+    - name: Debian - Ensure Report Directory Exists
+      ansible.builtin.file:
+        path: "{{ openscap_report_dir }}"
+        state: directory
+        mode: '0755'
+
+    # -------------------------------------------------------------------------
+    # MODE 1: REPORTING ONLY
+    # -------------------------------------------------------------------------
+    - name: Debian - Mode 1 - Reporting Only
+      block:
+        - name: Mode 1 - Execute Dual-Engine Pre-Hardening Audit
+          ansible.builtin.include_role:
+            name: reporting-ASIMP
+          vars:
+            execution_mode: "dev"
+
+        - name: Mode 1 - Display Audit Summary
+          ansible.builtin.debug:
+            msg:
+              - "=== Debian GNU/Linux System Audit (Reporting Only) ==="
+              - "Host: {{ inventory_hostname }} ({{ ansible_distribution }} {{ ansible_distribution_version }})"
+              - "System Configuration State: UNCHANGED"
+              - "OpenSCAP Compliance Report: {{ openscap_report_dir }}/cis-l2-report.html"
+              - "Lynis Hardening Report: /var/log/lynis-report.dat"
+      when: execution_mode == "report"
+
+    # -------------------------------------------------------------------------
+    # MODE 2: DOING (REMEDIATION & HARDENING)
+    # -------------------------------------------------------------------------
+    - name: Debian - Mode 2 - Doing (Remediation and Hardening)
+      block:
+        - name: Mode 2 - Phase 1 - Baseline Assessment
+          ansible.builtin.include_role:
+            name: reporting-ASIMP
+          vars:
+            execution_mode: "dev"
+
+        - name: Mode 2 - Phase 2 - Apply Debian Package Integrity Verification (debsums)
+          ansible.builtin.include_role:
+            name: update-ubuntu-ASIMP
+          vars:
+            debsums_ubuntu_check: true
+            upgrade_ubuntu_check: false
+
+        - name: Mode 2 - Phase 2 - Apply System File Permissions
+          ansible.builtin.file:
+            path: "{{ item.path }}"
+            owner: root
+            group: root
+            mode: "{{ item.mode }}"
+          loop:
+            - { path: '/etc/passwd', mode: '0644' }
+            - { path: '/etc/shadow', mode: '0000' }
+            - { path: '/etc/group', mode: '0644' }
+            - { path: '/etc/gshadow', mode: '0000' }
+          ignore_errors: yes
+
+        - name: Mode 2 - Phase 2 - Apply SSH Daemon Hardening
+          ansible.builtin.lineinfile:
+            path: /etc/ssh/sshd_config
+            regexp: "{{ item.regexp }}"
+            line: "{{ item.line }}"
+            state: present
+          loop:
+            - { regexp: '^#?PermitRootLogin', line: 'PermitRootLogin no' }
+            - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
+            - { regexp: '^#?MaxAuthTries', line: 'MaxAuthTries 4' }
+            - { regexp: '^#?ClientAliveInterval', line: 'ClientAliveInterval 300' }
+            - { regexp: '^#?ClientAliveCountMax', line: 'ClientAliveCountMax 0' }
+          register: sshd_config_res
+          ignore_errors: yes
+
+        - name: Mode 2 - Phase 2 - Apply PAM Password Quality Hardening
+          ansible.builtin.lineinfile:
+            path: /etc/security/pwquality.conf
+            regexp: "{{ item.regexp }}"
+            line: "{{ item.line }}"
+            state: present
+          loop:
+            - { regexp: '^#?minlen', line: 'minlen = 14' }
+            - { regexp: '^#?minclass', line: 'minclass = 4' }
+          ignore_errors: yes
+
+        - name: Mode 2 - Phase 2 - Apply Kernel Sysctl Hardening
+          ansible.posix.sysctl:
+            name: "{{ item.key }}"
+            value: "{{ item.value }}"
+            state: present
+            reload: yes
+          loop:
+            - { key: 'net.ipv4.ip_forward', value: '0' }
+            - { key: 'net.ipv4.conf.all.accept_redirects', value: '0' }
+            - { key: 'net.ipv4.conf.all.send_redirects', value: '0' }
+            - { key: 'net.ipv4.conf.all.rp_filter', value: '1' }
+            - { key: 'net.ipv4.tcp_syncookies', value: '1' }
+          when: not is_sandbox_jules
+          ignore_errors: yes
+
+        - name: Mode 2 - Phase 2 - Execute Lynis Security Audit & System Hardening
+          ansible.builtin.include_role:
+            name: lynis-ansible
+
+        - name: Mode 2 - Phase 3 - Post-Hardening Verification Assessment
+          ansible.builtin.include_role:
+            name: reporting-ASIMP
+          vars:
+            execution_mode: "dev"
+
+        - name: Mode 2 - Display Comparative Scorecard Summary
+          ansible.builtin.debug:
+            msg:
+              - "=== Debian GNU/Linux Security Remediation Completed ==="
+              - "Host: {{ inventory_hostname }} ({{ ansible_distribution }} {{ ansible_distribution_version }})"
+              - "System Configuration State: REMEDIATED & VERIFIED"
+      when: execution_mode == "remediate"

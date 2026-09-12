@@ -31,6 +31,12 @@ ASIMP's execution workflow is controlled by two core playbooks depending on the 
 - **Scope**: Specialized for executing self-hardening on the local host controller node.
 - **Connection**: `connection: local`.
 
+### 3. Distribution-Specific Standalone Playbooks
+- **`playbooks/rhel_family_cis.yml`**: Enterprise Linux CIS Level 2 audit and hardening for RHEL, AlmaLinux, Rocky Linux, and Oracle Linux 8, 9, 10.
+- **`playbooks/ubuntu_lts_hardening.yml`**: Dedicated audit and hardening workflow for Ubuntu 24.04 LTS and Ubuntu 26.04 LTS.
+- **`playbooks/debian_hardening.yml`**: Dedicated audit, package integrity verification (`debsums`), and hardening for Debian 11, 12, and 13.
+- **`playbooks/opensuse_hardening.yml`**: Dedicated audit, dynamic sysctl resource calculation (`sysctl-suse-ASIMP`), and hardening for openSUSE (Leap, Tumbleweed) and SUSE (SLES, SLED).
+
 ---
 
 ## 🔁 Hardening Phase Mapping
