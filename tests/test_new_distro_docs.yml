@@ -1,0 +1,74 @@
+---
+# Structural and content-correctness tests for Ubuntu LTS, Debian, and openSUSE docs.
+#
+# Run with:
+#   ansible-playbook -i tests/inventory tests/test_new_distro_docs.yml
+
+- name: Verify New Distro Hardening Guides
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    docs:
+      - path: "{{ repo_root }}/docs/ubuntu_lts_hardening.md"
+        title: "Ubuntu 24.04/26.04 LTS Hardening & Audit Guide"
+        sidebar_title: "Ubuntu LTS Guide"
+        playbook: "{{ repo_root }}/playbooks/ubuntu_lts_hardening.yml"
+      - path: "{{ repo_root }}/docs/debian_hardening.md"
+        title: "Debian GNU/Linux Hardening & Audit Guide"
+        sidebar_title: "Debian Hardening Guide"
+        playbook: "{{ repo_root }}/playbooks/debian_hardening.yml"
+      - path: "{{ repo_root }}/docs/opensuse_hardening.md"
+        title: "openSUSE / SUSE Linux Enterprise Hardening & Audit Guide"
+        sidebar_title: "openSUSE Hardening Guide"
+        playbook: "{{ repo_root }}/playbooks/opensuse_hardening.yml"
+
+  tasks:
+    - name: Stat doc file
+      ansible.builtin.stat:
+        path: "{{ item.path }}"
+      register: doc_stat
+      loop: "{{ docs }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: Assert doc files exist
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isreg
+        fail_msg: "Documentation file must exist: {{ item.item.path }}"
+      loop: "{{ doc_stat.results }}"
+      loop_control:
+        label: "{{ item.item.path }}"
+
+    - name: Assert doc frontmatter metadata matches expected title and sidebarTitle
+      ansible.builtin.assert:
+        that:
+          - (lookup('file', item.path).split('---', 2)[1] | from_yaml).okf_version == "0.1"
+          - (lookup('file', item.path).split('---', 2)[1] | from_yaml).type == "documentation"
+          - (lookup('file', item.path).split('---', 2)[1] | from_yaml).title == item.title
+          - (lookup('file', item.path).split('---', 2)[1] | from_yaml).sidebarTitle == item.sidebar_title
+        fail_msg: "Frontmatter metadata for {{ item.path }} does not match expected title or sidebarTitle"
+      loop: "{{ docs }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: Stat playbook files
+      ansible.builtin.stat:
+        path: "{{ item.playbook }}"
+      register: pb_stat
+      loop: "{{ docs }}"
+      loop_control:
+        label: "{{ item.playbook }}"
+
+    - name: Assert playbook files exist
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isreg
+        fail_msg: "Playbook file must exist: {{ item.item.playbook }}"
+      loop: "{{ pb_stat.results }}"
+      loop_control:
+        label: "{{ item.item.playbook }}"

@@ -28,8 +28,11 @@
             "pages": [
               "README",
               "SUMMARY",
+              "debian_hardening",
               "index",
-              "rhel_family_cis"
+              "opensuse_hardening",
+              "rhel_family_cis",
+              "ubuntu_lts_hardening"
             ]
           },
           {

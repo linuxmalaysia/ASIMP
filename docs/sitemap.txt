@@ -12,4 +12,7 @@ https://linuxmalaysia.github.io/ASIMP/output_openscap.html
 https://linuxmalaysia.github.io/ASIMP/legal-notice.html
 https://linuxmalaysia.github.io/ASIMP/security_posture_assessment.html
 https://linuxmalaysia.github.io/ASIMP/rhel_family_cis.html
+https://linuxmalaysia.github.io/ASIMP/ubuntu_lts_hardening.html
+https://linuxmalaysia.github.io/ASIMP/debian_hardening.html
+https://linuxmalaysia.github.io/ASIMP/opensuse_hardening.html
 https://linuxmalaysia.github.io/ASIMP/troubleshooting.html

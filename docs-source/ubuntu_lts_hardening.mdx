@@ -1,0 +1,75 @@
+---
+title: "Ubuntu 24.04/26.04 LTS Hardening & Audit Guide"
+sidebarTitle: "Ubuntu LTS Guide"
+description: "Topics: ubuntu, lts, openscap, lynis, audit, remediation, ansible, debsums"
+---
+
+# Ubuntu 24.04/26.04 LTS Hardening & Audit Guide
+
+The **Ubuntu Long Term Support (LTS)** series, including **Ubuntu 24.04 LTS (Noble Numbat)** and **Ubuntu 26.04 LTS**, represents the foundation of modern cloud and enterprise infrastructure deployments. Securing Ubuntu LTS nodes requires a combined approach of package checksum verification, cryptographic policy enforcement, SSH daemon hardening, kernel parameter sysctl tuning, and automated audit scanning via OpenSCAP and Lynis.
+
+This guide details the **Ansible System Integrity Management Platform (ASIMP)** workflow for evaluating, auditing, and hardening Ubuntu 24.04 LTS and 26.04 LTS host environments.
+
+---
+
+## 🧭 Scope & Distribution Matrix
+
+ASIMP provides target-aware validation for Ubuntu LTS releases, integrating package integrity checking (`debsums`), Security Compliance Assessment Protocol (SCAP), and Lynis hardening:
+
+| Distribution | Version | Integrity Engine | Audit Engines Supported | Playbook Target |
+| :--- | :--- | :--- | :--- | :--- |
+| **Ubuntu 24.04 LTS** | `24.04` | `debsums` (MD5 Checksums) | OpenSCAP, Lynis | `playbooks/ubuntu_lts_hardening.yml` |
+| **Ubuntu 26.04 LTS** | `26.04` | `debsums` (MD5 Checksums) | OpenSCAP, Lynis | `playbooks/ubuntu_lts_hardening.yml` |
+
+---
+
+## 📊 Architectural Paradigm: Mode Separation
+
+ASIMP strictly separates operations into two distinct execution modes, controlled via the `execution_mode` variable:
+
+1. **Mode A: Reporting Only (`execution_mode: "report"`)**:
+   - Performs non-destructive compliance scanning and evaluation.
+   - Outputs visual HTML reports and XML results.
+   - Does not apply hardening, but may create report directories and files.
+
+2. **Mode B: Doing (`execution_mode: "remediate"`)**:
+   - Performs a pre-remediation baseline assessment ("Phase 1: Measure").
+   - Applies automated package upgrades, file permission controls, SSH hardening, and kernel sysctl tuning ("Phase 2: Harden").
+   - Performs package checksum verification using `debsums`.
+   - Executes a post-remediation evaluation scan ("Phase 3: Re-Measure").
+   - Outputs a comparative scorecard.
+
+---
+
+## 🚀 Ansible Playbook Execution Guide
+
+The dedicated playbook `playbooks/ubuntu_lts_hardening.yml` automates both modes across Ubuntu 24.04 LTS and 26.04 LTS targets.
+
+### 1. Execute Reporting Only Mode
+
+To run a non-destructive security assessment and view compliance reports:
+
+```bash
+ansible-playbook -i inventory/hosts playbooks/ubuntu_lts_hardening.yml -e "execution_mode=report"
+```
+
+### 2. Execute Doing (Remediation & Hardening) Mode
+
+To run baseline audits, apply Ubuntu LTS security hardening and package updates, and generate verification reports:
+
+```bash
+ansible-playbook -i inventory/hosts playbooks/ubuntu_lts_hardening.yml -e "execution_mode=remediate"
+```
+
+---
+
+## 🐳 Unprivileged Sandbox & Fallback Strategy
+
+Inside unprivileged container environments or Google Jules sandboxes (detected via `/home/jules`):
+
+1. **Privilege Safety Guards**: Tasks modifying restricted kernel settings or system services run with `ignore_errors: true` or evaluate `is_sandbox_jules`.
+2. **Mock Auditing**: Diagnostic scorecards gracefully report simulated baseline and hardened metrics without halting workflow execution.
+
+---
+
+ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu Malaysia (Piawai) | GNU General Public License v3.0 | [Legal Notice & Disclaimer](https://linuxmalaysia.github.io/ASIMP/legal-notice.html)

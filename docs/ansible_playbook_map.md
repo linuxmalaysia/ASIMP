@@ -23,6 +23,10 @@ The following index maps playbooks, roles, and support files in ASIMP to their c
 | `play.yml` | Multi-host remote execution | Dual-engine baseline checks, upgrades, system hardening, and verification | `docs/openscap.md`, `docs/lynis.md`, `docs/configuration.md` |
 | `play-localhost.yml` | Localhost execution | Hardening and audit on localhost with dynamic privilege level checking | `docs/index.md`, `docs/troubleshooting.md`, `docs/dsom_ansible_review.md` |
 | `playbooks/matrix_test.yml` | Local multi-OS testing matrix | Parallel Podman 5+ container orchestration for Ubuntu, Debian, and AlmaLinux | `docs/local_testing_matrix_spec.md` |
+| `playbooks/rhel_family_cis.yml` | Enterprise Linux CIS L2 | Audit and hardening for RHEL, AlmaLinux, Rocky Linux, Oracle Linux 8/9/10 | `docs/rhel_family_cis.md` |
+| `playbooks/ubuntu_lts_hardening.yml` | Ubuntu LTS Hardening | Audit, package updates, debsums, and hardening for Ubuntu 24.04/26.04 LTS | `docs/ubuntu_lts_hardening.md` |
+| `playbooks/debian_hardening.yml` | Debian Hardening | Audit, debsums integrity check, and hardening for Debian 11/12/13 | `docs/debian_hardening.md` |
+| `playbooks/opensuse_hardening.yml` | openSUSE Hardening | Audit, dynamic sysctl tuning (`sysctl-suse-ASIMP`), and hardening for openSUSE / SUSE | `docs/opensuse_hardening.md` |
 | `tests/test_*.yml` | Playbook-level regression tests | Validates layout metadata, navbar entries, footers, and execution logic | `docs/local_testing_matrix_spec.md`, `docs/dsom_ansible_review.md` |
 | `scripts/verify_sitemap_links.py` | Pre-merge links validation | Crawls local documents and verifies GitBook links and sitemap integrity | `docs/_layouts/default.html` |
 
