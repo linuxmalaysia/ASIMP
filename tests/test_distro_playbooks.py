@@ -64,8 +64,15 @@ class TestDistroPlaybooks(unittest.TestCase):
         play, tasks = self._load_playbook("opensuse_hardening.yml")
         mode2_block = next(t for t in tasks if "Mode 2" in t.get("name", ""))
         block_tasks = mode2_block.get("block", [])
-        sysctl_task = next(t for t in block_tasks if "sysctl-suse-ASIMP" in str(t))
-        self.assertIsNotNone(sysctl_task)
+        sysctl_task = next(
+            (
+                t
+                for t in block_tasks
+                if t.get("ansible.builtin.include_role", {}).get("name") == "sysctl-suse-ASIMP"
+            ),
+            None,
+        )
+        self.assertIsNotNone(sysctl_task, "openSUSE playbook must include_role sysctl-suse-ASIMP")
 
 
 if __name__ == "__main__":
