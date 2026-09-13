@@ -38,14 +38,19 @@
         that:
           - item.stat.exists
           - item.stat.isreg
-        fail_msg: "Documentation file must exist"
+        fail_msg: "Documentation file must exist: {{ item.item.path }}"
       loop: "{{ doc_stat.results }}"
       loop_control:
         label: "{{ item.item.path }}"
 
-    - name: Load and validate frontmatter for each doc
-      ansible.builtin.set_fact:
-        doc_frontmatter: "{{ lookup('file', item.path).split('---', 2)[1] | from_yaml }}"
+    - name: Assert doc frontmatter metadata matches expected title and sidebarTitle
+      ansible.builtin.assert:
+        that:
+          - (lookup('file', item.path).split('---', 2)[1] | from_yaml).okf_version == "0.1"
+          - (lookup('file', item.path).split('---', 2)[1] | from_yaml).type == "documentation"
+          - (lookup('file', item.path).split('---', 2)[1] | from_yaml).title == item.title
+          - (lookup('file', item.path).split('---', 2)[1] | from_yaml).sidebarTitle == item.sidebar_title
+        fail_msg: "Frontmatter metadata for {{ item.path }} does not match expected title or sidebarTitle"
       loop: "{{ docs }}"
       loop_control:
         label: "{{ item.path }}"
@@ -63,7 +68,7 @@
         that:
           - item.stat.exists
           - item.stat.isreg
-        fail_msg: "Playbook file must exist"
+        fail_msg: "Playbook file must exist: {{ item.item.playbook }}"
       loop: "{{ pb_stat.results }}"
       loop_control:
         label: "{{ item.item.playbook }}"

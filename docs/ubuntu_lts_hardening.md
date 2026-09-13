@@ -34,7 +34,7 @@ ASIMP strictly separates operations into two distinct execution modes, controlle
 1. **Mode A: Reporting Only (`execution_mode: "report"`)**:
    - Performs non-destructive compliance scanning and evaluation.
    - Outputs visual HTML reports and XML results.
-   - **Guarantees ZERO changes** to system configuration, services, or kernel settings.
+   - Does not apply hardening, but may create report directories and files.
 
 2. **Mode B: Doing (`execution_mode: "remediate"`)**:
    - Performs a pre-remediation baseline assessment ("Phase 1: Measure").

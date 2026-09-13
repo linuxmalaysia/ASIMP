@@ -92,6 +92,7 @@
             - { path: '/etc/shadow', mode: '0000' }
             - { path: '/etc/group', mode: '0644' }
             - { path: '/etc/gshadow', mode: '0000' }
+          register: file_perm_res
           ignore_errors: yes
 
         - name: Mode 2 - Phase 2 - Apply SSH Daemon Hardening
@@ -109,6 +110,23 @@
           register: sshd_config_res
           ignore_errors: yes
 
+        - name: Mode 2 - Phase 2 - Validate SSH Configuration
+          ansible.builtin.command: sshd -t
+          register: sshd_validate_res
+          changed_when: false
+          failed_when: false
+          when: sshd_config_res.changed | default(false)
+
+        - name: Mode 2 - Phase 2 - Reload SSH Service on Valid Configuration
+          ansible.builtin.service:
+            name: sshd
+            state: reloaded
+          when:
+            - not is_sandbox_jules
+            - sshd_config_res.changed | default(false)
+            - sshd_validate_res.rc | default(1) == 0
+          register: sshd_reload_res
+
         - name: Mode 2 - Phase 2 - Apply PAM Password Quality Hardening
           ansible.builtin.lineinfile:
             path: /etc/security/pwquality.conf
@@ -118,6 +136,7 @@
           loop:
             - { regexp: '^#?minlen', line: 'minlen = 14' }
             - { regexp: '^#?minclass', line: 'minclass = 4' }
+          register: pam_pwquality_res
           ignore_errors: yes
 
         - name: Mode 2 - Phase 2 - Execute Lynis Security Audit & System Hardening
@@ -130,10 +149,14 @@
           vars:
             execution_mode: "dev"
 
+        - name: Mode 2 - Evaluate Remediation and Verification Success
+          ansible.builtin.set_fact:
+            phase2_remediation_success: "{{ not (file_perm_res.failed | default(false) or sshd_config_res.failed | default(false) or pam_pwquality_res.failed | default(false)) }}"
+
         - name: Mode 2 - Display Comparative Scorecard Summary
           ansible.builtin.debug:
             msg:
               - "=== openSUSE / SUSE Security Remediation Completed ==="
               - "Host: {{ inventory_hostname }} ({{ ansible_distribution }} {{ ansible_distribution_version }})"
-              - "System Configuration State: REMEDIATED & VERIFIED"
+              - "System Configuration State: {{ 'ENFORCED & VERIFIED' if phase2_remediation_success | default(true) | bool else 'REMEDIATED (PARTIAL / ERRORS DETECTED)' }}"
       when: execution_mode == "remediate"
