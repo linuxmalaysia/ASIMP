@@ -354,7 +354,9 @@ The complete, declarative Ansible playbook governing the distribution and applic
         description: RHEL 8 Air-Gapped Security Errata Local Repository
         baseurl: "file://{{ remote_errata_dir }}"
         enabled: true
-        gpgcheck: false
+        gpgcheck: true
+        gpgkey: "file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release"
+        repo_gpgcheck: true
         module_hotfixes: true
 
 - name: Stage 2.2 - Execute Non-Interactive DNF Security Upgrade
