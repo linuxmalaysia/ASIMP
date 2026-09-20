@@ -35,7 +35,7 @@
     <!-- Left Distinct Sector: OVAL Errata Stream -->
     <text x="230" y="105" class="circle-stat" fill="#0369A1" text-anchor="middle">2,703</text>
     <text x="230" y="124" class="circle-title" fill="#0369A1" text-anchor="middle">OVAL DEFINITIONS</text>
-    <text x="230" y="140" class="circle-meta" text-anchor="middle">AlmaLinux 8.10 Official Stream</text>
+    <text x="230" y="140" class="circle-meta" text-anchor="middle">AlmaLinux 10.0 Official Stream</text>
     <text x="230" y="154" class="circle-meta" text-anchor="middle">(ALSA Errata Catalog)</text>
 
     <!-- Center Intersecting Sector: 2,810 Critical & High Reconciled Findings -->

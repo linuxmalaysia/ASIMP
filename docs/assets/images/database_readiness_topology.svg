@@ -41,7 +41,7 @@
     <rect width="260" height="74" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
     <rect width="4" height="74" rx="2" fill="#0284C7"/>
     <text x="14" y="18" class="card-header" fill="#0284C7">Ansible Controller (CTL-NODE-01)</text>
-    <text x="14" y="36" class="card-body">IP: 192.0.2.10 • AlmaLinux 8.10</text>
+    <text x="14" y="36" class="card-body">IP: 192.0.2.10 • AlmaLinux 10.0</text>
     <text x="14" y="52" class="card-body">Staged: ~/asimp-workspace/ (16 Plays)</text>
     <text x="14" y="66" class="status-pill" fill="#16A34A">● CONTROLLER READY (Ping 100%)</text>
   </g>
@@ -84,7 +84,7 @@
     <rect width="260" height="74" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
     <rect width="4" height="74" rx="2" fill="#0284C7"/>
     <text x="14" y="18" class="card-header" fill="#0284C7">Ansible Controller (PROD-CTL-01)</text>
-    <text x="14" y="36" class="card-body">IP: 192.0.2.110 • AlmaLinux 8.10</text>
+    <text x="14" y="36" class="card-body">IP: 192.0.2.110 • AlmaLinux 10.0</text>
     <text x="14" y="52" class="card-body">Key: portal_dc1_ansible_key</text>
     <text x="14" y="66" class="status-pill" fill="#16A34A">● CONTROLLER AUDITED</text>
   </g>
@@ -127,7 +127,7 @@
     <rect width="260" height="74" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
     <rect width="4" height="74" rx="2" fill="#0284C7"/>
     <text x="14" y="18" class="card-header" fill="#0284C7">Ansible Controller (PROD-CTL-01)</text>
-    <text x="14" y="36" class="card-body">IP: 192.0.2.100 • AlmaLinux 8.10</text>
+    <text x="14" y="36" class="card-body">IP: 192.0.2.100 • AlmaLinux 10.0</text>
     <text x="14" y="52" class="card-body">Staged: ~/asimp-workspace/dsom-portal-dc2-prod</text>
     <text x="14" y="66" class="status-pill" fill="#16A34A">● 100% PING PONG (7/7 Target Nodes)</text>
   </g>

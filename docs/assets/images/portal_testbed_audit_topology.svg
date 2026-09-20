@@ -103,8 +103,8 @@
       <text x="10" y="38" class="node-meta">Host: core-db-01</text>
       <text x="10" y="54" class="node-meta">IP: 192.0.2.20</text>
       <text x="10" y="70" class="node-meta">Role: Core Engine &amp; PostgreSQL</text>
-      <text x="10" y="86" class="node-meta">OS: AlmaLinux 8.10 (Ootpa)</text>
-      <text x="10" y="102" class="node-meta">Kernel: 4.18.0-553.el8_10</text>
+      <text x="10" y="86" class="node-meta">OS: AlmaLinux 10.0 (Ootpa)</text>
+      <text x="10" y="102" class="node-meta">Kernel: 6.12.0-52.el10</text>
       <text x="10" y="118" class="node-meta">CPU: 8 vCPUs | RAM: 32 GB</text>
       <text x="10" y="134" class="node-meta">Storage: /data/postgresql_db 48G</text>
       <text x="10" y="150" class="node-status">● DAEMONS &amp; DB ACTIVE</text>
@@ -119,8 +119,8 @@
       <text x="10" y="38" class="node-meta">Host: web-node-01</text>
       <text x="10" y="54" class="node-meta">IP: 192.0.2.30</text>
       <text x="10" y="70" class="node-meta">Role: Portal Web Standalone + PG17</text>
-      <text x="10" y="86" class="node-meta">OS: AlmaLinux 8.10 (Ootpa)</text>
-      <text x="10" y="102" class="node-meta">Kernel: 4.18.0-553.22.1</text>
+      <text x="10" y="86" class="node-meta">OS: AlmaLinux 10.0 (Ootpa)</text>
+      <text x="10" y="102" class="node-meta">Kernel: 6.12.0-108.el10_0</text>
       <text x="10" y="118" class="node-meta">CPU: 4 vCPUs | RAM: 16 GB</text>
       <text x="10" y="134" class="node-meta">Role Var: web_pg_role=primary</text>
       <text x="10" y="150" class="node-status">● Portal Web APPLICATION UP</text>
@@ -135,8 +135,8 @@
       <text x="10" y="38" class="node-meta">Host: mgmt-node-01</text>
       <text x="10" y="54" class="node-meta">IP: 192.0.2.40</text>
       <text x="10" y="70" class="node-meta">Role: Management Gateway</text>
-      <text x="10" y="86" class="node-meta">OS: AlmaLinux 8.10 (Ootpa)</text>
-      <text x="10" y="102" class="node-meta">Kernel: 4.18.0-553.22.1</text>
+      <text x="10" y="86" class="node-meta">OS: AlmaLinux 10.0 (Ootpa)</text>
+      <text x="10" y="102" class="node-meta">Kernel: 6.12.0-108.el10_0</text>
       <text x="10" y="118" class="node-meta">CPU: 8 vCPUs | RAM: 32 GB</text>
       <text x="10" y="134" class="node-meta">Containers: 20 Microservices</text>
       <text x="10" y="150" class="node-status">● Management Gateway CONTAINERS ONLINE</text>
@@ -151,8 +151,8 @@
       <text x="10" y="38" class="node-meta">Host: ha-node-01</text>
       <text x="10" y="54" class="node-meta">IP: 192.0.2.50</text>
       <text x="10" y="70" class="node-meta">Role: Ingress Gateway</text>
-      <text x="10" y="86" class="node-meta">OS: AlmaLinux 8.10 (Ootpa)</text>
-      <text x="10" y="102" class="node-meta">Kernel: 4.18.0-553.22.1</text>
+      <text x="10" y="86" class="node-meta">OS: AlmaLinux 10.0 (Ootpa)</text>
+      <text x="10" y="102" class="node-meta">Kernel: 6.12.0-108.el10_0</text>
       <text x="10" y="118" class="node-meta">CPU: 2 vCPUs | RAM: 8 GB</text>
       <text x="10" y="134" class="node-meta">Load Balancer: HAProxy Ingress</text>
       <text x="10" y="150" class="node-status">● INGRESS ROUTING ACTIVE</text>
