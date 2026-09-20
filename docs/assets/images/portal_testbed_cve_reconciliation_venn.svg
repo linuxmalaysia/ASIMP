@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 420" width="100%" height="100%">
+  <defs>
+    <linearGradient id="rhGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EE0000" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#CC0000" stop-opacity="0.05"/>
+    </linearGradient>
+    <linearGradient id="vaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284C7" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#0369A1" stop-opacity="0.05"/>
+    </linearGradient>
+    <linearGradient id="overlapGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#059669" stop-opacity="0.10"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="2" dy="3" stdDeviation="3" flood-opacity="0.1"/>
+    </filter>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="920" height="420" fill="#FFFFFF" rx="12"/>
+  <rect width="918" height="418" x="1" y="1" fill="none" stroke="#E2E8F0" stroke-width="1.5" rx="11"/>
+
+  <!-- Title Header -->
+  <text x="460" y="38" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A" text-anchor="middle">Knowledge Portal Fleet Testbed: OVAL True Risk vs. VA Raw Scan Reconciliation</text>
+  <text x="460" y="58" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">Reconciliation across 5 Testbed VMs: ctl-node-01, 008, 001, 005, 004</text>
+
+  <!-- Left Circle: Carrier VA Scan Banner -->
+  <circle cx="340" cy="225" r="150" fill="url(#vaGrad)" stroke="#0284C7" stroke-width="2.5" filter="url(#shadow)"/>
+
+  <!-- Right Circle: AlmaLinux OVAL Banner -->
+  <circle cx="580" cy="225" r="150" fill="url(#rhGrad)" stroke="#DC2626" stroke-width="2.5" filter="url(#shadow)"/>
+
+  <!-- Left Side Annotations (Pure VA Scan Phantom Domain) -->
+  <g transform="translate(230, 150)">
+    <rect x="-30" y="-15" width="130" height="30" rx="6" fill="#F0F9FF" stroke="#BAE6FD" stroke-width="1"/>
+    <text x="35" y="5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#0369A1" text-anchor="middle">Phantom Exposures</text>
+    <text x="35" y="35" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="24" font-weight="800" fill="#0284C7" text-anchor="middle">2,692</text>
+    <text x="35" y="52" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#475569" text-anchor="middle">Raw Banner Detections</text>
+    <text x="35" y="68" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#64748B" text-anchor="middle">Levels 1 to 7 (Medium/Low)</text>
+    <text x="35" y="82" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#64748B" text-anchor="middle">Upstream Version Mismatch</text>
+  </g>
+
+  <!-- Overlap Region (Actionable Vulnerabilities & Hardening) -->
+  <g transform="translate(460, 150)">
+    <rect x="-55" y="-15" width="110" height="30" rx="6" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+    <text x="0" y="5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#047857" text-anchor="middle">True Actionable</text>
+    <text x="0" y="35" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="26" font-weight="800" fill="#059669" text-anchor="middle">910</text>
+    <text x="0" y="52" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#065F46" text-anchor="middle">853 Errata Packages</text>
+    <text x="0" y="68" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#047857" text-anchor="middle">Levels 8, 9, 10 (Critical/High)</text>
+    <text x="0" y="82" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="600" fill="#B45309" text-anchor="middle">+ 57 Non-DNF Items</text>
+    <text x="0" y="96" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#78350F" text-anchor="middle">SSHD &amp; Perms Hardening</text>
+  </g>
+
+  <!-- Right Side Annotations (Pure OVAL RH Backport Verification) -->
+  <g transform="translate(685, 150)">
+    <rect x="-35" y="-15" width="130" height="30" rx="6" fill="#FEF2F2" stroke="#FECACA" stroke-width="1"/>
+    <text x="30" y="5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#B91C1C" text-anchor="middle">AlmaLinux OVAL</text>
+    <text x="30" y="35" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="24" font-weight="800" fill="#DC2626" text-anchor="middle">Article 221883</text>
+    <text x="30" y="52" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#475569" text-anchor="middle">librpm Epoch Verification</text>
+    <text x="30" y="68" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#64748B" text-anchor="middle">Security Advisory Tracking</text>
+    <text x="30" y="82" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#64748B" text-anchor="middle">Zero ABI/API Breakage</text>
+  </g>
+
+  <!-- Bottom Comparison Cards -->
+  <rect x="50" y="355" width="370" height="46" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="65" y="375" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#0369A1">Network VA Scanner Limitation:</text>
+  <text x="65" y="391" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#64748B">Inspects SSH banners (e.g., OpenSSH 8.0) and flags upstream CVEs without evaluating AlmaLinux release tags.</text>
+
+  <rect x="500" y="355" width="370" height="46" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="515" y="375" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#047857">AlmaLinux OVAL Deterministic Engine:</text>
+  <text x="515" y="391" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#64748B">Queries installed RPM database directly (EVR) validating patch backports, eliminating 74.7% of false positives.</text>
+</svg>

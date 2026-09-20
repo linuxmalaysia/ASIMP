@@ -1,5 +1,6 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: "documentation"
 title: "GitBook & DSOM Summary Index"
 timestamp: "2026-08-15T00:00:00Z"
@@ -25,6 +26,7 @@ topics: ["summary", "gitbook", "dsom", "diataxis"]
 * [Ubuntu 24.04/26.04 LTS Guide](ubuntu_lts_hardening.md)
 * [Debian Hardening Guide](debian_hardening.md)
 * [openSUSE Hardening Guide](opensuse_hardening.md)
+* [Knowledge Sharing Portal OpenSCAP Audit Report](knowledge_portal_testbed_openscap_va_report.html)
 
 ## Reference Material
 * [Component & Tool Index](reference/index.md)

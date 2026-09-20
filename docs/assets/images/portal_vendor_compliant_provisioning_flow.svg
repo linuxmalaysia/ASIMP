@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 430" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #FFFFFF; }
+      .card { rx: 8px; ry: 8px; stroke-width: 1.5px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.04)); }
+      .card-stage { fill: #F8FAFC; stroke: #64748B; }
+      .card-file { fill: #EFF6FF; stroke: #2563EB; }
+      .card-cmd { fill: #FEF3C7; stroke: #D97706; }
+      .card-act { fill: #F0FDF4; stroke: #16A34A; }
+      .step-title { font-family: 'Inter', -apple-system, sans-serif; font-weight: 700; font-size: 13px; fill: #0F172A; }
+      .step-code { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 11px; fill: #1E293B; font-weight: 600; }
+      .bullet-text { font-family: 'Inter', -apple-system, sans-serif; font-size: 11px; fill: #334155; }
+      .arrow-line { stroke: #2563EB; stroke-width: 2px; fill: none; stroke-linecap: round; }
+      .branch-line { stroke: #64748B; stroke-width: 1.5px; fill: none; stroke-linecap: round; }
+      .badge-step { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; fill: #FFFFFF; }
+    </style>
+    <marker id="blue-arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#2563EB" />
+    </marker>
+    <marker id="dark-arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M 0 1 L 7 5 L 0 9 z" fill="#64748B" />
+    </marker>
+  </defs>
+
+  <rect width="100%" height="100%" class="bg" />
+
+  <!-- Step 1 -->
+  <g transform="translate(50, 20)">
+    <rect width="780" height="58" class="card card-stage" />
+    <circle cx="28" cy="29" r="14" fill="#64748B" />
+    <text x="28" y="33" class="badge-step" text-anchor="middle">1</text>
+    <text x="56" y="26" class="step-title">Declarative Ansible Provisioning (Playbook 06i)</text>
+    <text x="56" y="44" class="step-code">playbooks-portal-dc1-prod/.../06i_configure_cbc_info_provider.yml</text>
+  </g>
+
+  <path d="M 440 78 L 440 104" class="arrow-line" marker-end="url(#blue-arrow)" />
+
+  <!-- Step 2 -->
+  <g transform="translate(50, 105)">
+    <rect width="780" height="58" class="card card-file" />
+    <circle cx="28" cy="29" r="14" fill="#2563EB" />
+    <text x="28" y="33" class="badge-step" text-anchor="middle">2</text>
+    <text x="56" y="26" class="step-title">Fixed Staging Import File Drop</text>
+    <text x="56" y="44" class="step-code">/var/app/config/info_prov.imp  (APP_NAME=PWC-PORTAL, ALLOW_NEW_PORTAL_REQ=Y)</text>
+  </g>
+
+  <path d="M 440 163 L 440 190" class="arrow-line" marker-end="url(#blue-arrow)" />
+
+  <!-- Step 3 -->
+  <g transform="translate(50, 192)">
+    <rect width="780" height="106" class="card card-cmd" />
+    <circle cx="28" cy="28" r="14" fill="#D97706" />
+    <text x="28" y="32" class="badge-step" text-anchor="middle">3</text>
+    <text x="56" y="25" class="step-title">Vendor Ingest &amp; Schema Staging</text>
+    <text x="56" y="42" class="step-code">su - appadmin -c "portal tenant import /var/app/config/info_prov.imp"</text>
+
+    <!-- Sub actions -->
+    <path d="M 75 52 L 75 66 L 90 66" class="branch-line" marker-end="url(#dark-arrow)" />
+    <text x="100" y="70" class="bullet-text">Validates grammar, character lengths, repetition rates, and TENANT_ID bounds</text>
+
+    <path d="M 75 66 L 75 84 L 90 84" class="branch-line" marker-end="url(#dark-arrow)" />
+    <text x="100" y="88" class="bullet-text">Creates Inactive Candidate Configuration Set (returns Set-ID, e.g. Set 104)</text>
+
+    <path d="M 75 84 L 75 98 L 90 98" class="branch-line" marker-end="url(#dark-arrow)" />
+    <text x="100" y="101" class="bullet-text">Stages verified configuration rows into PostgreSQL Schema Core Engine (State: INACTIVE)</text>
+  </g>
+
+  <path d="M 440 298 L 440 324" class="arrow-line" marker-end="url(#blue-arrow)" />
+
+  <!-- Step 4 -->
+  <g transform="translate(50, 326)">
+    <rect width="780" height="88" class="card card-act" />
+    <circle cx="28" cy="28" r="14" fill="#16A34A" />
+    <text x="28" y="32" class="badge-step" text-anchor="middle">4</text>
+    <text x="56" y="25" class="step-title">Zero-Downtime Hot Activation &amp; Cache Reload</text>
+    <text x="56" y="42" class="step-code">su - vaspadm -c "cbc 104 activate"</text>
+
+    <!-- Sub actions -->
+    <path d="M 75 52 L 75 64 L 90 64" class="branch-line" marker-end="url(#dark-arrow)" />
+    <text x="100" y="68" class="bullet-text">Updates active configuration pointer in PostgreSQL Database 16</text>
+
+    <path d="M 75 64 L 75 78 L 90 78" class="branch-line" marker-end="url(#dark-arrow)" />
+    <text x="100" y="82" class="bullet-text">Emits SIGHUP / IPC signal to master daemon cbcd to hot-reload live RAM tables</text>
+  </g>
+</svg>

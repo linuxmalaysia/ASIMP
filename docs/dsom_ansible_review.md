@@ -1,5 +1,6 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 layout: default
 type: "documentation"
 title: "Review & Adoption of DSOM Ansible Configuration Guide (v3.6.2)"

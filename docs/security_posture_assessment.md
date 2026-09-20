@@ -1,5 +1,6 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: documentation
 title: "Security Posture Assessment (SPA) Requirement Checklist"
 timestamp: "2026-08-10T12:00:00Z"

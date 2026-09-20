@@ -9,6 +9,7 @@ https://linuxmalaysia.github.io/ASIMP/openscap.html
 https://linuxmalaysia.github.io/ASIMP/output_asimp.html
 https://linuxmalaysia.github.io/ASIMP/output_lynis.html
 https://linuxmalaysia.github.io/ASIMP/output_openscap.html
+https://linuxmalaysia.github.io/ASIMP/knowledge_portal_testbed_openscap_va_report.html
 https://linuxmalaysia.github.io/ASIMP/legal-notice.html
 https://linuxmalaysia.github.io/ASIMP/security_posture_assessment.html
 https://linuxmalaysia.github.io/ASIMP/rhel_family_cis.html

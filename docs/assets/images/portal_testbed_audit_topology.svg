@@ -1,0 +1,161 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 440" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #FFFFFF; }
+      .title { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 15px; font-weight: 700; fill: #0F172A; }
+      .sub { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 10.5px; fill: #64748B; }
+      .node-header { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 11px; font-weight: 700; }
+      .node-meta { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 9.2px; fill: #334155; }
+      .node-status { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 8.5px; font-weight: 700; fill: #15803D; }
+      .conn-label { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 8.5px; fill: #0369A1; font-weight: 600; }
+      .box-label { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 10px; font-weight: 700; fill: #1E3A8A; }
+    </style>
+    <filter id="shadow" x="-2%" y="-2%" width="104%" height="104%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#0F172A" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284C7"/>
+    </marker>
+  </defs>
+
+  <rect width="920" height="440" class="bg"/>
+
+  <!-- Top Banner -->
+  <rect x="16" y="12" width="888" height="46" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1"/>
+  <text x="32" y="32" class="title">Knowledge Portal Fleet Testbed Access Chain &amp; Dedicated Ansible Audit Topology</text>
+  <text x="32" y="47" class="sub">Pre-Remediation Infrastructure Architecture • Dedicated Testbed Environment • Rules 11, 32, &amp; 33 Compliant</text>
+
+  <!-- Access Chain Tier (Horizontal) -->
+  <!-- Hop 1: Local Control Node (WSL2) -->
+  <g transform="translate(16, 70)">
+    <rect width="210" height="80" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1" filter="url(#shadow)"/>
+    <rect width="210" height="22" rx="6" fill="#F1F5F9"/>
+    <rect y="16" width="210" height="6" fill="#F1F5F9"/>
+    <text x="12" y="15" class="node-header" fill="#0F172A">1. Local Workstation (WSL2)</text>
+    <text x="12" y="38" class="node-meta">User: asimp</text>
+    <text x="12" y="52" class="node-meta">Persistent SSH ControlPersist</text>
+    <text x="12" y="68" class="node-status">● LOCAL CONTROL NODE</text>
+  </g>
+
+  <!-- Arrow 1 -> 2 -->
+  <path d="M 226 110 L 250 110" stroke="#0284C7" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+  <text x="228" y="103" class="conn-label">22222</text>
+
+  <!-- Hop 2: External Jumphost -->
+  <g transform="translate(258, 70)">
+    <rect width="200" height="80" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1" filter="url(#shadow)"/>
+    <rect width="200" height="22" rx="6" fill="#F1F5F9"/>
+    <rect y="16" width="200" height="6" fill="#F1F5F9"/>
+    <text x="12" y="15" class="node-header" fill="#0284C7">2. Jump Box 1 (Public)</text>
+    <text x="12" y="38" class="node-meta">IP: 198.51.100.10:22222</text>
+    <text x="12" y="52" class="node-meta">Tunnel: 10.26.79.216 (eth3)</text>
+    <text x="12" y="68" class="node-status">● PROXY RELAY ONLINE</text>
+  </g>
+
+  <!-- Arrow 2 -> 3 -->
+  <path d="M 458 110 L 482 110" stroke="#0284C7" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+  <text x="460" y="103" class="conn-label">VPN</text>
+
+  <!-- Hop 3: Edge Bastion -->
+  <g transform="translate(490, 70)">
+    <rect width="200" height="80" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1" filter="url(#shadow)"/>
+    <rect width="200" height="22" rx="6" fill="#F1F5F9"/>
+    <rect y="16" width="200" height="6" fill="#F1F5F9"/>
+    <text x="12" y="15" class="node-header" fill="#0284C7">3. Portal Edge Bastion</text>
+    <text x="12" y="38" class="node-meta">Host: jump-bastion-01</text>
+    <text x="12" y="52" class="node-meta">IP: 198.51.100.20 (ASSET-10022)</text>
+    <text x="12" y="68" class="node-status">● PORT 22 / KEY AUTH</text>
+  </g>
+
+  <!-- Arrow 3 -> 4 -->
+  <path d="M 690 110 L 714 110" stroke="#0284C7" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+  <text x="692" y="103" class="conn-label">O&amp;M</text>
+
+  <!-- Hop 4: Testbed Controller -->
+  <g transform="translate(722, 70)">
+    <rect width="182" height="80" rx="6" fill="#EFF6FF" stroke="#3B82F6" stroke-width="1.5" filter="url(#shadow)"/>
+    <rect width="182" height="22" rx="6" fill="#DBEAFE"/>
+    <rect y="16" width="182" height="6" fill="#DBEAFE"/>
+    <text x="10" y="15" class="node-header" fill="#1E3A8A">4. Testbed Controller</text>
+    <text x="10" y="38" class="node-meta">ctl-node-01</text>
+    <text x="10" y="52" class="node-meta">192.0.2.10 [app_ctl]</text>
+    <text x="10" y="68" class="node-status">● ANEventLE ORCHESTRATOR</text>
+  </g>
+
+  <!-- Downward Arrow from Controller to Managed Nodes Cluster -->
+  <path d="M 813 150 L 813 182 L 460 182 L 460 196" stroke="#0284C7" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+  <text x="540" y="176" class="conn-label">Ansible Execution Bridge (inventories/portal-testbed.ini)</text>
+
+  <!-- Managed Nodes Grid Container (4 Target VMs) -->
+  <g transform="translate(16, 204)">
+    <rect width="888" height="220" rx="6" fill="#F8FAFC" stroke="#0284C7" stroke-width="1.5" filter="url(#shadow)"/>
+    <rect width="888" height="30" rx="6" fill="#E0F2FE"/>
+    <rect y="24" width="888" height="6" fill="#E0F2FE"/>
+    <circle cx="28" cy="15" r="4" fill="#0284C7"/>
+    <text x="38" y="19" class="box-label">MANAGED Knowledge Portal Fleet TESTBED WORKLOAD NODES (PRE-REMEDIATION AUDIT POSTURE)</text>
+
+    <!-- Node A: Test Core Knowledge Engine -->
+    <g transform="translate(16, 42)">
+      <rect width="202" height="162" rx="4" fill="#FFFFFF" stroke="#CBD5E1"/>
+      <rect width="202" height="22" rx="4" fill="#F1F5F9"/>
+      <rect y="16" width="202" height="6" fill="#F1F5F9"/>
+      <text x="10" y="15" class="node-header" fill="#0F172A">Test Core Knowledge Engine [app_core]</text>
+      <text x="10" y="38" class="node-meta">Host: core-db-01</text>
+      <text x="10" y="54" class="node-meta">IP: 192.0.2.20</text>
+      <text x="10" y="70" class="node-meta">Role: Core Engine &amp; PostgreSQL</text>
+      <text x="10" y="86" class="node-meta">OS: AlmaLinux 10.0 (Ootpa)</text>
+      <text x="10" y="102" class="node-meta">Kernel: 6.12.0-52.el10</text>
+      <text x="10" y="118" class="node-meta">CPU: 8 vCPUs | RAM: 32 GB</text>
+      <text x="10" y="134" class="node-meta">Storage: /data/postgresql_db 48G</text>
+      <text x="10" y="150" class="node-status">● DAEMONS &amp; DB ACTIVE</text>
+    </g>
+
+    <!-- Node B: Test Portal Web App -->
+    <g transform="translate(230, 42)">
+      <rect width="202" height="162" rx="4" fill="#FFFFFF" stroke="#CBD5E1"/>
+      <rect width="202" height="22" rx="4" fill="#F1F5F9"/>
+      <rect y="16" width="202" height="6" fill="#F1F5F9"/>
+      <text x="10" y="15" class="node-header" fill="#0F172A">Test Portal Web App [app_web]</text>
+      <text x="10" y="38" class="node-meta">Host: web-node-01</text>
+      <text x="10" y="54" class="node-meta">IP: 192.0.2.30</text>
+      <text x="10" y="70" class="node-meta">Role: Portal Web Standalone + PG17</text>
+      <text x="10" y="86" class="node-meta">OS: AlmaLinux 10.0 (Ootpa)</text>
+      <text x="10" y="102" class="node-meta">Kernel: 6.12.0-108.el10_0</text>
+      <text x="10" y="118" class="node-meta">CPU: 4 vCPUs | RAM: 16 GB</text>
+      <text x="10" y="134" class="node-meta">Role Var: web_pg_role=primary</text>
+      <text x="10" y="150" class="node-status">● Portal Web APPLICATION UP</text>
+    </g>
+
+    <!-- Node C: Test Management Gateway -->
+    <g transform="translate(444, 42)">
+      <rect width="202" height="162" rx="4" fill="#FFFFFF" stroke="#CBD5E1"/>
+      <rect width="202" height="22" rx="4" fill="#F1F5F9"/>
+      <rect y="16" width="202" height="6" fill="#F1F5F9"/>
+      <text x="10" y="15" class="node-header" fill="#0F172A">Test Management Gateway 5.1 [app_mgmt]</text>
+      <text x="10" y="38" class="node-meta">Host: mgmt-node-01</text>
+      <text x="10" y="54" class="node-meta">IP: 192.0.2.40</text>
+      <text x="10" y="70" class="node-meta">Role: Management Gateway</text>
+      <text x="10" y="86" class="node-meta">OS: AlmaLinux 10.0 (Ootpa)</text>
+      <text x="10" y="102" class="node-meta">Kernel: 6.12.0-108.el10_0</text>
+      <text x="10" y="118" class="node-meta">CPU: 8 vCPUs | RAM: 32 GB</text>
+      <text x="10" y="134" class="node-meta">Containers: 20 Microservices</text>
+      <text x="10" y="150" class="node-status">● Management Gateway CONTAINERS ONLINE</text>
+    </g>
+
+    <!-- Node D: Test HAProxy Ingress -->
+    <g transform="translate(658, 42)">
+      <rect width="214" height="162" rx="4" fill="#FFFFFF" stroke="#CBD5E1"/>
+      <rect width="214" height="22" rx="4" fill="#F1F5F9"/>
+      <rect y="16" width="214" height="6" fill="#F1F5F9"/>
+      <text x="10" y="15" class="node-header" fill="#0F172A">Test HAProxy [app_ha]</text>
+      <text x="10" y="38" class="node-meta">Host: ha-node-01</text>
+      <text x="10" y="54" class="node-meta">IP: 192.0.2.50</text>
+      <text x="10" y="70" class="node-meta">Role: Ingress Gateway</text>
+      <text x="10" y="86" class="node-meta">OS: AlmaLinux 10.0 (Ootpa)</text>
+      <text x="10" y="102" class="node-meta">Kernel: 6.12.0-108.el10_0</text>
+      <text x="10" y="118" class="node-meta">CPU: 2 vCPUs | RAM: 8 GB</text>
+      <text x="10" y="134" class="node-meta">Load Balancer: HAProxy Ingress</text>
+      <text x="10" y="150" class="node-status">● INGRESS ROUTING ACTIVE</text>
+    </g>
+  </g>
+</svg>

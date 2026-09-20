@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 420" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #FFFFFF; }
+      .title { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 15px; font-weight: 700; fill: #0F172A; }
+      .sub { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 10.5px; fill: #64748B; }
+      .node-header { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 11px; font-weight: 700; }
+      .node-meta { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 9.5px; fill: #334155; }
+      .node-status { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 9px; font-weight: 700; fill: #15803D; }
+      .badge { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 9.5px; font-weight: 700; fill: #FFFFFF; }
+      .conn-label { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 8.5px; fill: #0369A1; font-weight: 600; }
+    </style>
+    <filter id="shadow" x="-2%" y="-2%" width="104%" height="104%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#0F172A" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284C7"/>
+    </marker>
+  </defs>
+
+  <rect width="920" height="420" class="bg"/>
+
+  <!-- Top Banner -->
+  <rect x="16" y="12" width="888" height="46" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1"/>
+  <text x="32" y="32" class="title">Knowledge Portal Fleet Multi-Hop Access Chain &amp; Ansible Controller Audit Topology</text>
+  <text x="32" y="47" class="sub">Isolated Remote Execution Pipeline for OpenSCAP OVAL Security Assessments • Rule 32 / Rule 33 Compliant</text>
+
+  <!-- Node 1: Workstation -->
+  <g transform="translate(16, 74)">
+    <rect width="200" height="84" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1" filter="url(#shadow)"/>
+    <rect width="200" height="24" rx="6" fill="#F1F5F9"/>
+    <rect y="18" width="200" height="6" fill="#F1F5F9"/>
+    <text x="14" y="16" class="node-header" fill="#0F172A">1. Local Workstation (WSL2)</text>
+    <text x="14" y="40" class="node-meta">User: asimp</text>
+    <text x="14" y="56" class="node-meta">Controlpersisted SSH Client</text>
+    <text x="14" y="72" class="node-status">● LOCAL CONTROL NODE</text>
+  </g>
+
+  <!-- Arrow 1 -> 2 -->
+  <path d="M 216 116 L 244 116" stroke="#0284C7" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+  <text x="218" y="108" class="conn-label">Port 22222</text>
+
+  <!-- Node 2: Relay Laptop -->
+  <g transform="translate(252, 74)">
+    <rect width="210" height="84" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1" filter="url(#shadow)"/>
+    <rect width="210" height="24" rx="6" fill="#F1F5F9"/>
+    <rect y="18" width="210" height="6" fill="#F1F5F9"/>
+    <text x="14" y="16" class="node-header" fill="#0284C7">2. Relay Host (DESKTOP-G1S3SPF)</text>
+    <text x="14" y="40" class="node-meta">Public IP: 198.51.100.5</text>
+    <text x="14" y="56" class="node-meta">Tunnel: eth3 (10.26.79.216)</text>
+    <text x="14" y="72" class="node-status">● JUMP 1 ONLINE (PORT 22222)</text>
+  </g>
+
+  <!-- Arrow 2 -> 3 -->
+  <path d="M 462 116 L 490 116" stroke="#0284C7" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+  <text x="464" y="108" class="conn-label">VPN Tunnel</text>
+
+  <!-- Node 3: Edge Bastion -->
+  <g transform="translate(498, 74)">
+    <rect width="210" height="84" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1" filter="url(#shadow)"/>
+    <rect width="210" height="24" rx="6" fill="#F1F5F9"/>
+    <rect y="18" width="210" height="6" fill="#F1F5F9"/>
+    <text x="14" y="16" class="node-header" fill="#0284C7">3. Portal Edge Bastion</text>
+    <text x="14" y="40" class="node-meta">Host: jump-bastion-01</text>
+    <text x="14" y="56" class="node-meta">IP: 198.51.100.20 (ASSET-10022)</text>
+    <text x="14" y="72" class="node-status">● PORT 22 / SSH CERT AUTH</text>
+  </g>
+
+  <!-- Arrow 3 -> Target -->
+  <path d="M 603 158 L 603 186" stroke="#0284C7" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+  <text x="612" y="176" class="conn-label">O&amp;M LAN (VLAN 3134)</text>
+
+  <!-- Node 4: Target Node (Full-Width Card) -->
+  <g transform="translate(16, 196)">
+    <rect width="888" height="206" rx="6" fill="#F8FAFC" stroke="#0284C7" stroke-width="1.5" filter="url(#shadow)"/>
+    <rect width="888" height="34" rx="6" fill="#E0F2FE"/>
+    <rect y="28" width="888" height="6" fill="#E0F2FE"/>
+    <circle cx="28" cy="17" r="5" fill="#0284C7"/>
+    <text x="42" y="21" class="node-header" fill="#0369A1">TARGET UNDER AUDIT: Knowledge Portal Fleet PRODUCTION ANEventLE CONTROLLER (prod-ctl-01)</text>
+
+    <!-- Sub-card left: System Profile -->
+    <rect x="18" y="44" width="418" height="148" rx="4" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <text x="32" y="66" class="node-header" fill="#0F172A">System &amp; OS Hardware Profile</text>
+    <text x="32" y="86" class="node-meta">• Management IP: 192.0.2.100 (ens192, 52:54:00:12:34:56)</text>
+    <text x="32" y="104" class="node-meta">• Private VLANs: 10.50.1.10 (ens224) | 10.50.2.10 (ens256)</text>
+    <text x="32" y="122" class="node-meta">• Operating System: AlmaLinux 10.0 (Purple Lion)</text>
+    <text x="32" y="140" class="node-meta">• Kernel Release: 6.12.0-52.el10.x86_64 (Base ISO Errata Level)</text>
+    <text x="32" y="158" class="node-meta">• Uptime: 13 days 20 hrs | Load: 0.00 (Headless multi-user.target)</text>
+    <text x="32" y="176" class="node-status">● VERIFIED RUNTIME BASELINE</text>
+
+    <!-- Sub-card right: OpenSCAP Security Profile -->
+    <rect x="452" y="44" width="418" height="148" rx="4" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <text x="466" y="66" class="node-header" fill="#0369A1">OpenSCAP OVAL Evaluation Environment</text>
+    <text x="466" y="86" class="node-meta">• Scanner Engine: openscap-scanner-1.3.14-1.el8_10.x86_64</text>
+    <text x="466" y="104" class="node-meta">• OVAL Definitions: almalinux-10.oval.xml (v5.10, AlmaLinux Patch Merger 3)</text>
+    <text x="466" y="122" class="node-meta">• Sovereign Workspace: ~/asimp-workspace/openscap_oval/</text>
+    <text x="466" y="140" class="node-meta">• Generated Artifacts: oval-results.xml (62 MB), oval-report.html (2.6 MB)</text>
+    <text x="466" y="158" class="node-meta">• Scope of Assessment: 100% of installed RPMs checked for CVEs</text>
+    <text x="466" y="176" class="node-status">● TEST RUN COMPLETED WITH ZERO INVASIVE IMPACT</text>
+  </g>
+</svg>

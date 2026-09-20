@@ -2,7 +2,8 @@
 
 description: 'Coding standards and architectural rules for Copilot when working with ASIMP playbooks, roles, and python helper scripts'
 applyTo: '**/*.yml, **/*.yaml, **/*.py, **/*.sh'
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: documentation
 title: "GitHub Copilot Custom Instructions for ASIMP"
 timestamp: "2026-08-05T12:00:00Z"

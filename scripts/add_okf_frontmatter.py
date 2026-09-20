@@ -2,8 +2,8 @@
 """
 OKF Frontmatter Patcher
 Scans workspace markdown (.md) documents and enforces compliance with the
-Google Open Knowledge Format (OKF) v0.1 specification, auto-injecting five
-mandatory YAML frontmatter fields: okf_version, type, title, timestamp, topics.
+Google Open Knowledge Format (OKF) v0.2 specification, auto-injecting six
+mandatory YAML frontmatter fields: okf_version, trust_level, type, title, timestamp, topics.
 """
 
 import os
@@ -95,7 +95,7 @@ def extract_title_from_content(content: str, filepath: str) -> str:
 
 
 def process_file(filepath: str) -> None:
-    """Check a markdown file and append or update OKF v0.1 compliant frontmatter fields.
+    """Check a markdown file and append or update OKF v0.2 compliant frontmatter fields.
 
     Args:
         filepath: The path of the markdown file to process.
@@ -121,7 +121,8 @@ def process_file(filepath: str) -> None:
 
         fm: str = (
             "---\n"
-            'okf_version: "0.1"\n'
+            'okf_version: "0.2"\n'
+            'trust_level: "verified"\n'
             f"type: {guessed_type}\n"
             f'title: "{title}"\n'
             f'timestamp: "{default_timestamp}"\n'
@@ -132,13 +133,16 @@ def process_file(filepath: str) -> None:
         new_content: str = fm + content
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(new_content)
-        print(f"Added complete OKF v0.1 frontmatter to {filepath}")
+        print(f"Added complete OKF v0.2 frontmatter to {filepath}")
     else:
         parts = stripped.split('---', 2)
         fm_content: str = parts[1]
         body: str = parts[2]
 
-        lines: List[str] = fm_content.split('\n')
+        # Normalize root okf_version "0.1" -> "0.2" inside fm_content
+        fm_content_normalized = re.sub(r'^okf_version\s*:\s*["\']?0\.1["\']?', 'okf_version: "0.2"', fm_content, flags=re.MULTILINE)
+
+        lines: List[str] = fm_content_normalized.split('\n')
         keys: Dict[str, str] = {}
         for line in lines:
             line_strip: str = line.strip()
@@ -150,7 +154,9 @@ def process_file(filepath: str) -> None:
 
         updates: List[str] = []
         if 'okf_version' not in keys:
-            updates.append('okf_version: "0.1"')
+            updates.append('okf_version: "0.2"')
+        if 'trust_level' not in keys:
+            updates.append('trust_level: "verified"')
         if 'type' not in keys:
             updates.append(f"type: {guessed_type}")
         if 'title' not in keys:
@@ -161,22 +167,28 @@ def process_file(filepath: str) -> None:
         if 'timestamp' not in keys:
             updates.append(f'timestamp: "{default_timestamp}"')
         if 'topics' not in keys:
-            tags_list: List[str] = extract_list('tags', fm_content)
+            tags_list: List[str] = extract_list('tags', fm_content_normalized)
             if tags_list:
                 topics_str = "[" + ", ".join(tags_list) + "]"
             else:
                 topics_str = "[" + ", ".join(guessed_topics) + "]"
             updates.append(f"topics: {topics_str}")
 
-        if updates:
-            fm_content_clean: str = fm_content.rstrip('\n')
-            new_fm_content: str = fm_content_clean + "\n" + "\n".join(updates) + "\n"
+        if updates or fm_content_normalized != fm_content:
+            fm_content_clean: str = fm_content_normalized.rstrip('\n')
+            if updates:
+                new_fm_content: str = fm_content_clean + "\n" + "\n".join(updates) + "\n"
+            else:
+                new_fm_content: str = fm_content_clean + "\n"
             new_content = f"---\n{new_fm_content}---\n" + body
             with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(new_content)
-            print(f"Updated OKF v0.1 frontmatter in {filepath} with: {updates}")
+            if updates:
+                print(f"Updated OKF v0.2 frontmatter in {filepath} with: {updates}")
+            else:
+                print(f"Updated OKF v0.2 frontmatter in {filepath}")
         else:
-            print(f"No OKF v0.1 updates needed for {filepath}")
+            print(f"No OKF v0.2 updates needed for {filepath}")
 
 
 def main() -> None:

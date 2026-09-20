@@ -1,6 +1,7 @@
 ---
 
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 layout: default
 type: documentation
 title: "ASIMP Local Testing Matrix & Telemetry Spec"

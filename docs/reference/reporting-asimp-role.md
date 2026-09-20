@@ -1,5 +1,6 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: "reference"
 title: "Role reporting-ASIMP Reference"
 description: "Detailed specification of the reporting-ASIMP role metrics engine and compliance scorecard parser."

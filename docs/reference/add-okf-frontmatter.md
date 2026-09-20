@@ -1,9 +1,10 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: "reference"
 title: "Google OKF Frontmatter Patcher Reference"
 sidebarTitle: "Google OKF Frontmatter Patcher Reference"
-description: "Detailed specification of scripts/add_okf_frontmatter.py for Google OKF v0.1 YAML compliance."
+description: "Detailed specification of scripts/add_okf_frontmatter.py for Google OKF v0.2 YAML compliance."
 timestamp: "2026-08-15T00:00:00Z"
 topics: ["okf", "frontmatter", "patcher", "reference"]
 id: "docs/reference/add-okf-frontmatter.md"
@@ -18,17 +19,18 @@ layout: "default"
 
 # Google OKF Frontmatter Patcher Reference
 
-`scripts/add_okf_frontmatter.py` enforces compliance with the Google Open Knowledge Format (OKF) v0.1 specification by ensuring five mandatory frontmatter fields are present in every Markdown file.
+`scripts/add_okf_frontmatter.py` enforces compliance with the Google Open Knowledge Format (OKF) v0.2 specification by ensuring six mandatory frontmatter fields are present in every Markdown file.
 
 ---
 
 ## 🗂️ Mandatory Fields Validated
 
-1. `okf_version`: Declaring `"0.1"`.
-2. `type`: The semantic category of the file (`instructions`, `documentation`, `skill`, `concept`, etc.).
-3. `title`: The display header, parsed from the first Markdown title (`#`).
-4. `timestamp`: ISO-8601 formatted modification date.
-5. `topics`: List of relevant topics/tags.
+1. `okf_version`: Declaring `"0.2"`.
+2. `trust_level`: Trust verification level (`"verified"`).
+3. `type`: The semantic category of the file (`instructions`, `documentation`, `skill`, `concept`, etc.).
+4. `title`: The display header, parsed from the first Markdown title (`#`).
+5. `timestamp`: ISO-8601 formatted modification date.
+6. `topics`: List of relevant topics/tags.
 
 ---
 

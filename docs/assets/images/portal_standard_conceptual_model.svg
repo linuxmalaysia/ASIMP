@@ -1,0 +1,171 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 480" width="100%" height="100%" style="background-color: #FFFFFF; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <defs>
+    <filter id="shadow" x="-3%" y="-4%" width="108%" height="110%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="2" dy="3" stdDeviation="3" flood-color="#0F172A" flood-opacity="0.08"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284C7"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#16A34A"/>
+    </marker>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <!-- Title & Scope Header -->
+  <text x="500" y="32" text-anchor="middle" font-size="18" font-weight="700" fill="#0F172A">Knowledge Sharing Portal Platform — Standard Architecture &amp; Network Topology</text>
+  <text x="500" y="52" text-anchor="middle" font-size="12" font-weight="500" fill="#64748B">3GPP TS 23.041 / Open-Source Gateway Core Engine Operator Reference | Portal Service = Core Engine + &#8721; CBE</text>
+
+  <!-- Content Provider Box (Left) -->
+  <g transform="translate(30, 80)">
+    <rect width="130" height="350" rx="8" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="65" y="160" text-anchor="middle" font-size="14" font-weight="700" fill="#0F172A">Content</text>
+    <text x="65" y="180" text-anchor="middle" font-size="14" font-weight="700" fill="#0F172A">Provider</text>
+    <text x="65" y="215" text-anchor="middle" font-size="11" font-weight="500" fill="#64748B">Authoritative</text>
+    <text x="65" y="230" text-anchor="middle" font-size="11" font-weight="500" fill="#64748B">Originators</text>
+    <text x="65" y="250" text-anchor="middle" font-size="10" font-weight="600" fill="#2563EB">(MCMC, NADMA,</text>
+    <text x="65" y="265" text-anchor="middle" font-size="10" font-weight="600" fill="#2563EB">MetMalaysia)</text>
+  </g>
+
+  <!-- Arrow CP -> Portal Service -->
+  <path d="M 160 255 L 205 255" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow-slate)"/>
+
+  <!-- Portal Service Boundary Container -->
+  <g transform="translate(210, 70)">
+    <rect width="360" height="380" rx="10" fill="#F0F9FF" stroke="#0284C7" stroke-width="2" stroke-dasharray="6,4"/>
+    <text x="180" y="24" text-anchor="middle" font-size="13" font-weight="700" fill="#0284C7">Knowledge Sharing Portal Platform</text>
+
+    <!-- OAM Operator Header -->
+    <g transform="translate(195, 35)">
+      <rect width="130" height="40" rx="6" fill="#FFFFFF" stroke="#0284C7" stroke-width="1.5" filter="url(#shadow)"/>
+      <text x="65" y="20" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">OAM / Management Gateway 5.1</text>
+      <text x="65" y="32" text-anchor="middle" font-size="9" fill="#64748B">Operator Portal &amp; Telemetry</text>
+    </g>
+    <!-- Arrow OAM -> Core Engine -->
+    <path d="M 260 75 L 260 105" fill="none" stroke="#0284C7" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- CBE Group (Portal Web) -->
+    <g transform="translate(20, 85)">
+      <!-- CBE 1 (Portal Web Node 1) -->
+      <g transform="translate(0, 20)">
+        <rect width="110" height="65" rx="6" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5" filter="url(#shadow)"/>
+        <text x="55" y="24" text-anchor="middle" font-size="11" font-weight="700" fill="#1E3A8A">CBE 1 (Portal Web)</text>
+        <text x="55" y="40" text-anchor="middle" font-size="9" fill="#64748B">CAP Engine</text>
+        <text x="55" y="54" text-anchor="middle" font-size="9" fill="#2563EB">portal-web-api:8866</text>
+      </g>
+      <!-- CBE 2 (Portal Web Node 2) -->
+      <g transform="translate(0, 100)">
+        <rect width="110" height="65" rx="6" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5" filter="url(#shadow)"/>
+        <text x="55" y="24" text-anchor="middle" font-size="11" font-weight="700" fill="#1E3A8A">CBE 2 (Portal Web)</text>
+        <text x="55" y="40" text-anchor="middle" font-size="9" fill="#64748B">Active/Passive</text>
+        <text x="55" y="54" text-anchor="middle" font-size="9" fill="#2563EB">Patroni Cluster</text>
+      </g>
+      <!-- CBE n -->
+      <g transform="translate(0, 180)">
+        <rect width="110" height="65" rx="6" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5" filter="url(#shadow)"/>
+        <text x="55" y="24" text-anchor="middle" font-size="11" font-weight="700" fill="#1E3A8A">CBE n (Portal)</text>
+        <text x="55" y="40" text-anchor="middle" font-size="9" fill="#64748B">External Gateway</text>
+        <text x="55" y="54" text-anchor="middle" font-size="9" fill="#2563EB">CAP / XML-RPC</text>
+      </g>
+    </g>
+
+    <!-- Connectors CBE -> Core Engine -->
+    <path d="M 130 137 L 190 200" fill="none" stroke="#2563EB" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <path d="M 130 217 L 190 225" fill="none" stroke="#2563EB" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <path d="M 130 297 L 190 250" fill="none" stroke="#2563EB" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- Core Engine Centre Box -->
+    <g transform="translate(200, 110)">
+      <rect width="135" height="230" rx="8" fill="#FFFFFF" stroke="#0F172A" stroke-width="2" filter="url(#shadow)"/>
+      <rect width="135" height="32" rx="8" fill="#0F172A"/>
+      <text x="67" y="21" text-anchor="middle" font-size="13" font-weight="700" fill="#FFFFFF">Core Engine Centre</text>
+      <text x="67" y="55" text-anchor="middle" font-size="10" font-weight="700" fill="#0284C7">CBE Gateway (8080)</text>
+      <text x="67" y="70" text-anchor="middle" font-size="9" fill="#64748B">info_prov.imp Auth</text>
+      <line x1="10" y1="82" x2="125" y2="82" stroke="#E2E8F0"/>
+      <text x="67" y="100" text-anchor="middle" font-size="10" font-weight="700" fill="#0F172A">Core Application</text>
+      <text x="67" y="115" text-anchor="middle" font-size="9" fill="#475569">cbcd, oman, trc, alh</text>
+      <text x="67" y="130" text-anchor="middle" font-size="9" fill="#475569">sns, gis-1, psm-1</text>
+      <line x1="10" y1="142" x2="125" y2="142" stroke="#E2E8F0"/>
+      <text x="67" y="160" text-anchor="middle" font-size="10" font-weight="700" fill="#16A34A">PostgreSQL 16 Engine</text>
+      <text x="67" y="175" text-anchor="middle" font-size="9" fill="#475569">/data/postgresql_db</text>
+      <text x="67" y="190" text-anchor="middle" font-size="9" fill="#475569">SUBSCRIPTION_STORE</text>
+      <text x="67" y="215" text-anchor="middle" font-size="9" font-weight="600" fill="#DC2626">Store-and-Forward</text>
+    </g>
+  </g>
+
+  <!-- Arrow Core Engine -> TENANT_ID -->
+  <path d="M 550 255 L 610 255" fill="none" stroke="#16A34A" stroke-width="2.5" marker-end="url(#arrow-green)"/>
+  <text x="580" y="245" text-anchor="middle" font-size="10" font-weight="600" fill="#16A34A">29168/SCTP</text>
+
+  <!-- TENANT_ID Boundary Container (Right) -->
+  <g transform="translate(615, 70)">
+    <rect width="355" height="380" rx="10" fill="#F0FDF4" stroke="#16A34A" stroke-width="2" stroke-dasharray="6,4"/>
+    <text x="177" y="24" text-anchor="middle" font-size="13" font-weight="700" fill="#16A34A">Public Land Mobile Network (TENANT_ID)</text>
+
+    <!-- Authentication & Identity Tier -->
+    <g transform="translate(20, 45)">
+      <!-- Auth Service -->
+      <g transform="translate(0, 15)">
+        <rect width="130" height="55" rx="6" fill="#FFFFFF" stroke="#16A34A" stroke-width="1.5" filter="url(#shadow)"/>
+        <text x="65" y="22" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Auth Service (OAuth / OIDC)</text>
+        <text x="65" y="38" text-anchor="middle" font-size="9" fill="#64748B">Mobility Management Entity</text>
+        <text x="65" y="49" text-anchor="middle" font-size="9" fill="#16A34A">Portal ServiceP / SBc-AP</text>
+      </g>
+      <!-- Identity Service -->
+      <g transform="translate(0, 85)">
+        <rect width="130" height="55" rx="6" fill="#FFFFFF" stroke="#16A34A" stroke-width="1.5" filter="url(#shadow)"/>
+        <text x="65" y="22" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Identity Provider (IdP)</text>
+        <text x="65" y="38" text-anchor="middle" font-size="9" fill="#64748B">Core Access &amp; Mobility</text>
+        <text x="65" y="49" text-anchor="middle" font-size="9" fill="#16A34A">NG-RAN Protocol</text>
+      </g>
+      <!-- 2G BSC / 3G RNC -->
+      <g transform="translate(0, 155)">
+        <rect width="130" height="55" rx="6" fill="#FFFFFF" stroke="#16A34A" stroke-width="1.5" filter="url(#shadow)"/>
+        <text x="65" y="22" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">2G BSC / 3G RNC</text>
+        <text x="65" y="38" text-anchor="middle" font-size="9" fill="#64748B">Base Station Controller</text>
+        <text x="65" y="49" text-anchor="middle" font-size="9" fill="#64748B">Radio Network Controller</text>
+      </g>
+    </g>
+
+    <!-- Connectors Controller -> Cells -->
+    <path d="M 150 72 L 195 72" fill="none" stroke="#16A34A" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+    <path d="M 150 142 L 195 142" fill="none" stroke="#16A34A" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+    <path d="M 150 212 L 195 212" fill="none" stroke="#16A34A" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+
+    <!-- Compute & Edge Worker Tier -->
+    <g transform="translate(200, 45)">
+      <!-- Edge Worker -->
+      <g transform="translate(0, 15)">
+        <rect width="135" height="55" rx="6" fill="#FFFFFF" stroke="#475569" stroke-width="1.5" filter="url(#shadow)"/>
+        <text x="67" y="22" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Edge Worker (4G LTE)</text>
+        <text x="67" y="38" text-anchor="middle" font-size="9" fill="#64748B">Worker Node Clusters</text>
+        <text x="67" y="49" text-anchor="middle" font-size="9" fill="#16A34A">Dispatch to Workers</text>
+      </g>
+      <!-- Edge Worker -->
+      <g transform="translate(0, 85)">
+        <rect width="135" height="55" rx="6" fill="#FFFFFF" stroke="#475569" stroke-width="1.5" filter="url(#shadow)"/>
+        <text x="67" y="22" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Edge Worker (5G NR)</text>
+        <text x="67" y="38" text-anchor="middle" font-size="9" fill="#64748B">Edge Compute Nodes</text>
+        <text x="67" y="49" text-anchor="middle" font-size="9" fill="#16A34A">Simultaneous Dispatch</text>
+      </g>
+      <!-- Legacy Worker -->
+      <g transform="translate(0, 155)">
+        <rect width="135" height="55" rx="6" fill="#FFFFFF" stroke="#475569" stroke-width="1.5" filter="url(#shadow)"/>
+        <text x="67" y="22" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">Legacy Compute Tier</text>
+        <text x="67" y="38" text-anchor="middle" font-size="9" fill="#64748B">Legacy Worker Nodes</text>
+        <text x="67" y="49" text-anchor="middle" font-size="9" fill="#64748B">Area Addressing</text>
+      </g>
+    </g>
+
+    <!-- Mobile Handsets Footer in TENANT_ID -->
+    <g transform="translate(30, 275)">
+      <rect width="295" height="85" rx="6" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.5"/>
+      <text x="147" y="22" text-anchor="middle" font-size="11" font-weight="700" fill="#14532D">&#128241; Target Mobile Handsets (Over the Air)</text>
+      <text x="147" y="40" text-anchor="middle" font-size="9" fill="#166534">&#8226; Asynchronous event notification to web clients in designated group</text>
+      <text x="147" y="55" text-anchor="middle" font-size="9" fill="#166534">&#8226; Event Polling & Websockets Enable Reconnecting Web Clients to Sync</text>
+      <text x="147" y="70" text-anchor="middle" font-size="9" fill="#166534">&#8226; Handsets filter duplicate messages based on serial number</text>
+    </g>
+  </g>
+</svg>

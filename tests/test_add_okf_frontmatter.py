@@ -107,16 +107,49 @@ class TestAddOkfFrontmatter(unittest.TestCase):
 
         res = self._read(path)
         self.assertTrue(res.startswith("---"))
-        self.assertIn('okf_version: "0.1"', res)
+        self.assertIn('okf_version: "0.2"', res)
+        self.assertIn('trust_level: "verified"', res)
         self.assertIn('type: documentation', res)
         self.assertIn('title: "ASIMP Main Readme"', res)
         self.assertIn('timestamp: "2026-08-05T12:00:00Z"', res)
         self.assertIn('topics: [asimp, readme, security, baseline, hardening]', res)
 
+    def test_process_file_version_01_upgrade(self) -> None:
+        # Existing frontmatter with okf_version "0.1" should be upgraded to "0.2" and get trust_level "verified"
+        path = "docs/page.md"
+        original = "---\nokf_version: \"0.1\"\ntitle: \"Legacy Doc\"\n---\n# Heading\nBody"
+        self._write(path, original)
+
+        add_okf_frontmatter.process_file(path)
+
+        res = self._read(path)
+        self.assertIn('okf_version: "0.2"', res)
+        self.assertIn('trust_level: "verified"', res)
+
+    def test_process_file_version_in_body_untouched(self) -> None:
+        # Frontmatter okf_version is upgraded to 0.2, but scalar text containing okf_version: "0.1" in description or body is untouched
+        path = "docs/page.md"
+        original = (
+            "---\n"
+            'okf_version: "0.1"\n'
+            'description: "Note about okf_version: \\"0.1\\" migration"\n'
+            "---\n"
+            "# Heading\n"
+            'This document mentions okf_version: "0.1" in the body.'
+        )
+        self._write(path, original)
+
+        add_okf_frontmatter.process_file(path)
+
+        res = self._read(path)
+        self.assertTrue(res.startswith("---\nokf_version: \"0.2\""))
+        self.assertIn('description: "Note about okf_version: \\"0.1\\" migration"', res)
+        self.assertIn('This document mentions okf_version: "0.1" in the body.', res)
+
     def test_process_file_partial_frontmatter(self) -> None:
         # Existing frontmatter missing some fields
         path = "docs/page.md"
-        # Has title, but missing okf_version, type, timestamp, topics
+        # Has title, but missing okf_version, trust_level, type, timestamp, topics
         original = "---\ntitle: \"Existing Title\"\n---\n# My Heading\nBody"
         self._write(path, original)
 
@@ -125,7 +158,8 @@ class TestAddOkfFrontmatter(unittest.TestCase):
         res = self._read(path)
         self.assertTrue(res.startswith("---"))
         self.assertIn('title: "Existing Title"', res) # Kept original
-        self.assertIn('okf_version: "0.1"', res)
+        self.assertIn('okf_version: "0.2"', res)
+        self.assertIn('trust_level: "verified"', res)
         self.assertIn('type: documentation', res)
         self.assertIn('timestamp: "2026-08-05T12:00:00Z"', res)
         self.assertIn('topics: [asimp, docs, manual, security]', res)
@@ -140,7 +174,8 @@ class TestAddOkfFrontmatter(unittest.TestCase):
 
         res = self._read(path)
         self.assertTrue(res.startswith("---"))
-        self.assertIn('okf_version: "0.1"', res)
+        self.assertIn('okf_version: "0.2"', res)
+        self.assertIn('trust_level: "verified"', res)
         self.assertIn('topics: [custom1, custom2]', res)
 
     def test_process_file_complete_frontmatter(self) -> None:
@@ -148,7 +183,8 @@ class TestAddOkfFrontmatter(unittest.TestCase):
         path = "docs/page.md"
         original = (
             "---\n"
-            'okf_version: "0.1"\n'
+            'okf_version: "0.2"\n'
+            'trust_level: "verified"\n'
             "type: documentation\n"
             'title: "Full Title"\n'
             'timestamp: "2026-08-05T12:00:00Z"\n'

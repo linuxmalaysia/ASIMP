@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 250" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #FFFFFF; }
+      .main-title { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 14px; font-weight: 700; fill: #0F172A; }
+      .main-sub { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 10.5px; fill: #64748B; }
+      .card-header { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 11px; font-weight: 700; }
+      .card-body { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 9.5px; fill: #334155; }
+      .card-meta { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 9px; fill: #64748B; }
+      .badge-text { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 9px; font-weight: 700; fill: #FFFFFF; }
+      .flow-label { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 9px; font-weight: 600; fill: #0284C7; }
+    </style>
+    <filter id="cardShadow" x="-2%" y="-2%" width="104%" height="104%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#0F172A" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284C7"/>
+    </marker>
+  </defs>
+
+  <rect width="920" height="250" class="bg"/>
+
+  <!-- Top Title Banner -->
+  <rect x="16" y="12" width="888" height="42" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1"/>
+  <text x="32" y="30" class="main-title">Three-Step Reconciled Errata Harvesting Workflow</text>
+  <text x="32" y="44" class="main-sub">Deterministic Air-Gapped Package Derivation without Indiscriminate Mirror Downloads • Ansible &amp; Python uv</text>
+
+  <!-- Step 1: Target Inventory Export -->
+  <g transform="translate(16, 68)">
+    <rect width="268" height="166" rx="8" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1" filter="url(#cardShadow)"/>
+    <rect width="268" height="28" rx="8" fill="#F1F5F9"/>
+    <rect y="20" width="268" height="8" fill="#F1F5F9"/>
+    <rect width="4" height="166" rx="2" fill="#0284C7"/>
+    <text x="14" y="19" class="card-header" fill="#0F172A">Step 1: Inventory Export</text>
+
+    <rect x="176" y="6" width="80" height="16" rx="8" fill="#0284C7"/>
+    <text x="216" y="17.5" class="badge-text" text-anchor="middle">AIR-GAPPED</text>
+
+    <text x="14" y="46" class="card-body">Ansible Playbook:</text>
+    <text x="14" y="60" class="card-meta">playbooks/export_node_rpm_inventory.yml</text>
+
+    <text x="14" y="86" class="card-body">Command:</text>
+    <text x="14" y="100" class="card-meta">rpm -qa --qf "%{NAME}-%{EPOCH}..."</text>
+
+    <text x="14" y="126" class="card-body">Output Artifact:</text>
+    <text x="14" y="140" class="card-meta">installed_rpms.txt (361 RPMs)</text>
+  </g>
+
+  <!-- Arrow 1 -> 2 -->
+  <path d="M 284 151 L 320 151" stroke="#0284C7" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+
+  <!-- Step 2: OVAL Criteria Reconciliation -->
+  <g transform="translate(326, 68)">
+    <rect width="268" height="166" rx="8" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1" filter="url(#cardShadow)"/>
+    <rect width="268" height="28" rx="8" fill="#F1F5F9"/>
+    <rect y="20" width="268" height="8" fill="#F1F5F9"/>
+    <rect width="4" height="166" rx="2" fill="#2563EB"/>
+    <text x="14" y="19" class="card-header" fill="#1D4ED8">Step 2: OVAL Reconciliation</text>
+
+    <rect x="176" y="6" width="80" height="16" rx="8" fill="#2563EB"/>
+    <text x="216" y="17.5" class="badge-text" text-anchor="middle">PYTHON UV</text>
+
+    <text x="14" y="46" class="card-body">DSOM Tooling:</text>
+    <text x="14" y="60" class="card-meta">tools/generate_rpm_download_list.py</text>
+
+    <text x="14" y="86" class="card-body">Logic:</text>
+    <text x="14" y="100" class="card-meta">Parse &lt;rpminfo_test&gt; EVR criteria</text>
+
+    <text x="14" y="126" class="card-body">Output Artifact:</text>
+    <text x="14" y="140" class="card-meta">packages_to_update.txt (119 targets)</text>
+  </g>
+
+  <!-- Arrow 2 -> 3 -->
+  <path d="M 594 151 L 630 151" stroke="#0284C7" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+
+  <!-- Step 3: Targeted Batch Harvesting -->
+  <g transform="translate(636, 68)">
+    <rect width="268" height="166" rx="8" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1" filter="url(#cardShadow)"/>
+    <rect width="268" height="28" rx="8" fill="#F1F5F9"/>
+    <rect y="20" width="268" height="8" fill="#F1F5F9"/>
+    <rect width="4" height="166" rx="2" fill="#16A34A"/>
+    <text x="14" y="19" class="card-header" fill="#15803D">Step 3: Targeted Harvesting</text>
+
+    <rect x="176" y="6" width="80" height="16" rx="8" fill="#16A34A"/>
+    <text x="216" y="17.5" class="badge-text" text-anchor="middle">CONNECTED</text>
+
+    <text x="14" y="46" class="card-body">Execution Script:</text>
+    <text x="14" y="60" class="card-meta">dnf_download_commands.sh</text>
+
+    <text x="14" y="86" class="card-body">Mechanism:</text>
+    <text x="14" y="100" class="card-meta">dnf download --resolve --destdir=...</text>
+
+    <text x="14" y="126" class="card-body">Destination:</text>
+    <text x="14" y="140" class="card-meta">~/offline-repos/.../ (Stage 1 Repo)</text>
+  </g>
+</svg>

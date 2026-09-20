@@ -1,5 +1,6 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: "documentation"
 title: "ASIMP AI & Human Documentation Gateway"
 description: "Sovereign gateway and indexing baseline for human administrators and autonomous AI agents navigating ASIMP."

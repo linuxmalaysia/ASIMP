@@ -13,7 +13,8 @@ metadata:
   author: Google Jules & Antigravity
   version: "1.0.0"
   project: ASIMP
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 topics: [ai, agents, rules, guidelines, clients]
 ---
 

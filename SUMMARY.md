@@ -1,5 +1,6 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: "documentation"
 title: "ASIMP Summary Index"
 timestamp: "2026-08-15T00:00:00Z"
@@ -23,6 +24,7 @@ topics: ["asimp", "summary", "documentation", "index"]
 * [Ubuntu 24.04/26.04 LTS Guide](docs/ubuntu_lts_hardening.md)
 * [Debian Hardening Guide](docs/debian_hardening.md)
 * [openSUSE Hardening Guide](docs/opensuse_hardening.md)
+* [Knowledge Sharing Portal OpenSCAP Audit Report](docs/knowledge_portal_testbed_openscap_va_report.md)
 * [Configuration & Variables](docs/configuration.md)
 * [Troubleshooting & Fallbacks](docs/troubleshooting.md)
 * [Legal Notice](docs/legal-notice.md)

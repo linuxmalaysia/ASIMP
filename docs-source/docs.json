@@ -30,6 +30,7 @@
               "SUMMARY",
               "debian_hardening",
               "index",
+              "knowledge_portal_testbed_openscap_va_report",
               "opensuse_hardening",
               "rhel_family_cis",
               "ubuntu_lts_hardening"

@@ -1,5 +1,6 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: reference
 title: SUSE/SLED Sysctl Hardening Role Reference
 sidebarTitle: "SUSE/SLED Sysctl Hardening"

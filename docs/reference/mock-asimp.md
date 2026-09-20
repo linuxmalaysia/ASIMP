@@ -1,5 +1,6 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: "reference"
 title: "Mock Scanning Utility Reference"
 description: "Detailed specification of tools/mock-asimp.sh mock scan generator."
