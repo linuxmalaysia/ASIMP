@@ -126,6 +126,26 @@ class TestAddOkfFrontmatter(unittest.TestCase):
         self.assertIn('okf_version: "0.2"', res)
         self.assertIn('trust_level: "verified"', res)
 
+    def test_process_file_version_in_body_untouched(self) -> None:
+        # Frontmatter okf_version is upgraded to 0.2, but scalar text containing okf_version: "0.1" in description or body is untouched
+        path = "docs/page.md"
+        original = (
+            "---\n"
+            'okf_version: "0.1"\n'
+            'description: "Note about okf_version: \\"0.1\\" migration"\n'
+            "---\n"
+            "# Heading\n"
+            'This document mentions okf_version: "0.1" in the body.'
+        )
+        self._write(path, original)
+
+        add_okf_frontmatter.process_file(path)
+
+        res = self._read(path)
+        self.assertTrue(res.startswith("---\nokf_version: \"0.2\""))
+        self.assertIn('description: "Note about okf_version: \\"0.1\\" migration"', res)
+        self.assertIn('This document mentions okf_version: "0.1" in the body.', res)
+
     def test_process_file_partial_frontmatter(self) -> None:
         # Existing frontmatter missing some fields
         path = "docs/page.md"

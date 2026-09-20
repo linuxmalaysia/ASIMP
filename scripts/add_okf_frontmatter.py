@@ -139,8 +139,8 @@ def process_file(filepath: str) -> None:
         fm_content: str = parts[1]
         body: str = parts[2]
 
-        # Normalize okf_version "0.1" -> "0.2" inside fm_content
-        fm_content_normalized = re.sub(r'okf_version\s*:\s*["\']?0\.1["\']?', 'okf_version: "0.2"', fm_content)
+        # Normalize root okf_version "0.1" -> "0.2" inside fm_content
+        fm_content_normalized = re.sub(r'^okf_version\s*:\s*["\']?0\.1["\']?', 'okf_version: "0.2"', fm_content, flags=re.MULTILINE)
 
         lines: List[str] = fm_content_normalized.split('\n')
         keys: Dict[str, str] = {}
@@ -183,7 +183,10 @@ def process_file(filepath: str) -> None:
             new_content = f"---\n{new_fm_content}---\n" + body
             with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(new_content)
-            print(f"Updated OKF v0.2 frontmatter in {filepath}")
+            if updates:
+                print(f"Updated OKF v0.2 frontmatter in {filepath} with: {updates}")
+            else:
+                print(f"Updated OKF v0.2 frontmatter in {filepath}")
         else:
             print(f"No OKF v0.2 updates needed for {filepath}")
 

@@ -26,7 +26,7 @@ topics: ["summary", "gitbook", "dsom", "diataxis"]
 * [Ubuntu 24.04/26.04 LTS Guide](ubuntu_lts_hardening.md)
 * [Debian Hardening Guide](debian_hardening.md)
 * [openSUSE Hardening Guide](opensuse_hardening.md)
-* [Knowledge Sharing Portal OpenSCAP Audit Report](/knowledge_portal_testbed_openscap_va_report)
+* [Knowledge Sharing Portal OpenSCAP Audit Report](knowledge_portal_testbed_openscap_va_report.html)
 
 ## Reference Material
 * [Component & Tool Index](reference/index.md)
