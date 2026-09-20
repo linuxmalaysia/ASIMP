@@ -21,8 +21,8 @@
 
   <!-- Top Banner -->
   <rect x="16" y="12" width="888" height="46" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1"/>
-  <text x="32" y="32" class="title">MNO Dual-Data-Center Access Chain &amp; Ansible OpenSCAP Audit Topology</text>
-  <text x="32" y="47" class="sub">Multi-Hop Bastion Relay Architecture across MNO Fleet Production (DR) &amp; MNO KVDC Production (Primary) • Rule 32 / Rule 33 Compliant</text>
+  <text x="32" y="32" class="title">Portal Dual-Data-Center Access Chain &amp; Ansible OpenSCAP Audit Topology</text>
+  <text x="32" y="47" class="sub">Multi-Hop Bastion Relay Architecture across Knowledge Portal Fleet Production (DR) &amp; Portal KVDC Production (Primary) • Rule 32 / Rule 33 Compliant</text>
 
   <!-- Workstation -->
   <g transform="translate(16, 74)">
@@ -48,30 +48,30 @@
     <text x="12" y="72" class="node-status">● GATEWAY ACTIVE</text>
   </g>
 
-  <!-- Split Branch BRF vs KVDC -->
+  <!-- Split Branch Portal vs KVDC -->
   <path d="M 412 100 L 450 100 L 450 180 L 480 180" stroke="#0284C7" stroke-width="1.8" marker-end="url(#arrow)" fill="none"/>
   <path d="M 412 130 L 450 130 L 450 310 L 480 310" stroke="#0284C7" stroke-width="1.8" marker-end="url(#arrow)" fill="none"/>
-  <text x="415" y="92" class="conn-label">BRF Route</text>
+  <text x="415" y="92" class="conn-label">Portal Route</text>
   <text x="415" y="295" class="conn-label">KVDC Route</text>
 
-  <!-- BRF Bastion -->
+  <!-- Portal Bastion -->
   <g transform="translate(488, 140)">
     <rect width="180" height="80" rx="6" fill="#F0F9FF" stroke="#BAE6FD" stroke-width="1" filter="url(#shadow)"/>
     <rect width="180" height="22" rx="6" fill="#E0F2FE"/>
-    <text x="12" y="15" class="node-header" fill="#0369A1">3A. BRF Edge Bastion</text>
+    <text x="12" y="15" class="node-header" fill="#0369A1">3A. Portal Edge Bastion</text>
     <text x="12" y="38" class="node-meta">198.51.100.20</text>
     <text x="12" y="54" class="node-meta">User: ASSET-10022</text>
-    <text x="12" y="70" class="node-status">● BRF DC INGRESS</text>
+    <text x="12" y="70" class="node-status">● Portal DC INGRESS</text>
   </g>
 
-  <!-- Arrow to BRF Controller -->
+  <!-- Arrow to Portal Controller -->
   <path d="M 668 180 L 696 180" stroke="#0284C7" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
 
-  <!-- BRF Controller -->
+  <!-- Portal Controller -->
   <g transform="translate(704, 140)">
     <rect width="198" height="80" rx="6" fill="#F0FDF4" stroke="#BBF7D0" stroke-width="1" filter="url(#shadow)"/>
     <rect width="198" height="22" rx="6" fill="#DCFCE7"/>
-    <text x="12" y="15" class="node-header" fill="#15803D">4A. MNO Fleet Controller</text>
+    <text x="12" y="15" class="node-header" fill="#15803D">4A. Knowledge Portal Fleet Controller</text>
     <text x="12" y="38" class="node-meta">192.0.2.100 (8 VMs)</text>
     <text x="12" y="54" class="node-meta">OpenSCAP OVAL Audit</text>
     <text x="12" y="70" class="node-status">● 100% AUDIT COMPLETE</text>
@@ -94,7 +94,7 @@
   <g transform="translate(704, 270)">
     <rect width="198" height="80" rx="6" fill="#F0FDF4" stroke="#BBF7D0" stroke-width="1" filter="url(#shadow)"/>
     <rect width="198" height="22" rx="6" fill="#DCFCE7"/>
-    <text x="12" y="15" class="node-header" fill="#15803D">4B. MNO KVDC Controller</text>
+    <text x="12" y="15" class="node-header" fill="#15803D">4B. Portal KVDC Controller</text>
     <text x="12" y="38" class="node-meta">192.0.2.110 (8 VMs)</text>
     <text x="12" y="54" class="node-meta">OpenSCAP OVAL Audit</text>
     <text x="12" y="70" class="node-status">● 100% AUDIT COMPLETE</text>

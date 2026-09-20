@@ -22,7 +22,7 @@
 
   <!-- Top Banner -->
   <rect x="16" y="12" width="888" height="46" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1"/>
-  <text x="32" y="32" class="title">MNO Fleet Multi-Hop Access Chain &amp; Ansible Controller Audit Topology</text>
+  <text x="32" y="32" class="title">Knowledge Portal Fleet Multi-Hop Access Chain &amp; Ansible Controller Audit Topology</text>
   <text x="32" y="47" class="sub">Isolated Remote Execution Pipeline for OpenSCAP OVAL Security Assessments • Rule 32 / Rule 33 Compliant</text>
 
   <!-- Node 1: Workstation -->
@@ -60,7 +60,7 @@
     <rect width="210" height="84" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1" filter="url(#shadow)"/>
     <rect width="210" height="24" rx="6" fill="#F1F5F9"/>
     <rect y="18" width="210" height="6" fill="#F1F5F9"/>
-    <text x="14" y="16" class="node-header" fill="#0284C7">3. BRF Edge Bastion</text>
+    <text x="14" y="16" class="node-header" fill="#0284C7">3. Portal Edge Bastion</text>
     <text x="14" y="40" class="node-meta">Host: jump-bastion-01</text>
     <text x="14" y="56" class="node-meta">IP: 198.51.100.20 (ASSET-10022)</text>
     <text x="14" y="72" class="node-status">● PORT 22 / SSH CERT AUTH</text>
@@ -76,7 +76,7 @@
     <rect width="888" height="34" rx="6" fill="#E0F2FE"/>
     <rect y="28" width="888" height="6" fill="#E0F2FE"/>
     <circle cx="28" cy="17" r="5" fill="#0284C7"/>
-    <text x="42" y="21" class="node-header" fill="#0369A1">TARGET UNDER AUDIT: MNO Fleet PRODUCTION ANSIBLE CONTROLLER (prod-ctl-01)</text>
+    <text x="42" y="21" class="node-header" fill="#0369A1">TARGET UNDER AUDIT: Knowledge Portal Fleet PRODUCTION ANEventLE CONTROLLER (prod-ctl-01)</text>
 
     <!-- Sub-card left: System Profile -->
     <rect x="18" y="44" width="418" height="148" rx="4" fill="#FFFFFF" stroke="#E2E8F0"/>

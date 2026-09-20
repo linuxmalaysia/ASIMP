@@ -19,8 +19,8 @@
 
   <!-- Top Title Bar -->
   <rect x="16" y="12" width="888" height="46" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
-  <text x="32" y="32" class="venn-title">Grand Empirical Reconciliation Matrix: OpenSCAP OVAL vs. MNO Operator VA Scan</text>
-  <text x="32" y="47" class="venn-sub">Comprehensive Fleet Audit Across All Sixteen (16) Production Nodes in KVDC &amp; BRF • 100% Critical &amp; High Errata Resolution</text>
+  <text x="32" y="32" class="venn-title">Grand Empirical Reconciliation Matrix: OpenSCAP OVAL vs. Portal Operator VA Scan</text>
+  <text x="32" y="47" class="venn-sub">Comprehensive Fleet Audit Across All Sixteen (16) Production Nodes in KVDC &amp; Portal • 100% Critical &amp; High Errata Resolution</text>
 
   <!-- Visual Venn Graphic Area -->
   <g transform="translate(16, 70)">
@@ -56,6 +56,6 @@
     <!-- Bottom Legend / Note -->
     <rect x="20" y="186" width="848" height="38" rx="4" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1"/>
     <text x="34" y="202" class="callout-title">● GRAND TWO-SITE FLEET TAKEAWAY FOR OPERATOR:</text>
-    <text x="34" y="215" class="callout-text">Across all 16 production nodes in KVDC and BRF, host-internal OpenSCAP OVAL confirms 100.0% of all Critical and High findings (2,810 / 2,810) are resolved by official Red Hat DNF errata updates.</text>
+    <text x="34" y="215" class="callout-text">Across all 16 production nodes in KVDC and Portal, host-internal OpenSCAP OVAL confirms 100.0% of all Critical and High findings (2,810 / 2,810) are resolved by official Red Hat DNF errata updates.</text>
   </g>
 </svg>

@@ -34,77 +34,77 @@
 
   <!-- Top Header Banner -->
   <rect x="24" y="14" width="912" height="54" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
-  <text x="44" y="36" class="header-title">The Tri-Component CBS Readiness Contract Architecture</text>
-  <text x="44" y="52" class="header-sub">Cell Broadcast System (CBS) Interdependency • Public Warning Platform (PWP/CBE) ↔ CBC Core ↔ Element Manager (EM 5.1.0)</text>
+  <text x="44" y="36" class="header-title">The Tri-Component Portal Service Readiness Contract Architecture</text>
+  <text x="44" y="52" class="header-sub">Knowledge Sharing Portal Platform Interdependency • Knowledge Portal Web App (Portal Web/CBE) ↔ Core Knowledge Engine ↔ Management Gateway (Management Gateway 5.1)</text>
 
   <rect x="736" y="25" width="180" height="28" rx="14" fill="#1E3A8A"/>
-  <text x="752" y="43" class="badge-text">MNO LLD v1.0 TOPOLOGY</text>
+  <text x="752" y="43" class="badge-text">Portal LLD v1.0 TOPOLOGY</text>
 
-  <!-- ==================== COMPONENT 1: PWP (CBE) [TOP LEFT] ==================== -->
+  <!-- ==================== COMPONENT 1: Portal Web (CBE) [TOP LEFT] ==================== -->
   <g transform="translate(24, 88)">
     <rect width="360" height="136" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1" filter="url(#shadow)"/>
     <rect width="360" height="30" rx="8" fill="#F0F9FF"/>
     <rect y="24" width="360" height="6" fill="#F0F9FF"/>
     <rect width="4" height="136" rx="2" fill="#0284C7"/>
     <circle cx="20" cy="15" r="4" fill="#0284C7"/>
-    <text x="32" y="19" class="box-title" fill="#0369A1">Public Warning Platform (PWP / CBE)</text>
+    <text x="32" y="19" class="box-title" fill="#0369A1">Knowledge Portal Web App (Portal Web / CBE)</text>
     <text x="16" y="46" class="box-subtitle">ALERT ORIGINATION &amp; CAP ENCODING</text>
-    <text x="16" y="66" class="box-body">• Role: Originates CAP XML alerts &amp; broadcast polygons</text>
+    <text x="16" y="66" class="box-body">• Role: Originates Knowledge alerts &amp; content payloads</text>
     <text x="16" y="82" class="box-body">• Nodes: 3-Node Patroni HA (PostgreSQL 17, etcd)</text>
     <text x="16" y="98" class="box-body">• Client: XML-RPC Client via channelAdapters.xml</text>
     <text x="16" y="116" class="pill-text" fill="#16A34A">● ACTIVE / SYNCED (Status 0 Heartbeat, latency 6–12ms)</text>
   </g>
 
-  <!-- ==================== COMPONENT 2: CBC CORE [TOP RIGHT] ==================== -->
+  <!-- ==================== COMPONENT 2: Core Engine CORE [TOP RIGHT] ==================== -->
   <g transform="translate(576, 88)">
     <rect width="360" height="136" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1" filter="url(#shadow)"/>
     <rect width="360" height="30" rx="8" fill="#F0FDF4"/>
     <rect y="24" width="360" height="6" fill="#F0FDF4"/>
     <rect width="4" height="136" rx="2" fill="#16A34A"/>
     <circle cx="20" cy="15" r="4" fill="#16A34A"/>
-    <text x="32" y="19" class="box-title" fill="#15803D">Cell Broadcast Centre (CBC Core)</text>
+    <text x="32" y="19" class="box-title" fill="#15803D">Core Knowledge Engine (Core DB)</text>
     <text x="16" y="46" class="box-subtitle">RADIO ACCESS SIGNALLING &amp; DISPATCH</text>
-    <text x="16" y="66" class="box-body">• Role: Radio transmission via 4G/5G MME (29168/sctp)</text>
-    <text x="16" y="82" class="box-body">• Database: PostgreSQL 16 Enterprise (SID CBC, OPEN RW)</text>
+    <text x="16" y="66" class="box-body">• Role: Secure Event Dispatch via Auth Gateway (8443/tcp)</text>
+    <text x="16" y="82" class="box-body">• Database: PostgreSQL 16 Enterprise (SID Core Engine, OPEN RW)</text>
     <text x="16" y="98" class="box-body">• Gateway: Tomcat cbegateway (Port 8080/tcp HTTP)</text>
     <text x="16" y="116" class="pill-text" fill="#16A34A">● 14/14 DAEMONS ACTIVE (cbcd, oman, trc, alh, sns)</text>
   </g>
 
-  <!-- ==================== HORIZONTAL FLOW: PWP <-> CBC ==================== -->
-  <!-- Upper line: PWP -> CBC (XML-RPC HTTP Requests) -->
+  <!-- ==================== HORIZONTAL FLOW: Portal Web <-> Core Engine ==================== -->
+  <!-- Upper line: Portal Web -> Core Engine (XML-RPC HTTP Requests) -->
   <line x1="384" y1="126" x2="568" y2="126" stroke="#0284C7" stroke-width="2" marker-end="url(#arrow-blue)"/>
   <rect x="408" y="110" width="136" height="16" rx="4" fill="#F0F9FF" stroke="#BAE6FD" stroke-width="1"/>
   <text x="476" y="122" text-anchor="middle" class="flow-label">XML-RPC (Port 8080/tcp)</text>
 
-  <!-- Lower line: CBC -> PWP (CBCLOGIN / Heartbeat Status 0) -->
+  <!-- Lower line: Core Engine -> Portal Web (Core EngineLOGIN / Heartbeat Status 0) -->
   <line x1="576" y1="168" x2="392" y2="168" stroke="#16A34A" stroke-width="2" marker-end="url(#arrow-green)"/>
   <rect x="398" y="174" width="156" height="16" rx="4" fill="#F0FDF4" stroke="#BBF7D0" stroke-width="1"/>
-  <text x="476" y="186" text-anchor="middle" class="flow-label" fill="#15803D">CBCLOGIN / Status: 0 (Success)</text>
+  <text x="476" y="186" text-anchor="middle" class="flow-label" fill="#15803D">Core EngineLOGIN / Status: 0 (Success)</text>
 
-  <!-- ==================== VERTICAL FLOWS TO ELEMENT MANAGER ==================== -->
-  <!-- Left Vertical: PWP -> EM -->
+  <!-- ==================== VERTICAL FLOWS TO MANAGEMENT GATEWAY ==================== -->
+  <!-- Left Vertical: Portal Web -> Management Gateway -->
   <line x1="204" y1="224" x2="204" y2="280" stroke="#0284C7" stroke-width="2" marker-end="url(#arrow-blue)"/>
   <rect x="74" y="238" width="180" height="20" rx="4" fill="#F0F9FF" stroke="#BAE6FD" stroke-width="1"/>
   <text x="164" y="252" text-anchor="middle" class="flow-label">Metrics &amp; API (Port 8866 / 8888)</text>
 
-  <!-- Right Vertical: CBC -> EM -->
+  <!-- Right Vertical: Core Engine -> Management Gateway -->
   <line x1="756" y1="224" x2="756" y2="280" stroke="#7C3AED" stroke-width="2" marker-end="url(#arrow-purple)"/>
   <rect x="688" y="238" width="170" height="20" rx="4" fill="#FAF5FF" stroke="#E9D5FF" stroke-width="1"/>
   <text x="773" y="252" text-anchor="middle" class="flow-label" fill="#7C3AED">SNMP Traps (Port 162/udp)</text>
 
-  <!-- ==================== COMPONENT 3: ELEMENT MANAGER (BOTTOM) ==================== -->
+  <!-- ==================== COMPONENT 3: MANAGEMENT GATEWAY (BOTTOM) ==================== -->
   <g transform="translate(24, 288)">
     <rect width="912" height="114" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1" filter="url(#shadow)"/>
     <rect width="912" height="28" rx="8" fill="#F8FAFC"/>
     <rect y="22" width="912" height="6" fill="#F8FAFC"/>
     <rect width="4" height="114" rx="2" fill="#7C3AED"/>
     <circle cx="20" cy="14" r="4" fill="#7C3AED"/>
-    <text x="32" y="18" class="box-title" fill="#5B21B6">Element Manager (EM 5.1.0 / OAM Central Console)</text>
+    <text x="32" y="18" class="box-title" fill="#5B21B6">Management Gateway (Management Gateway 5.1 / OAM Central Console)</text>
     <text x="560" y="18" class="pill-text" fill="#16A34A">● 20 MICROSERVICES HEALTHY (Docker/Podman Compose • 1.1TB /data)</text>
 
-    <text x="16" y="44" class="box-subtitle">SINGLE-PANE-OF-GLASS MONITORING, REAL-TIME CORRELATION &amp; CELL COVERAGE KPI</text>
+    <text x="16" y="44" class="box-subtitle">SINGLE-PANE-OF-GLASS MONITORING, REAL-TIME CORRELATION &amp; SERVICE COVERAGE KPI</text>
     <text x="16" y="64" class="box-body">• Web Management Ingress: Secure HTTPS Portal (Port 443/tcp / fallback 8443/tcp) with Keycloak SSO &amp; RBAC</text>
     <text x="16" y="80" class="box-body">• Telemetry Ingestion Engine: Collects live XML-RPC handshake latencies, Patroni HA states, and Valkey/Redis cache statistics</text>
-    <text x="16" y="96" class="box-body">• Alarm Collector: Listens on port 162/udp for asynchronous broadcast quota and PLMN cell traps emitted by CBC daemons (alh, oman)</text>
+    <text x="16" y="96" class="box-body">• Alarm Collector: Listens on port 162/udp for asynchronous event quota and TENANT_ID event traps emitted by Core Engine daemons (alh, oman)</text>
   </g>
 </svg>

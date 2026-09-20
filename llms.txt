@@ -27,7 +27,7 @@ ASIMP performs dynamic auditing before and after configurations are modified. It
 - [History & Design Philosophy](HISTORY.md)
 - [Changelog](CHANGELOG.md)
 - [Architecture & Workflow Docs](docs/architecture.md)
-- [MNO Testbed OpenSCAP Audit Report](docs/mno_testbed_openscap_va_report.md)
+- [Knowledge Sharing Portal OpenSCAP Audit Report](docs/knowledge_portal_testbed_openscap_va_report.md)
 - [Configuration & Variables](docs/configuration.md)
 - [Troubleshooting & Fallbacks](docs/troubleshooting.md)
 - [Complete Information Compilation](llms-full.txt)

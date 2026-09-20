@@ -5,7 +5,7 @@
       .lane-box { fill: #FAFAFA; stroke: #CBD5E1; stroke-width: 1px; stroke-dasharray: 4 4; rx: 6px; }
       .lane-hdr { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 11px; fill: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
       .node-box { rx: 6px; ry: 6px; stroke-width: 1.5px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05)); }
-      .node-pwp { fill: #EFF6FF; stroke: #2563EB; }
+      .node-web { fill: #EFF6FF; stroke: #2563EB; }
       .node-gw { fill: #F0FDF4; stroke: #16A34A; }
       .node-cbc { fill: #FEF3C7; stroke: #D97706; }
       .node-core { fill: #F5F3FF; stroke: #7C3AED; }
@@ -37,11 +37,11 @@
     <line x1="55" y1="46" x2="55" y2="520" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="4 4" />
   </g>
 
-  <!-- 2. PWP API -->
+  <!-- 2. Portal Web API -->
   <g transform="translate(160, 20)">
-    <rect width="130" height="46" class="node-box node-pwp" />
+    <rect width="130" height="46" class="node-box node-web" />
     <text x="65" y="24" class="node-title" text-anchor="middle">Public Warning</text>
-    <text x="65" y="38" class="node-sub" text-anchor="middle">pwp-api :8866</text>
+    <text x="65" y="38" class="node-sub" text-anchor="middle">portal-web-api :8866</text>
     <line x1="65" y1="46" x2="65" y2="520" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="4 4" />
   </g>
 
@@ -53,19 +53,19 @@
     <line x1="65" y1="46" x2="65" y2="520" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="4 4" />
   </g>
 
-  <!-- 4. CBC Core -->
+  <!-- 4. Core Knowledge Engine -->
   <g transform="translate(460, 20)">
     <rect width="140" height="46" class="node-box node-cbc" />
-    <text x="70" y="24" class="node-title" text-anchor="middle">CBC Core (cbcd)</text>
+    <text x="70" y="24" class="node-title" text-anchor="middle">Core Knowledge Engine (cbcd)</text>
     <text x="70" y="38" class="node-sub" text-anchor="middle">PostgreSQL DB &amp; Daemons</text>
     <line x1="70" y1="46" x2="70" y2="520" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="4 4" />
   </g>
 
-  <!-- 5. Telecom Core (MME / AMF) -->
+  <!-- 5. Enterprise Portal Core (Auth / Identity Gateway) -->
   <g transform="translate(620, 20)">
     <rect width="140" height="46" class="node-box node-core" />
-    <text x="70" y="24" class="node-title" text-anchor="middle">Telecom Core</text>
-    <text x="70" y="38" class="node-sub" text-anchor="middle">4G MME &amp; 5G AMF</text>
+    <text x="70" y="24" class="node-title" text-anchor="middle">Enterprise Portal Core</text>
+    <text x="70" y="38" class="node-sub" text-anchor="middle">Auth Service &amp; Identity Service</text>
     <line x1="70" y1="46" x2="70" y2="520" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="4 4" />
   </g>
 
@@ -73,7 +73,7 @@
   <g transform="translate(780, 20)">
     <rect width="130" height="46" class="node-box node-ran" />
     <text x="65" y="24" class="node-title" text-anchor="middle">RAN &amp; Handsets</text>
-    <text x="65" y="38" class="node-sub" text-anchor="middle">eNodeB/gNodeB &amp; UE</text>
+    <text x="65" y="38" class="node-sub" text-anchor="middle">Edge Worker/Edge Worker &amp; UE</text>
     <line x1="65" y1="46" x2="65" y2="520" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="4 4" />
   </g>
 
@@ -83,7 +83,7 @@
     <circle cx="95" cy="-7" r="8" fill="#1E3A8A" />
     <text x="95" y="-4" class="badge-num" text-anchor="middle">1</text>
     <text x="110" y="-4" class="flow-text">Create Nationwide Alert</text>
-    <text x="110" y="12" class="proto-tag">Select PLMN (502-153)</text>
+    <text x="110" y="12" class="proto-tag">Select TENANT_ID (502-153)</text>
   </g>
 
   <!-- Flow 2: XML-RPC Login Handshake -->
@@ -91,22 +91,22 @@
     <line x1="225" y1="0" x2="375" y2="0" class="flow-arrow" marker-end="url(#arrowhead)" />
     <circle cx="235" cy="-7" r="8" fill="#1E3A8A" />
     <text x="235" y="-4" class="badge-num" text-anchor="middle">2</text>
-    <text x="250" y="-4" class="flow-text">CBCLOGINREQUEST</text>
+    <text x="250" y="-4" class="flow-text">Core EngineLOGINREQUEST</text>
     <text x="250" y="12" class="proto-tag">XML-RPC Digest Auth</text>
   </g>
 
   <g transform="translate(0, 185)">
     <line x1="375" y1="0" x2="225" y2="0" stroke="#16A34A" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#blue-arrowhead)" />
-    <text x="365" y="-6" class="flow-text" text-anchor="end" fill="#166534">CBCLOGINRESPONSE (Authenticated)</text>
+    <text x="365" y="-6" class="flow-text" text-anchor="end" fill="#166534">Core EngineLOGINRESPONSE (Authenticated)</text>
   </g>
 
-  <!-- Flow 3: NEW_MESSAGE_PLMN_REQ -->
+  <!-- Flow 3: NEW_MESSAGE_PORTAL_REQ -->
   <g transform="translate(0, 235)">
     <line x1="225" y1="0" x2="375" y2="0" class="flow-arrow" marker-end="url(#arrowhead)" />
     <circle cx="235" cy="-7" r="8" fill="#1E3A8A" />
     <text x="235" y="-4" class="badge-num" text-anchor="middle">3</text>
-    <text x="250" y="-4" class="flow-text">NEW_MESSAGE_PLMN_REQ</text>
-    <text x="250" y="12" class="proto-tag">Nationwide Broadcast Scope</text>
+    <text x="250" y="-4" class="flow-text">NEW_MESSAGE_PORTAL_REQ</text>
+    <text x="250" y="12" class="proto-tag">Enterprise Cluster Scope</text>
   </g>
 
   <!-- Flow 4: Core Validation & Schema Store -->
@@ -115,7 +115,7 @@
     <circle cx="385" cy="-7" r="8" fill="#1E3A8A" />
     <text x="385" y="-4" class="badge-num" text-anchor="middle">4</text>
     <text x="400" y="-4" class="flow-text">IPC Alert Dispatch</text>
-    <text x="400" y="12" class="proto-tag">Check ALLOW_NEW_MESSAGE_PLMN_REQ</text>
+    <text x="400" y="12" class="proto-tag">Check ALLOW_NEW_PORTAL_REQ</text>
   </g>
 
   <!-- DB Internal Save note -->
@@ -124,13 +124,13 @@
     <text x="45" y="12" class="proto-tag" fill="#B45309">Store to SUBSCRIPTION_STORE</text>
   </g>
 
-  <!-- Flow 5: Telecom Radio Core Signaling -->
+  <!-- Flow 5: Enterprise Portal Radio Core Signaling -->
   <g transform="translate(0, 375)">
     <line x1="530" y1="0" x2="690" y2="0" class="flow-arrow" marker-end="url(#arrowhead)" />
     <circle cx="540" cy="-7" r="8" fill="#1E3A8A" />
     <text x="540" y="-4" class="badge-num" text-anchor="middle">5</text>
     <text x="555" y="-4" class="flow-text">Write-Replace Warning</text>
-    <text x="555" y="12" class="proto-tag">4G: SBc-AP / 29168/sctp | 5G: SBA / 443</text>
+    <text x="555" y="12" class="proto-tag">4G: SBc-AP / 8443/tcp | 5G: SBA / 443</text>
   </g>
 
   <!-- Flow 6: S1-AP / NG-AP to BTS -->
@@ -142,10 +142,10 @@
     <text x="715" y="12" class="proto-tag">S1-AP / NG-AP Protocol</text>
   </g>
 
-  <!-- Flow 7: Air Broadcast to Phones -->
+  <!-- Flow 7: Event Dispatch to Web Clients -->
   <g transform="translate(0, 485)">
     <rect x="765" y="-12" width="160" height="38" rx="4" fill="#FEF2F2" stroke="#EF4444" stroke-width="1.5" />
-    <text x="845" y="4" class="flow-text" text-anchor="middle" fill="#991B1B">7. SIB Over-The-Air Broadcast</text>
-    <text x="845" y="18" class="proto-tag" text-anchor="middle" fill="#B91C1C">SIB10/11/12 (4G) &amp; SIB6/7/8 (5G)</text>
+    <text x="845" y="4" class="flow-text" text-anchor="middle" fill="#991B1B">7. Event Over-The-Network Dispatch</text>
+    <text x="845" y="18" class="proto-tag" text-anchor="middle" fill="#B91C1C">Event10/11/12 (4G) &amp; Event6/7/8 (5G)</text>
   </g>
 </svg>

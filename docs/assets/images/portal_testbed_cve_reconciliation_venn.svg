@@ -22,7 +22,7 @@
   <rect width="918" height="418" x="1" y="1" fill="none" stroke="#E2E8F0" stroke-width="1.5" rx="11"/>
 
   <!-- Title Header -->
-  <text x="460" y="38" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A" text-anchor="middle">MNO Fleet Testbed: OVAL True Risk vs. VA Raw Scan Reconciliation</text>
+  <text x="460" y="38" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F172A" text-anchor="middle">Knowledge Portal Fleet Testbed: OVAL True Risk vs. VA Raw Scan Reconciliation</text>
   <text x="460" y="58" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">Reconciliation across 5 Testbed VMs: ctl-node-01, 008, 001, 005, 004</text>
 
   <!-- Left Circle: Carrier VA Scan Banner -->

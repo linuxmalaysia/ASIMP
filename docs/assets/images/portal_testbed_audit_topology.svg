@@ -22,7 +22,7 @@
 
   <!-- Top Banner -->
   <rect x="16" y="12" width="888" height="46" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1"/>
-  <text x="32" y="32" class="title">MNO Fleet Testbed Access Chain &amp; Dedicated Ansible Audit Topology</text>
+  <text x="32" y="32" class="title">Knowledge Portal Fleet Testbed Access Chain &amp; Dedicated Ansible Audit Topology</text>
   <text x="32" y="47" class="sub">Pre-Remediation Infrastructure Architecture • Dedicated Testbed Environment • Rules 11, 32, &amp; 33 Compliant</text>
 
   <!-- Access Chain Tier (Horizontal) -->
@@ -61,7 +61,7 @@
     <rect width="200" height="80" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1" filter="url(#shadow)"/>
     <rect width="200" height="22" rx="6" fill="#F1F5F9"/>
     <rect y="16" width="200" height="6" fill="#F1F5F9"/>
-    <text x="12" y="15" class="node-header" fill="#0284C7">3. BRF Edge Bastion</text>
+    <text x="12" y="15" class="node-header" fill="#0284C7">3. Portal Edge Bastion</text>
     <text x="12" y="38" class="node-meta">Host: jump-bastion-01</text>
     <text x="12" y="52" class="node-meta">IP: 198.51.100.20 (ASSET-10022)</text>
     <text x="12" y="68" class="node-status">● PORT 22 / KEY AUTH</text>
@@ -78,13 +78,13 @@
     <rect y="16" width="182" height="6" fill="#DBEAFE"/>
     <text x="10" y="15" class="node-header" fill="#1E3A8A">4. Testbed Controller</text>
     <text x="10" y="38" class="node-meta">ctl-node-01</text>
-    <text x="10" y="52" class="node-meta">192.0.2.10 [mno_ctl]</text>
-    <text x="10" y="68" class="node-status">● ANSIBLE ORCHESTRATOR</text>
+    <text x="10" y="52" class="node-meta">192.0.2.10 [app_ctl]</text>
+    <text x="10" y="68" class="node-status">● ANEventLE ORCHESTRATOR</text>
   </g>
 
   <!-- Downward Arrow from Controller to Managed Nodes Cluster -->
   <path d="M 813 150 L 813 182 L 460 182 L 460 196" stroke="#0284C7" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
-  <text x="540" y="176" class="conn-label">Ansible Execution Bridge (inventories/mno-testbed.ini)</text>
+  <text x="540" y="176" class="conn-label">Ansible Execution Bridge (inventories/portal-testbed.ini)</text>
 
   <!-- Managed Nodes Grid Container (4 Target VMs) -->
   <g transform="translate(16, 204)">
@@ -92,17 +92,17 @@
     <rect width="888" height="30" rx="6" fill="#E0F2FE"/>
     <rect y="24" width="888" height="6" fill="#E0F2FE"/>
     <circle cx="28" cy="15" r="4" fill="#0284C7"/>
-    <text x="38" y="19" class="box-label">MANAGED MNO Fleet TESTBED WORKLOAD NODES (PRE-REMEDIATION AUDIT POSTURE)</text>
+    <text x="38" y="19" class="box-label">MANAGED Knowledge Portal Fleet TESTBED WORKLOAD NODES (PRE-REMEDIATION AUDIT POSTURE)</text>
 
-    <!-- Node A: Test CBC Core -->
+    <!-- Node A: Test Core Knowledge Engine -->
     <g transform="translate(16, 42)">
       <rect width="202" height="162" rx="4" fill="#FFFFFF" stroke="#CBD5E1"/>
       <rect width="202" height="22" rx="4" fill="#F1F5F9"/>
       <rect y="16" width="202" height="6" fill="#F1F5F9"/>
-      <text x="10" y="15" class="node-header" fill="#0F172A">Test CBC Core [mno_cbc]</text>
-      <text x="10" y="38" class="node-meta">Host: cbc-node-01</text>
+      <text x="10" y="15" class="node-header" fill="#0F172A">Test Core Knowledge Engine [app_core]</text>
+      <text x="10" y="38" class="node-meta">Host: core-db-01</text>
       <text x="10" y="54" class="node-meta">IP: 192.0.2.20</text>
-      <text x="10" y="70" class="node-meta">Role: CBC Engine &amp; PostgreSQL</text>
+      <text x="10" y="70" class="node-meta">Role: Core Engine &amp; PostgreSQL</text>
       <text x="10" y="86" class="node-meta">OS: RHEL 8.10 (Ootpa)</text>
       <text x="10" y="102" class="node-meta">Kernel: 4.18.0-553.el8_10</text>
       <text x="10" y="118" class="node-meta">CPU: 8 vCPUs | RAM: 32 GB</text>
@@ -110,36 +110,36 @@
       <text x="10" y="150" class="node-status">● DAEMONS &amp; DB ACTIVE</text>
     </g>
 
-    <!-- Node B: Test PWP App -->
+    <!-- Node B: Test Portal Web App -->
     <g transform="translate(230, 42)">
       <rect width="202" height="162" rx="4" fill="#FFFFFF" stroke="#CBD5E1"/>
       <rect width="202" height="22" rx="4" fill="#F1F5F9"/>
       <rect y="16" width="202" height="6" fill="#F1F5F9"/>
-      <text x="10" y="15" class="node-header" fill="#0F172A">Test PWP App [mno_pwp]</text>
-      <text x="10" y="38" class="node-meta">Host: pwp-node-01</text>
+      <text x="10" y="15" class="node-header" fill="#0F172A">Test Portal Web App [app_web]</text>
+      <text x="10" y="38" class="node-meta">Host: web-node-01</text>
       <text x="10" y="54" class="node-meta">IP: 192.0.2.30</text>
-      <text x="10" y="70" class="node-meta">Role: PWP Standalone + PG17</text>
+      <text x="10" y="70" class="node-meta">Role: Portal Web Standalone + PG17</text>
       <text x="10" y="86" class="node-meta">OS: RHEL 8.10 (Ootpa)</text>
       <text x="10" y="102" class="node-meta">Kernel: 4.18.0-553.22.1</text>
       <text x="10" y="118" class="node-meta">CPU: 4 vCPUs | RAM: 16 GB</text>
-      <text x="10" y="134" class="node-meta">Role Var: pwp_pg_role=primary</text>
-      <text x="10" y="150" class="node-status">● PWP APPLICATION UP</text>
+      <text x="10" y="134" class="node-meta">Role Var: web_pg_role=primary</text>
+      <text x="10" y="150" class="node-status">● Portal Web APPLICATION UP</text>
     </g>
 
-    <!-- Node C: Test Element Manager -->
+    <!-- Node C: Test Management Gateway -->
     <g transform="translate(444, 42)">
       <rect width="202" height="162" rx="4" fill="#FFFFFF" stroke="#CBD5E1"/>
       <rect width="202" height="22" rx="4" fill="#F1F5F9"/>
       <rect y="16" width="202" height="6" fill="#F1F5F9"/>
-      <text x="10" y="15" class="node-header" fill="#0F172A">Test EM 5.1.0 [mno_em]</text>
-      <text x="10" y="38" class="node-meta">Host: em-node-01</text>
+      <text x="10" y="15" class="node-header" fill="#0F172A">Test Management Gateway 5.1 [app_mgmt]</text>
+      <text x="10" y="38" class="node-meta">Host: mgmt-node-01</text>
       <text x="10" y="54" class="node-meta">IP: 192.0.2.40</text>
-      <text x="10" y="70" class="node-meta">Role: Element Manager</text>
+      <text x="10" y="70" class="node-meta">Role: Management Gateway</text>
       <text x="10" y="86" class="node-meta">OS: RHEL 8.10 (Ootpa)</text>
       <text x="10" y="102" class="node-meta">Kernel: 4.18.0-553.22.1</text>
       <text x="10" y="118" class="node-meta">CPU: 8 vCPUs | RAM: 32 GB</text>
       <text x="10" y="134" class="node-meta">Containers: 20 Microservices</text>
-      <text x="10" y="150" class="node-status">● EM CONTAINERS ONLINE</text>
+      <text x="10" y="150" class="node-status">● Management Gateway CONTAINERS ONLINE</text>
     </g>
 
     <!-- Node D: Test HAProxy Ingress -->
@@ -147,7 +147,7 @@
       <rect width="214" height="162" rx="4" fill="#FFFFFF" stroke="#CBD5E1"/>
       <rect width="214" height="22" rx="4" fill="#F1F5F9"/>
       <rect y="16" width="214" height="6" fill="#F1F5F9"/>
-      <text x="10" y="15" class="node-header" fill="#0F172A">Test HAProxy [mno_ha]</text>
+      <text x="10" y="15" class="node-header" fill="#0F172A">Test HAProxy [app_ha]</text>
       <text x="10" y="38" class="node-meta">Host: ha-node-01</text>
       <text x="10" y="54" class="node-meta">IP: 192.0.2.50</text>
       <text x="10" y="70" class="node-meta">Role: Ingress Gateway</text>

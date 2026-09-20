@@ -28,7 +28,7 @@
 
   <!-- Master Header Banner -->
   <rect x="16" y="12" width="888" height="46" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1"/>
-  <text x="32" y="32" class="main-title">MNO Fleet Testbed: Two-Stage Air-Gapped Errata Architecture</text>
+  <text x="32" y="32" class="main-title">Knowledge Portal Fleet Testbed: Two-Stage Air-Gapped Errata Architecture</text>
   <text x="32" y="48" class="main-sub">Strict Operational Decoupling: Controller Package Staging (Stage 1) vs. Rolling Cluster Remediation (Stage 2) • Rule 32.21 &amp; Rule 32.36</text>
 
   <!-- ================= STAGE 1 COLUMN (Left) ================= -->
@@ -117,9 +117,9 @@
       <rect width="4" height="150" rx="2" fill="#DC2626"/>
       <text x="16" y="20" class="card-header" fill="#991B1B">2.1 Sequential Rolling Execution (serial: 1)</text>
       <text x="16" y="38" class="card-body">Tier 1: HAProxy Ingress (ha-node-01 - 192.0.2.50)</text>
-      <text x="16" y="52" class="card-body">Tier 2: Element Manager (em-node-01 - 192.0.2.40)</text>
-      <text x="16" y="66" class="card-body">Tier 3: PWP App &amp; PostgreSQL (pwp-node-01 - 192.0.2.30)</text>
-      <text x="16" y="80" class="card-body">Tier 4: CBC Core &amp; PostgreSQL 16 (cbc-node-01 - 192.0.2.20)</text>
+      <text x="16" y="52" class="card-body">Tier 2: Management Gateway (mgmt-node-01 - 192.0.2.40)</text>
+      <text x="16" y="66" class="card-body">Tier 3: Portal Web App &amp; PostgreSQL (web-node-01 - 192.0.2.30)</text>
+      <text x="16" y="80" class="card-body">Tier 4: Core Knowledge Engine &amp; PostgreSQL 16 (core-db-01 - 192.0.2.20)</text>
       <text x="16" y="94" class="card-body">Tier 5: Ansible Controller (ctl-node-01 - 192.0.2.10)</text>
       <text x="16" y="112" class="card-meta">Execution: Inside persistent tmux session with chunked rsync</text>
       <text x="16" y="126" class="card-meta">Reboot: needs-restarting -r triggers controlled reboot per node</text>
@@ -136,7 +136,7 @@
       <text x="16" y="20" class="card-header" fill="#15803D">2.2 Post-Remediation Compliance Verification</text>
       <text x="16" y="38" class="card-body">• Run: audit_openscap_oval.yml across all 5 testbed nodes</text>
       <text x="16" y="52" class="card-body">• Confirm: 0 Vulnerable Definitions in Levels 8, 9, 10</text>
-      <text x="16" y="66" class="card-meta">Formal testbed qualification sign-off for telecom governance</text>
+      <text x="16" y="66" class="card-meta">Formal testbed qualification sign-off for enterprise portal governance</text>
     </g>
   </g>
 </svg>

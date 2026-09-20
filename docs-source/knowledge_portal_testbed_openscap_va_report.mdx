@@ -1,22 +1,22 @@
 ---
-title: "MNO Testbed OpenSCAP OVAL vs. Operator VA Scan Pre-Remediation Comparative Audit Report"
-sidebarTitle: "MNO OpenSCAP VA Report"
+title: "Knowledge Portal OpenSCAP OVAL vs. Operator VA Scan Pre-Remediation Comparative Audit Report"
+sidebarTitle: "Knowledge Portal OpenSCAP VA Report"
 description: "Topics: openscap, oval, va-scan, compliance, comparative-audit, testbed"
 ---
 
 {% raw %}
-# MNO Testbed: OpenSCAP OVAL vs. Operator VA Scan Pre-Remediation Comparative Audit Report
+# Knowledge Portal Testbed: OpenSCAP OVAL vs. Operator VA Scan Pre-Remediation Comparative Audit Report
 
-> **Evaluation Scope:** Dedicated MNO Testbed Lab Fleet — All Five (5) Virtual Machines:
-> • **Ansible Testbed Controller:** `ctl-node-01` (`192.0.2.10` — `[mno_ctl]`)
-> • **Cell Broadcast Centre (CBC) Core:** `cbc-node-01` (`192.0.2.20` — `[mno_cbc]`)
-> • **Public Warning Platform (PWP) App:** `pwp-node-01` (`192.0.2.30` — `[mno_pwp]`)
-> • **Element Manager (EM 5.1.0 Gateway):** `em-node-01` (`192.0.2.40` — `[mno_em]`)
-> • **HAProxy Ingress Gateway:** `ha-node-01` (`192.0.2.50` — `[mno_ha]`)
+> **Evaluation Scope:** Dedicated Knowledge Portal Testbed Lab Fleet — All Five (5) Virtual Machines:
+> • **Ansible Testbed Controller:** `ctl-node-01` (`192.0.2.10` — `[app_ctl]`)
+> • **Core Knowledge Engine (Core Engine) Core:** `core-db-01` (`192.0.2.20` — `[app_core]`)
+> • **Knowledge Portal Web App (Portal Web) App:** `web-node-01` (`192.0.2.30` — `[app_web]`)
+> • **Management Gateway (Management Gateway):** `mgmt-node-01` (`192.0.2.40` — `[app_mgmt]`)
+> • **HAProxy Ingress Gateway:** `ha-node-01` (`192.0.2.50` — `[app_ha]`)
 > **Evaluation Benchmark:** Red Hat OVAL Compatibility Standard ([RH Knowledgebase 221883](https://access.redhat.com/articles/221883))
 > **Baseline Definition Stream:** Red Hat Enterprise Linux 8 OVAL v2 Stream (`rhel-8.oval.xml`, 2,703 Definitions)
-> **Telecom Comparison Dataset:** MNO Fleet Vulnerability Assessment (VA) Scan Standard (`VA scan results - MNO 20260917.xlsx`)
-> **Access & Automation Pipeline:** Chained Relay via Jump 1 (`198.51.100.10`) & BRF Bastion (`198.51.100.20`)
+> **Portal Comparison Dataset:** Knowledge Portal Fleet Vulnerability Assessment (VA) Scan Standard (`VA scan results - Portal 20260917.xlsx`)
+> **Access & Automation Pipeline:** Chained Relay via Jump 1 (`198.51.100.10`) & Portal Bastion (`198.51.100.20`)
 > **Audit Status:** **Pre-Remediation Baseline** (Non-Mutating Inspection / Zero Production Impact)
 > **Audit Date:** 2026-09-18 20:55 MYT | **Compile by:** ASIMP Core Team & Sovereign AI Agent
 
@@ -24,24 +24,24 @@ description: "Topics: openscap, oval, va-scan, compliance, comparative-audit, te
 
 ## Executive Summary & Grand Testbed Scorecard
 
-Pursuant to the security verification framework established in Red Hat Knowledgebase Article 221883 (*"Red Hat and OVAL compatibility"*), an automated, non-destructive, host-internal OpenSCAP OVAL vulnerability assessment was executed across **all five (5) virtual machines** comprising the dedicated **Telecom Enterprise (MNO) BRF Testbed Cluster**.
+Pursuant to the security verification framework established in Red Hat Knowledgebase Article 221883 (*"Red Hat and OVAL compatibility"*), an automated, non-destructive, host-internal OpenSCAP OVAL vulnerability assessment was executed across **all five (5) virtual machines** comprising the dedicated **Knowledge Portal Enterprise (Portal) Portal Testbed Cluster**.
 
-This comparative evaluation establishes the definitive, empirical pre-remediation baseline across the testbed fleet prior to executing any package updates, software builds, or configuration modifications. The BRF Testbed serves as the non-production qualification gate under the **Testbed-First Deployment Mandate (Rule 32.7)** and the **Two-Stage Air-Gapped Errata Standard (Rule 32.36)**, ensuring that every errata RPM, kernel update, and hardening directive is fully validated in an isolated lab environment before being scheduled for the Primary Data Centre (DC1) and Disaster Recovery Site (DC2) Production clusters.
+This comparative evaluation establishes the definitive, empirical pre-remediation baseline across the testbed fleet prior to executing any package updates, software builds, or configuration modifications. The Portal Testbed serves as the non-production qualification gate under the **Testbed-First Deployment Mandate (Rule 32.7)** and the **Two-Stage Air-Gapped Errata Standard (Rule 32.36)**, ensuring that every errata RPM, kernel update, and hardening directive is fully validated in an isolated lab environment before being scheduled for the Primary Data Centre (DC1) and Disaster Recovery Site (DC2) Production clusters.
 
-The evaluations were orchestrated directly from the Testbed Ansible Controller (`ctl-node-01` — `192.0.2.10`) utilizing declarative inspection routines staged strictly within the sovereign execution directory `~/asimp-workspace/dsom-mno-testbed-playbooks/`. The official Red Hat RHEL 8 OVAL definition stream (`rhel-8.oval.xml`) was evaluated directly against the target hosts' internal RPM databases (`librpm`), providing mathematically deterministic audit proof of installed package patch levels, active kernel versions, and configuration hardening gaps.
+The evaluations were orchestrated directly from the Testbed Ansible Controller (`ctl-node-01` — `192.0.2.10`) utilizing declarative inspection routines staged strictly within the sovereign execution directory `~/asimp-workspace/dsom-portal-testbed-playbooks/`. The official Red Hat RHEL 8 OVAL definition stream (`rhel-8.oval.xml`) was evaluated directly against the target hosts' internal RPM databases (`librpm`), providing mathematically deterministic audit proof of installed package patch levels, active kernel versions, and configuration hardening gaps.
 
 ### Key High-Level Pre-Remediation Baseline Findings
 
 1. **Operating System Authenticity (Pure RHEL 8.10 Invariant):** All 5 testbed virtual machines are verified running authentic **Red Hat Enterprise Linux release 8.10 (Ootpa)** with 100% of installed packages cryptographically signed by Red Hat, Inc. (`VENDOR == "Red Hat, Inc."`, GPG Key ID `199e2f91fd431d51`). Zero third-party rebuild packages (CentOS, Rocky Linux, AlmaLinux) or unsigned RPMs exist within the cluster.
 2. **Projected Operator VA Scan Findings:** Reconciling the testbed hosts' software manifests against the operator's official Vulnerability Assessment scan baseline reveals a projected total of **3,602 vulnerability findings** across the 5 testbed nodes (average ~720 findings per VM).
-3. **Critical & High Severity Findings (Levels 8, 9, 10):** Exactly **853 findings** fall within the telecom operator's critical compliance thresholds (Severity Levels 8, 9, and 10), representing the immediate priority for security sign-off.
+3. **Critical & High Severity Findings (Levels 8, 9, 10):** Exactly **853 findings** fall within the enterprise portal operator's critical compliance thresholds (Severity Levels 8, 9, and 10), representing the immediate priority for security sign-off.
 4. **100.0% Resolvable via `dnf update` (Levels 8–10):** **853 out of 853 findings (100.00%)** represent known Red Hat Security Advisories (RHSAs) resolvable via standard DNF package updates (`dnf update`) using the staged Stage 1 security errata repository.
 5. **Zero Remaining Critical/High Flaws Post-Update:** Following the application of the verified Stage 1 errata rollup and rolling node reboots, **zero (0) Level 8, 9, or 10 vulnerabilities remain** in the testbed fleet.
-6. **Active Boot Kernel Drift Anomaly (CBC Node):** Node `cbc-node-01` (CBC Core) is currently booted into the base GA kernel `4.18.0-553.el8_10.x86_64`, while kernel `4.18.0-553.22.1.el8_10` is already physically installed in `/boot`. This indicates a pending maintenance reboot is required to align CBC with the rest of the fleet.
+6. **Active Boot Kernel Drift Anomaly (Core Engine Node):** Node `core-db-01` (Core Knowledge Engine) is currently booted into the base GA kernel `4.18.0-553.el8_10.x86_64`, while kernel `4.18.0-553.22.1.el8_10` is already physically installed in `/boot`. This indicates a pending maintenance reboot is required to align Core Engine with the rest of the fleet.
 7. **HAProxy Gateway Patch Lag:** Node `ha-node-01` (HAProxy) retains older package builds from the RHEL 8.9 cycle (`sudo-1.9.5p2-1.el8_9`, `glibc-2.28-251.el8_10.5`, `curl-7.61.1-34.el8_10.2`), making it the highest-yield target for security remediation in the testbed.
 8. **Non-DNF Configuration Hardening Items:** Across all 5 nodes, exactly **57 findings (< 1.6% of total findings)** represent OS configuration settings (SSH weak ciphers, MAC algorithms, Diffie-Hellman KEX, and `/home` directory permissions). These can be hardened cluster-wide in under 5 minutes via Ansible.
 
-![MNO Testbed Vulnerability Assessment Overview](assets/images/mno_testbed_vulnerability_detection_overview.svg)
+![Knowledge Portal Testbed Vulnerability Assessment Overview](assets/images/portal_testbed_vulnerability_detection_overview.svg)
 
 ---
 
@@ -49,35 +49,35 @@ The evaluations were orchestrated directly from the Testbed Ansible Controller (
 
 | Node Hostname | IP Address | Subsystem Role | Active Boot Kernel | Installed Kernels | VA Scan Findings | Levels 8–10 (High/Crit) | Resolvable via `dnf update` | Non-DNF Items |
 | :--- | :--- | :--- | :--- | :--- | :---: | :---: | :---: | :---: |
-| `ctl-node-01` | `192.0.2.10` | Ansible Test Controller (`mno_ctl`) | `4.18.0-553.22.1` | `513.24.1`, `553.22.1` | 679 | **155** | **155 / 155 (100%)** | 5 |
-| `cbc-node-01` | `192.0.2.20` | Cell Broadcast Centre (`mno_cbc`) | `4.18.0-553.el8_10` *(drift)* | `513.24.1`, `553.22.1`, `553.el8` | 743 | **189** | **189 / 189 (100%)** | 6 |
-| `pwp-node-01` | `192.0.2.30` | Public Warning Platform (`mno_pwp`) | `4.18.0-553.22.1` | `513.24.1`, `553.22.1` | 742 | **185** | **185 / 185 (100%)** | 15 |
-| `em-node-01` | `192.0.2.40` | Element Manager 5.1.0 (`mno_em`) | `4.18.0-553.22.1` | `513.24.1`, `553.22.1` | 760 | **178** | **178 / 178 (100%)** | 10 |
-| `ha-node-01` | `192.0.2.50` | HAProxy Ingress Gateway (`mno_ha`) | `4.18.0-553.22.1` | `513.24.1`, `553.22.1` | 678 | **146** | **146 / 146 (100%)** | 21 |
-| **GRAND TOTAL** | **5 Testbed Nodes** | **BRF Lab Cluster** | **RHEL 8.10 Fleet** | — | **3,602** | **853** | **853 / 853 (100.0%)** | **57** |
+| `ctl-node-01` | `192.0.2.10` | Ansible Test Controller (`app_ctl`) | `4.18.0-553.22.1` | `513.24.1`, `553.22.1` | 679 | **155** | **155 / 155 (100%)** | 5 |
+| `core-db-01` | `192.0.2.20` | Core Knowledge Engine (`app_core`) | `4.18.0-553.el8_10` *(drift)* | `513.24.1`, `553.22.1`, `553.el8` | 743 | **189** | **189 / 189 (100%)** | 6 |
+| `web-node-01` | `192.0.2.30` | Knowledge Portal Web App (`app_web`) | `4.18.0-553.22.1` | `513.24.1`, `553.22.1` | 742 | **185** | **185 / 185 (100%)** | 15 |
+| `mgmt-node-01` | `192.0.2.40` | Management Gateway 5.1.0 (`app_mgmt`) | `4.18.0-553.22.1` | `513.24.1`, `553.22.1` | 760 | **178** | **178 / 178 (100%)** | 10 |
+| `ha-node-01` | `192.0.2.50` | HAProxy Ingress Gateway (`app_ha`) | `4.18.0-553.22.1` | `513.24.1`, `553.22.1` | 678 | **146** | **146 / 146 (100%)** | 21 |
+| **GRAND TOTAL** | **5 Testbed Nodes** | **Portal Lab Cluster** | **RHEL 8.10 Fleet** | — | **3,602** | **853** | **853 / 853 (100.0%)** | **57** |
 
 ---
 
 ## 1. Network Topology & Chained Relay Architecture
 
-Access to the air-gapped MNO Testbed environment is governed by **Rule 33.4 (Multi-Hop Edge Bastion Routing & Per-Hop Key Isolation Standard)** and **Rule 33.7 (VPN Tunnel Host-Route Isolation & Chained Bastion Relay Standard)**. Because the corporate VPN pushes discrete `/32` host routes for intermediate bastions rather than flat internal subnet routes, external connections cannot directly address testbed IPs (`192.0.2.0/24` or `192.0.2.128/24`).
+Access to the air-gapped Knowledge Portal Testbed environment is governed by **Rule 33.4 (Multi-Hop Edge Bastion Routing & Per-Hop Key Isolation Standard)** and **Rule 33.7 (VPN Tunnel Host-Route Isolation & Chained Bastion Relay Standard)**. Because the corporate VPN pushes discrete `/32` host routes for intermediate bastions rather than flat internal subnet routes, external connections cannot directly address testbed IPs (`192.0.2.0/24` or `192.0.2.128/24`).
 
 Traffic must traverse a strictly controlled, non-interactive chained bastion relay:
 
-![MNO Testbed Access Chain & Dedicated Ansible Audit Topology](assets/images/mno_brf_testbed_audit_topology.svg)
+![Knowledge Portal Testbed Access Chain & Dedicated Ansible Audit Topology](assets/images/portal_testbed_audit_topology.svg)
 
 ### Testbed Subsystem Roles & Hardware Topology
 
 | Node Identifier | Target IP | Subsystem Architecture | Compute & Memory Profile | Storage Allocation & Key Mounts |
 | :--- | :--- | :--- | :---: | :--- |
-| `ctl-node-01` | `192.0.2.10` | **Ansible Automation Controller** (`mno_ctl`) | 2 vCPU / 8 GB RAM / 5 GB Swap | `/home` (42 GB, 33 GB free headroom for Stage 1 RPM staging) |
-| `cbc-node-01` | `192.0.2.20` | **Cell Broadcast Centre (CBC Core)** (`mno_cbc`) | 8 vCPU / 32 GB RAM / 16 GB Swap | `/data/postgresql_db` (48 GB, 21 GB free), `/data/postgresql_wal` (24 GB) |
-| `pwp-node-01` | `192.0.2.30` | **Public Warning Platform (PWP App)** (`mno_pwp`) | 4 vCPU / 16 GB RAM / 5 GB Swap | `/data/postgresql_db` (96 GB), `/data/postgresql_wal` (48 GB) |
-| `em-node-01` | `192.0.2.40` | **Element Manager (EM Gateway)** (`mno_em`) | 8 vCPU / 32 GB RAM / 5 GB Swap | `/data` (230 GB, 186 GB free for container volumes and logs) |
-| `ha-node-01` | `192.0.2.50` | **HAProxy Ingress Gateway** (`mno_ha`) | 2 vCPU / 8 GB RAM / 5 GB Swap | `/` (44 GB, 25 GB free), `/home` (10 GB) |
+| `ctl-node-01` | `192.0.2.10` | **Ansible Automation Controller** (`app_ctl`) | 2 vCPU / 8 GB RAM / 5 GB Swap | `/home` (42 GB, 33 GB free headroom for Stage 1 RPM staging) |
+| `core-db-01` | `192.0.2.20` | **Core Knowledge Engine (Core DB)** (`app_core`) | 8 vCPU / 32 GB RAM / 16 GB Swap | `/data/postgresql_db` (48 GB, 21 GB free), `/data/postgresql_wal` (24 GB) |
+| `web-node-01` | `192.0.2.30` | **Knowledge Portal Web App (Web App)** (`app_web`) | 4 vCPU / 16 GB RAM / 5 GB Swap | `/data/postgresql_db` (96 GB), `/data/postgresql_wal` (48 GB) |
+| `mgmt-node-01` | `192.0.2.40` | **Management & Ingestion Gateway** (`app_mgmt`) | 8 vCPU / 32 GB RAM / 5 GB Swap | `/data` (230 GB, 186 GB free for container volumes and logs) |
+| `ha-node-01` | `192.0.2.50` | **HAProxy Ingress Gateway** (`app_ha`) | 2 vCPU / 8 GB RAM / 5 GB Swap | `/` (44 GB, 25 GB free), `/home` (10 GB) |
 
 ### Automation Hygiene & Controller Isolation (Rule 32.10)
-1. **Sovereign Execution Namespace:** All testbed automation, inventories, and errata playbooks reside strictly under `~/asimp-workspace/dsom-mno-testbed-playbooks/` on Controller `192.0.2.10`. Vendor directories (`vendor-mno-playbooks/`, `projects/`) remain completely isolated and unmodified.
+1. **Sovereign Execution Namespace:** All testbed automation, inventories, and errata playbooks reside strictly under `~/asimp-workspace/dsom-portal-testbed-playbooks/` on Controller `192.0.2.10`. Vendor directories (`vendor-portal-playbooks/`, `projects/`) remain completely isolated and unmodified.
 2. **Dedicated Per-Hop SSH Key Localization:** Each testbed VM is provisioned with its own unique SSH private key located under `/home/ASSET-10022/.ssh/` on the controller, enforcing the principle of least privilege.
 3. **Non-Interactive Sudo Escalation:** Administrative operations execute non-interactively via staged credentials, protected by memory-only variables during Ansible runs.
 
@@ -95,19 +95,19 @@ A central objective of this audit report is bridging the conceptual gap between 
 
 ### 2.1 Empirical CVE & Errata Reconciliation Matrix
 
-Across all 5 virtual machines in the MNO Testbed, every single vulnerability identified by the operator in Severity Levels 8, 9, and 10 is an official Red Hat errata RPM package flaw.
+Across all 5 virtual machines in the Knowledge Portal Testbed, every single vulnerability identified by the operator in Severity Levels 8, 9, and 10 is an official Red Hat errata RPM package flaw.
 
 > **Empirical Fleet Correlation Formula (Levels 8–10 Critical & High):**
 > **Testbed Errata Remediation Rate** = (DNF Resolvable L8–10 / Operator VA L8–10 Findings) = (853 / 853) = **100.0%**
 
-![Grand Testbed Empirical Reconciliation Matrix](assets/images/mno_testbed_cve_reconciliation_venn.svg)
-*Grand Empirical Reconciliation Matrix: Host-Internal OpenSCAP OVAL vs. MNO Operator VA Scan across all 5 testbed nodes*
+![Grand Testbed Empirical Reconciliation Matrix](assets/images/portal_testbed_cve_reconciliation_venn.svg)
+*Grand Empirical Reconciliation Matrix: Host-Internal OpenSCAP OVAL vs. Portal Operator VA Scan across all 5 testbed nodes*
 
 ---
 
 ## 3. Critical & High Vulnerability Resolution (Levels 8, 9, 10)
 
-In telecommunications infrastructure compliance, Severity Levels 8, 9, and 10 represent non-negotiable security blockers that must achieve 100% remediation prior to commercial commissioning.
+In enterprise enterprise communications infrastructure compliance, Severity Levels 8, 9, and 10 represent non-negotiable security blockers that must achieve 100% remediation prior to commercial commissioning.
 
 ### Testbed Summary for Severity Levels 8, 9, and 10
 
@@ -121,7 +121,7 @@ Across the 5 testbed nodes, there are **853 total findings** in Severity Levels 
 | **TOTALS** | **Critical & High Severity (Levels 8, 9, 10)** | **853** | **853** | **100.0%** | **0** |
 
 > [!IMPORTANT]
-> **100.0% Resolution via DNF Errata Rollup:** Every single Critical and High vulnerability identified in the MNO Testbed represents an RPM package with an available Red Hat errata fix. Applying the staged Stage 1 security repository via `sudo dnf update` followed by a coordinated rolling reboot eliminates **100% of all Critical and High vulnerabilities** across the entire testbed cluster.
+> **100.0% Resolution via DNF Errata Rollup:** Every single Critical and High vulnerability identified in the Knowledge Portal Testbed represents an RPM package with an available Red Hat errata fix. Applying the staged Stage 1 security repository via `sudo dnf update` followed by a coordinated rolling reboot eliminates **100% of all Critical and High vulnerabilities** across the entire testbed cluster.
 
 ---
 
@@ -133,10 +133,10 @@ Across the entire testbed fleet, exactly **57 findings (< 1.6% of total scan ite
 | :--- | :---: | :---: | :--- | :--- |
 | **SSH Weak Key Exchange (KEX)** | Port 22/tcp | All 5 Nodes | Diffie-Hellman Group 1 and 14 enabled | In `/etc/ssh/sshd_config`, configure:<br>`KexAlgorithms curve25519-sha256,diffie-hellman-group16-sha512`<br>Apply: `sudo systemctl reload sshd` |
 | **SSH Weak MAC Algorithms** | Port 22/tcp | All 5 Nodes | MD5 and 96-bit MACs allowed | In `/etc/ssh/sshd_config`, configure:<br>`MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com`<br>Apply: `sudo systemctl reload sshd` |
-| **SSH CBC Block Ciphers** | Port 22/tcp | All 5 Nodes | Legacy CBC ciphers active | In `/etc/ssh/sshd_config`, configure:<br>`Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com`<br>Apply: `sudo systemctl reload sshd` |
+| **SSH Core Engine Block Ciphers** | Port 22/tcp | All 5 Nodes | Legacy Core Engine ciphers active | In `/etc/ssh/sshd_config`, configure:<br>`Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com`<br>Apply: `sudo systemctl reload sshd` |
 | **Permissive Home Directory Mode** | Local OS Filesystem | All 5 Nodes | Home directories set to `0755` | Execute cluster-wide:<br>`sudo chmod 750 /home/*` |
-| **Untrusted / Self-Signed TLS Certs** | Ports 443, 8866, 8877 | `mno_ha`, `mno_pwp` | Default internal test certificates | Deploy operator enterprise CA-signed TLS certificates to HAProxy and PWP API endpoints. |
-| **Database Network Access Probes** | Port 5432/tcp | `mno_pwp` (192.0.2.30) | PostgreSQL port exposed to VLAN | PostgreSQL binds to all interfaces for application access. Restrict access strictly via `pg_hba.conf` and `firewalld`. |
+| **Untrusted / Self-Signed TLS Certs** | Ports 443, 8866, 8877 | `app_ha`, `app_web` | Default internal test certificates | Deploy operator enterprise CA-signed TLS certificates to HAProxy and Portal Web API endpoints. |
+| **Database Network Access Probes** | Port 5432/tcp | `app_web` (192.0.2.30) | PostgreSQL port exposed to VLAN | PostgreSQL binds to all interfaces for application access. Restrict access strictly via `pg_hba.conf` and `firewalld`. |
 
 ---
 
@@ -145,7 +145,7 @@ Across the entire testbed fleet, exactly **57 findings (< 1.6% of total scan ite
 ### Node 5.1: `ctl-node-01` (192.0.2.10) — Ansible Testbed Controller
 
 ```yaml
-Subsystem Role: Ansible Automation Controller [mno_ctl]
+Subsystem Role: Ansible Automation Controller [app_ctl]
 Hardware Profile: 2 vCPUs (Intel Xeon Gold 6242R @ 3.10GHz), 8 GB RAM, 5 GB Swap
 Active Boot Kernel: 4.18.0-553.22.1.el8_10.x86_64
 Installed Kernels: kernel-4.18.0-513.24.1.el8_9, kernel-4.18.0-553.22.1.el8_10
@@ -173,16 +173,16 @@ Core Packages: openssl-1.1.1k-12.el8_9, glibc-2.28-251.el8_10.40, curl-7.61.1-34
 
 ---
 
-### Node 5.2: `cbc-node-01` (192.0.2.20) — Cell Broadcast Centre (CBC Core)
+### Node 5.2: `core-db-01` (192.0.2.20) — Core Knowledge Engine (Core DB)
 
 ```yaml
-Subsystem Role: CBC Telecom Core & PostgreSQL Database 16 [mno_cbc]
+Subsystem Role: Core Engine Enterprise Portal Core & PostgreSQL Database 16 [app_core]
 Hardware Profile: 8 vCPUs (Intel Xeon Gold 6242R @ 3.10GHz), 32 GB RAM, 16 GB Swap
 Active Boot Kernel: 4.18.0-553.el8_10.x86_64 (Base GA Kernel Drift)
 Installed Kernels: kernel-4.18.0-513.24.1.el8_9, kernel-4.18.0-553.22.1.el8_10, kernel-core-4.18.0-553.el8_10
 Operating System: Red Hat Enterprise Linux release 8.10 (Ootpa)
 Storage Partitions: /data/postgresql_db (48 GB, 21 GB free), /data/postgresql_wal (24 GB, 24 GB free), /opt (30 GB)
-Active Subsystems: cbcd, cbeinterf-1, cbckernel-1, cbckernel5g-1, alh, oman, trc, PostgreSQL 16 SID CBC
+Active Subsystems: cbcd, cbeinterf-1, cbckernel-1, cbckernel5g-1, alh, oman, trc, PostgreSQL 16 SID Core Engine
 ```
 
 #### Severity Distribution (Operator VA Scan Baseline)
@@ -201,20 +201,20 @@ Active Subsystems: cbcd, cbeinterf-1, cbckernel-1, cbckernel5g-1, alh, oman, trc
 | **Level 1** | Low Severity | **2** | Package errata / config | Resolvable via Stage 1 Errata |
 | **TOTALS** | **All Severity Levels** | **743** | **189 / 189 (100% L8-10)** | **0 Critical/High Remaining** |
 
-> **CBC Node Assessment Verdict:** Node `cbc-node-01` currently exhibits boot kernel drift (running base GA `553.el8_10` while `553.22.1` is installed). Applying the Stage 1 errata update brings the host to `4.18.0-553.144.1.el8_10` (or `553.30.1`), eliminating all 78 kernel advisories. PostgreSQL 16 and CBC daemons must be gracefully quiesced prior to the maintenance reboot.
+> **Core Engine Node Assessment Verdict:** Node `core-db-01` currently exhibits boot kernel drift (running base GA `553.el8_10` while `553.22.1` is installed). Applying the Stage 1 errata update brings the host to `4.18.0-553.144.1.el8_10` (or `553.30.1`), eliminating all 78 kernel advisories. PostgreSQL 16 and Core Engine daemons must be gracefully quiesced prior to the maintenance reboot.
 
 ---
 
-### Node 5.3: `pwp-node-01` (192.0.2.30) — Public Warning Platform (PWP App)
+### Node 5.3: `web-node-01` (192.0.2.30) — Knowledge Portal Web App (Web App)
 
 ```yaml
-Subsystem Role: PWP Application Server & PostgreSQL 17 DB [mno_pwp]
+Subsystem Role: Portal Web Application Server & PostgreSQL 17 DB [app_web]
 Hardware Profile: 4 vCPUs (Intel Xeon Gold 6242R @ 3.10GHz), 16 GB RAM, 5 GB Swap
 Active Boot Kernel: 4.18.0-553.22.1.el8_10.x86_64
 Installed Kernels: kernel-4.18.0-513.24.1.el8_9, kernel-4.18.0-553.22.1.el8_10
 Operating System: Red Hat Enterprise Linux release 8.10 (Ootpa)
 Storage Partitions: /data/postgresql_db (96 GB, 96 GB free), /data/postgresql_wal (48 GB, 48 GB free), /var (38 GB)
-Active Subsystems: pwp-api.service, pwp-gateway.service, pwp-ui.service, PostgreSQL 17 standalone
+Active Subsystems: portal-web-api.service, portal-web-gateway.service, portal-web-ui.service, PostgreSQL 17 standalone
 ```
 
 #### Severity Distribution (Operator VA Scan Baseline)
@@ -232,20 +232,20 @@ Active Subsystems: pwp-api.service, pwp-gateway.service, pwp-ui.service, Postgre
 | **Level 1** | Low Severity | **4** | Package errata / config | Resolvable via Stage 1 Errata |
 | **TOTALS** | **All Severity Levels** | **742** | **185 / 185 (100% L8-10)** | **0 Critical/High Remaining** |
 
-> **PWP Node Assessment Verdict:** In the single-node testbed setup, PostgreSQL 17 runs standalone rather than in Patroni HA. Applying Stage 1 errata updates core libraries (`glibc`, `openssl`, `libcurl`) without altering application binaries. 100% of Critical and High vulnerabilities are resolved via DNF.
+> **Portal Web Node Assessment Verdict:** In the single-node testbed setup, PostgreSQL 17 runs standalone rather than in Patroni HA. Applying Stage 1 errata updates core libraries (`glibc`, `openssl`, `libcurl`) without altering application binaries. 100% of Critical and High vulnerabilities are resolved via DNF.
 
 ---
 
-### Node 5.4: `em-node-01` (192.0.2.40) — Element Manager (EM 5.1.0 Gateway)
+### Node 5.4: `mgmt-node-01` (192.0.2.40) — Management Gateway (Management Gateway)
 
 ```yaml
-Subsystem Role: Element Manager Gateway & Container Host [mno_em]
+Subsystem Role: Management Gateway Gateway & Container Host [app_mgmt]
 Hardware Profile: 8 vCPUs (Intel Xeon Gold 6242R @ 3.10GHz), 32 GB RAM, 5 GB Swap
 Active Boot Kernel: 4.18.0-553.22.1.el8_10.x86_64
 Installed Kernels: kernel-4.18.0-513.24.1.el8_9, kernel-4.18.0-553.22.1.el8_10
 Operating System: Red Hat Enterprise Linux release 8.10 (Ootpa)
 Storage Partitions: /data (230 GB, 186 GB free), /var (36 GB, 11 GB free), /home (12 GB)
-Container Stack: Docker / Podman container engine hosting 20 EM microservices (Up/healthy)
+Container Stack: Docker / Podman container engine hosting 20 Management Gateway microservices (Up/healthy)
 ```
 
 #### Severity Distribution (Operator VA Scan Baseline)
@@ -263,14 +263,14 @@ Container Stack: Docker / Podman container engine hosting 20 EM microservices (U
 | **Level 1** | Low Severity | **4** | Package errata / config | Resolvable via Stage 1 Errata |
 | **TOTALS** | **All Severity Levels** | **760** | **178 / 178 (100% L8-10)** | **0 Critical/High Remaining** |
 
-> **EM Node Assessment Verdict:** Host `em-node-01` manages the Everbridge Element Manager container stack. Errata package updates must be applied with `container-selinux` protections in place to ensure container networking and volume mounts remain intact. 100% of Critical and High vulnerabilities are resolved via DNF.
+> **Management Gateway Node Assessment Verdict:** Host `mgmt-node-01` manages the Open-Source Gateway container stack. Errata package updates must be applied with `container-selinux` protections in place to ensure container networking and volume mounts remain intact. 100% of Critical and High vulnerabilities are resolved via DNF.
 
 ---
 
 ### Node 5.5: `ha-node-01` (192.0.2.50) — HAProxy Ingress Load Balancer
 
 ```yaml
-Subsystem Role: Ingress Gateway & Load Balancer [mno_ha]
+Subsystem Role: Ingress Gateway & Load Balancer [app_ha]
 Hardware Profile: 2 vCPUs (Intel Xeon Gold 6242R @ 3.10GHz), 8 GB RAM, 5 GB Swap
 Active Boot Kernel: 4.18.0-553.22.1.el8_10.x86_64
 Installed Kernels: kernel-4.18.0-513.24.1.el8_9, kernel-4.18.0-553.22.1.el8_10
@@ -300,9 +300,9 @@ Core Packages: openssl-1.1.1k-12.el8_9, glibc-2.28-251.el8_10.5 (Older), sudo-1.
 
 ## 6. Air-Gapped Two-Stage Remediation Architecture
 
-In strict alignment with **Rule 32.36 (Two-Stage Air-Gapped Errata Update & Autonomous Execution Boundary Standard)**, the remediation process for the MNO Testbed is partitioned into two distinct stages:
+In strict alignment with **Rule 32.36 (Two-Stage Air-Gapped Errata Update & Autonomous Execution Boundary Standard)**, the remediation process for the Knowledge Portal Testbed is partitioned into two distinct stages:
 
-![MNO Testbed Two-Stage Air-Gapped Errata Architecture](assets/images/mno_testbed_two_stage_errata_architecture.svg)
+![Knowledge Portal Testbed Two-Stage Air-Gapped Errata Architecture](assets/images/portal_testbed_two_stage_errata_architecture.svg)
 
 > [!CAUTION]
 > **Autonomous Execution Prohibition (Rule 32.36):**
@@ -317,9 +317,9 @@ The complete, declarative Ansible playbook governing the distribution and applic
 ```yaml
 ---
 # ==============================================================================
-# MNO Testbed: Air-Gapped RHEL 8 Errata Remediation & Cluster Rolling Update
+# Knowledge Portal Testbed: Air-Gapped RHEL 8 Errata Remediation & Cluster Rolling Update
 # Governance: Strictly Human-Commanded Execution (Rule 32.11 & Rule 32.21)
-# Inventory: dsom-mno-testbed-playbooks/ansible/inventories/mno-testbed.ini
+# Inventory: dsom-portal-testbed-playbooks/ansible/inventories/portal-testbed.ini
 # ==============================================================================
 
 - name: Stage 2.1 - Distribute Security Errata Bundle to Testbed Nodes
@@ -415,29 +415,29 @@ tmux new-session -s testbed-errata-maintenance
 
 | Phase | Subsystem Target | Inventory Limit | Rollout & Failover Procedure | Post-Reboot Verification Criteria |
 | :---: | :--- | :--- | :--- | :--- |
-| **Tier 1** | Ingress HAProxy | `--limit mno_ha` | Update `ha-node-01`, reboot VM, and verify proxy socket. | `systemctl is-active haproxy` returns `active`. |
-| **Tier 2** | Element Manager | `--limit mno_em` | Update `em-node-01`, reboot VM, and verify Docker stack. | All 20 EM microservices report `Up (healthy)`. |
-| **Tier 3** | PWP Application | `--limit mno_pwp` | Stop PWP daemons, update `pwp-node-01`, reboot, and restart services. | `pwp-api`, `pwp-gateway`, PostgreSQL 17 active. |
-| **Tier 4** | CBC Telecom Core | `--limit mno_cbc` | Gracefully shut down PostgreSQL 16 & CBC daemons, update, and reboot. | PostgreSQL SID `CBC` in `OPEN (READ WRITE)`; `cbcd` running. |
-| **Tier 5** | Test Controller | `--limit mno_ctl` | Update `ctl-node-01`, verify Ansible, Python `uv`, and OpenSCAP. | `ansible --version` and `oscap --version` operational. |
+| **Tier 1** | Ingress HAProxy | `--limit app_ha` | Update `ha-node-01`, reboot VM, and verify proxy socket. | `systemctl is-active haproxy` returns `active`. |
+| **Tier 2** | Management Gateway | `--limit app_mgmt` | Update `mgmt-node-01`, reboot VM, and verify Docker stack. | All 20 Management Gateway microservices report `Up (healthy)`. |
+| **Tier 3** | Portal Web Application | `--limit app_web` | Stop Portal Web daemons, update `web-node-01`, reboot, and restart services. | `portal-web-api`, `portal-web-gateway`, PostgreSQL 17 active. |
+| **Tier 4** | Core Engine Enterprise Portal Core | `--limit app_core` | Gracefully shut down PostgreSQL 16 & Core Engine daemons, update, and reboot. | PostgreSQL SID `Core Engine` in `OPEN (READ WRITE)`; `cbcd` running. |
+| **Tier 5** | Test Controller | `--limit app_ctl` | Update `ctl-node-01`, verify Ansible, Python `uv`, and OpenSCAP. | `ansible --version` and `oscap --version` operational. |
 
 ### Sample Execution Invocations
 
 ```bash
 # Step 1: HAProxy Ingress Gateway
-ansible-playbook -i inventories/mno-testbed.ini playbooks/remediate_airgap_security_errata.yml --limit mno_ha
+ansible-playbook -i inventories/portal-testbed.ini playbooks/remediate_airgap_security_errata.yml --limit app_ha
 
-# Step 2: Element Manager Gateway
-ansible-playbook -i inventories/mno-testbed.ini playbooks/remediate_airgap_security_errata.yml --limit mno_em
+# Step 2: Management Gateway Gateway
+ansible-playbook -i inventories/portal-testbed.ini playbooks/remediate_airgap_security_errata.yml --limit app_mgmt
 
-# Step 3: Public Warning Platform Application
-ansible-playbook -i inventories/mno-testbed.ini playbooks/remediate_airgap_security_errata.yml --limit mno_pwp
+# Step 3: Knowledge Portal Web App Application
+ansible-playbook -i inventories/portal-testbed.ini playbooks/remediate_airgap_security_errata.yml --limit app_web
 
-# Step 4: Cell Broadcast Centre Core Engine
-ansible-playbook -i inventories/mno-testbed.ini playbooks/remediate_airgap_security_errata.yml --limit mno_cbc
+# Step 4: Core Knowledge Engine Core Engine
+ansible-playbook -i inventories/portal-testbed.ini playbooks/remediate_airgap_security_errata.yml --limit app_core
 
 # Step 5: Ansible Testbed Controller
-ansible-playbook -i inventories/mno-testbed.ini playbooks/remediate_airgap_security_errata.yml --limit mno_ctl
+ansible-playbook -i inventories/portal-testbed.ini playbooks/remediate_airgap_security_errata.yml --limit app_ctl
 ```
 
 ---
@@ -447,13 +447,13 @@ ansible-playbook -i inventories/mno-testbed.ini playbooks/remediate_airgap_secur
 Immediately following completion of Stage 2 on any testbed node, the operator re-executes the declarative OpenSCAP audit playbooks to generate updated compliance records:
 
 ```bash
-ansible-playbook -i inventories/mno-testbed.ini playbooks-inspect/audit_openscap_oval.yml
+ansible-playbook -i inventories/portal-testbed.ini playbooks-inspect/audit_openscap_oval.yml
 ```
 
 Run `tools/compare_host_openscap_va.py` against the updated evaluation outputs to confirm:
 - **0 Vulnerable Definitions in Levels 8, 9, and 10.**
 - **100% remediation closure achieved across all 853 Critical & High findings.**
-- Formal lab certification generated for Telecom Enterprise network security governance prior to production deployment.
+- Formal lab certification generated for Knowledge Portal Enterprise network security governance prior to production deployment.
 
 ---
 
@@ -464,7 +464,7 @@ Run `tools/compare_host_openscap_va.py` against the updated evaluation outputs t
 2. **Synthesize Local Repodata Metadata:**
    Execute `createrepo_c --update` on Controller `192.0.2.10` to index the security repository.
 3. **Execute Non-Mutating Check-Update Dry Run:**
-   Execute `ansible-playbook -i inventories/mno-testbed.ini playbooks-inspect/audit_testbed_dnf_check.yml` to verify repository reachability across all 5 nodes with zero packages installed.
+   Execute `ansible-playbook -i inventories/portal-testbed.ini playbooks-inspect/audit_testbed_dnf_check.yml` to verify repository reachability across all 5 nodes with zero packages installed.
 4. **Deploy Declarative SSH & Home Permissions Hardening:**
    Apply the `/etc/ssh/sshd_config` cipher/MAC hardening block and `chmod 750 /home/*` across all 5 nodes to remediate the 57 non-DNF findings.
 5. **Authorize Stage 2 Maintenance Window:**

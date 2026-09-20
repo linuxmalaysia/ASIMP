@@ -22,19 +22,19 @@
 
   <!-- Top Banner / Header -->
   <rect x="24" y="16" width="912" height="68" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
-  <text x="44" y="44" class="header-title">CBC Infrastructure All-Sites Verification Topology</text>
-  <text x="44" y="66" class="header-sub">Cell Broadcast Centre &amp; PostgreSQL 16 Multi-Site Readiness Audit • Telecom Enterprise (MNO)</text>
+  <text x="44" y="44" class="header-title">Core Engine Infrastructure All-Sites Verification Topology</text>
+  <text x="44" y="66" class="header-sub">Core Knowledge Engine &amp; PostgreSQL 16 Multi-Site Readiness Audit • Knowledge Portal Enterprise (Portal)</text>
 
   <!-- Status Badge on Top Right -->
   <rect x="740" y="32" width="176" height="34" rx="17" fill="#0284C7"/>
   <text x="762" y="53" class="badge-text">DSOM RULE 32.22 AUDIT</text>
 
-  <!-- ==================== SITE 1: BRF TEST LAB ==================== -->
+  <!-- ==================== SITE 1: Portal TEST LAB ==================== -->
   <rect x="24" y="100" width="288" height="360" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1" filter="url(#shadow)"/>
   <rect x="24" y="100" width="288" height="36" rx="8" fill="#F1F5F9"/>
   <rect x="24" y="130" width="288" height="6" fill="#F1F5F9"/>
   <circle cx="42" cy="118" r="5" fill="#EAB308"/>
-  <text x="56" y="122" class="site-title">Site 1: BRF Testbed (Lab)</text>
+  <text x="56" y="122" class="site-title">Site 1: Portal Testbed (Lab)</text>
 
   <!-- Test Controller Card -->
   <g transform="translate(38, 150)">
@@ -46,29 +46,29 @@
     <text x="14" y="66" class="status-pill" fill="#16A34A">● CONTROLLER READY (Ping 100%)</text>
   </g>
 
-  <!-- Test CBC Node Card -->
+  <!-- Test Core Engine Node Card -->
   <g transform="translate(38, 238)">
     <rect width="260" height="116" rx="6" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1.5"/>
     <rect width="4" height="116" rx="2" fill="#16A34A"/>
-    <text x="14" y="18" class="card-header" fill="#15803D">CBC Core Node (cbc-node-01)</text>
-    <text x="14" y="36" class="card-body">IP: 192.0.2.20 • PostgreSQL 16 SID CBC</text>
+    <text x="14" y="18" class="card-header" fill="#15803D">Core Knowledge Engine Node (core-db-01)</text>
+    <text x="14" y="36" class="card-body">IP: 192.0.2.20 • PostgreSQL 16 SID Core Engine</text>
     <text x="14" y="52" class="card-body">Storage: /data/postgresql_db (21GB free)</text>
     <text x="14" y="68" class="card-body">PostgreSQL 16: OPEN • Port 1526 READY</text>
-    <text x="14" y="84" class="card-body">Schema CBC: 73 Tables (Verified)</text>
+    <text x="14" y="84" class="card-body">Schema Core Engine: 73 Tables (Verified)</text>
     <text x="14" y="104" class="status-pill" fill="#15803D">● 100% OPERATIONAL &amp; VERIFIED</text>
   </g>
 
-  <!-- Test PWP & EM Cards -->
+  <!-- Test Portal Web & Management Gateway Cards -->
   <g transform="translate(38, 368)">
     <rect width="260" height="42" rx="6" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1"/>
     <rect width="4" height="42" rx="2" fill="#16A34A"/>
-    <text x="14" y="16" class="card-header" fill="#15803D">PWP Standalone (pwp-node-01)</text>
+    <text x="14" y="16" class="card-header" fill="#15803D">Portal Web Standalone (web-node-01)</text>
     <text x="14" y="32" class="card-body">IP: 192.0.2.30 • Installed / Clean Slate ✅</text>
   </g>
   <g transform="translate(38, 416)">
     <rect width="260" height="42" rx="6" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1"/>
     <rect width="4" height="42" rx="2" fill="#16A34A"/>
-    <text x="14" y="16" class="card-header" fill="#15803D">Element Manager (em-node-01)</text>
+    <text x="14" y="16" class="card-header" fill="#15803D">Management Gateway (mgmt-node-01)</text>
     <text x="14" y="32" class="card-body">IP: 192.0.2.40 • 20/20 Containers Up ✅</text>
   </g>
 
@@ -85,81 +85,81 @@
     <rect width="4" height="74" rx="2" fill="#0284C7"/>
     <text x="14" y="18" class="card-header" fill="#0284C7">Ansible Controller (PROD-CTL-01)</text>
     <text x="14" y="36" class="card-body">IP: 192.0.2.110 • RHEL 8.10</text>
-    <text x="14" y="52" class="card-body">Key: mno_dc1_ansible_key</text>
+    <text x="14" y="52" class="card-body">Key: portal_dc1_ansible_key</text>
     <text x="14" y="66" class="status-pill" fill="#16A34A">● CONTROLLER AUDITED</text>
   </g>
 
-  <!-- KVDC CBC Node Card -->
+  <!-- KVDC Core Engine Node Card -->
   <g transform="translate(350, 238)">
     <rect width="260" height="116" rx="6" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1.5"/>
     <rect width="4" height="116" rx="2" fill="#16A34A"/>
-    <text x="14" y="18" class="card-header" fill="#15803D">CBC Core Node (PROD-CBC-01)</text>
-    <text x="14" y="36" class="card-body">IP: 192.0.2.120 • PostgreSQL 16 SID CBC</text>
+    <text x="14" y="18" class="card-header" fill="#15803D">Core Knowledge Engine Node (PROD-Core Engine-01)</text>
+    <text x="14" y="36" class="card-body">IP: 192.0.2.120 • PostgreSQL 16 SID Core Engine</text>
     <text x="14" y="52" class="card-body">Storage: /data/postgresql_db (252GB free)</text>
     <text x="14" y="68" class="card-body">PostgreSQL 16: OPEN • Port 1526 READY</text>
-    <text x="14" y="84" class="card-body">CBC Daemons: cbcd + 14 workers ✅</text>
+    <text x="14" y="84" class="card-body">Core Engine Daemons: cbcd + 14 workers ✅</text>
     <text x="14" y="104" class="status-pill" fill="#15803D">● 100% OPERATIONAL &amp; VERIFIED</text>
   </g>
 
-  <!-- KVDC PWP & EM Cards -->
+  <!-- KVDC Portal Web & Management Gateway Cards -->
   <g transform="translate(350, 368)">
     <rect width="260" height="42" rx="6" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1"/>
     <rect width="4" height="42" rx="2" fill="#16A34A"/>
-    <text x="14" y="16" class="card-header" fill="#15803D">PWP 3-Node HA (PROD-PWP-01-3)</text>
+    <text x="14" y="16" class="card-header" fill="#15803D">Portal Web 3-Node HA (PROD-Portal Web-01-3)</text>
     <text x="14" y="32" class="card-body">IPs: 192.0.2.130-.132 • HA Installed / Ready ✅</text>
   </g>
   <g transform="translate(350, 416)">
     <rect width="260" height="42" rx="6" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1"/>
     <rect width="4" height="42" rx="2" fill="#16A34A"/>
-    <text x="14" y="16" class="card-header" fill="#15803D">Element Manager (PROD-EM-01)</text>
+    <text x="14" y="16" class="card-header" fill="#15803D">Management Gateway (PROD-Management Gateway-01)</text>
     <text x="14" y="32" class="card-body">IP: 192.0.2.140 • 1.1TB /data Staged ✅</text>
   </g>
 
-  <!-- ==================== SITE 3: BRF PRODUCTION DR ==================== -->
+  <!-- ==================== SITE 3: Portal PRODUCTION DR ==================== -->
   <rect x="648" y="100" width="288" height="360" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1" filter="url(#shadow)"/>
   <rect x="648" y="100" width="288" height="36" rx="8" fill="#F1F5F9"/>
   <rect x="648" y="130" width="288" height="6" fill="#F1F5F9"/>
   <circle cx="666" cy="118" r="5" fill="#16A34A"/>
-  <text x="680" y="122" class="site-title">Site 3: BRF Prod DR (Secondary)</text>
+  <text x="680" y="122" class="site-title">Site 3: Portal Prod DR (Secondary)</text>
 
-  <!-- BRF Prod Controller Card -->
+  <!-- Portal Prod Controller Card -->
   <g transform="translate(662, 150)">
     <rect width="260" height="74" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
     <rect width="4" height="74" rx="2" fill="#0284C7"/>
     <text x="14" y="18" class="card-header" fill="#0284C7">Ansible Controller (PROD-CTL-01)</text>
     <text x="14" y="36" class="card-body">IP: 192.0.2.100 • RHEL 8.10</text>
-    <text x="14" y="52" class="card-body">Staged: ~/asimp-workspace/dsom-mno-dc2-prod</text>
+    <text x="14" y="52" class="card-body">Staged: ~/asimp-workspace/dsom-portal-dc2-prod</text>
     <text x="14" y="66" class="status-pill" fill="#16A34A">● 100% PING PONG (7/7 Target Nodes)</text>
   </g>
 
-  <!-- BRF Prod CBC Core Node Card (THE ACTIVE REFERENCE) -->
+  <!-- Portal Prod Core Knowledge Engine Node Card (THE ACTIVE REFERENCE) -->
   <g transform="translate(662, 238)">
     <rect width="260" height="116" rx="6" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1.5"/>
     <rect width="4" height="116" rx="2" fill="#16A34A"/>
-    <text x="14" y="18" class="card-header" fill="#15803D">CBC Core Node (PROD-CBC-01)</text>
-    <text x="14" y="36" class="card-body">IP: 192.0.2.150 • PostgreSQL 16 SID CBC</text>
+    <text x="14" y="18" class="card-header" fill="#15803D">Core Knowledge Engine Node (PROD-Core Engine-01)</text>
+    <text x="14" y="36" class="card-body">IP: 192.0.2.150 • PostgreSQL 16 SID Core Engine</text>
     <text x="14" y="52" class="card-body">Storage: /data/postgresql_db (252GB free)</text>
     <text x="14" y="68" class="card-body">PostgreSQL 16: OPEN READ WRITE (1526)</text>
-    <text x="14" y="84" class="card-body">CBC Daemons: cbcd + 14 workers ✅</text>
+    <text x="14" y="84" class="card-body">Core Engine Daemons: cbcd + 14 workers ✅</text>
     <text x="14" y="104" class="status-pill" fill="#15803D">● 100% OPERATIONAL &amp; VERIFIED</text>
   </g>
 
-  <!-- BRF Prod PWP & EM Cards -->
+  <!-- Portal Prod Portal Web & Management Gateway Cards -->
   <g transform="translate(662, 368)">
     <rect width="260" height="42" rx="6" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1"/>
     <rect width="4" height="42" rx="2" fill="#16A34A"/>
-    <text x="14" y="16" class="card-header" fill="#15803D">PWP 3-Node HA (prod-pwp-01/02/03)</text>
+    <text x="14" y="16" class="card-header" fill="#15803D">Portal Web 3-Node HA (prod-web-01/02/03)</text>
     <text x="14" y="32" class="card-body">IPs: 192.0.2.160/.161/.162 • Installed ✅</text>
   </g>
   <g transform="translate(662, 416)">
     <rect width="260" height="42" rx="6" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1"/>
     <rect width="4" height="42" rx="2" fill="#16A34A"/>
-    <text x="14" y="16" class="card-header" fill="#15803D">Element Manager (PROD-EM-01)</text>
+    <text x="14" y="16" class="card-header" fill="#15803D">Management Gateway (PROD-Management Gateway-01)</text>
     <text x="14" y="32" class="card-body">IP: 192.0.2.170 • 1.1TB /data Staged ✅</text>
   </g>
 
   <!-- Bottom Global Footer Note -->
   <rect x="24" y="474" width="912" height="50" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
   <text x="44" y="495" class="card-header" fill="#334155">Multi-Site Operational Summary</text>
-  <text x="44" y="512" class="card-body">All 3 Sites (Site 1 BRF Testbed, Site 2 Primary Data Centre (DC1) Prod, and Site 3 BRF Prod DR) CBC Cores are 100% OPERATIONAL with PostgreSQL 16 SID CBC, active daemons, and Tomcat CBE Gateway port 8080 responding.</text>
+  <text x="44" y="512" class="card-body">All 3 Sites (Site 1 Portal Testbed, Site 2 Primary Data Centre (DC1) Prod, and Site 3 Portal Prod DR) Core Knowledge Engines are 100% OPERATIONAL with PostgreSQL 16 SID Core Engine, active daemons, and Tomcat CBE Gateway port 8080 responding.</text>
 </svg>

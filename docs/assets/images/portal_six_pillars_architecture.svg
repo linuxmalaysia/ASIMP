@@ -22,8 +22,8 @@
   <g transform="translate(280, 16)">
     <rect width="400" height="56" rx="8" fill="#1E3A8A" filter="url(#card-shadow)"/>
     <rect x="0" y="0" width="400" height="4" rx="2" fill="#38BDF8"/>
-    <text x="200" y="28" text-anchor="middle" class="hub-title">CBC SIX-PILLAR READINESS ARCHITECTURE</text>
-    <text x="200" y="44" text-anchor="middle" class="hub-sub">Declarative Telemetry &amp; Telecom Application Health Verification</text>
+    <text x="200" y="28" text-anchor="middle" class="hub-title">Core Engine SIX-PILLAR READINESS ARCHITECTURE</text>
+    <text x="200" y="44" text-anchor="middle" class="hub-sub">Declarative Telemetry &amp; Enterprise Portal Application Health Verification</text>
   </g>
 
   <!-- Tree Connectors -->
@@ -71,7 +71,7 @@
     <text x="10" y="130" class="pillar-body">pmon, smon, dbw0</text>
     <text x="10" y="144" class="pillar-body">lgwr, ckpt, reco</text>
     <text x="10" y="164" class="pillar-body">/etc/oratab:</text>
-    <text x="10" y="178" class="pillar-body">CBC:...:Y (Autostart)</text>
+    <text x="10" y="178" class="pillar-body">Core Engine:...:Y (Autostart)</text>
     <text x="10" y="198" class="pillar-body" fill="#16A34A">Status: 🟢 VERIFIED</text>
   </g>
 
@@ -80,9 +80,9 @@
     <rect width="148" height="235" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.2" filter="url(#card-shadow)"/>
     <rect width="148" height="28" rx="6" fill="#FEF3C7"/>
     <rect width="148" height="4" fill="#D97706"/>
-    <text x="74" y="20" text-anchor="middle" class="pillar-header" fill="#B45309">3. CBC SCHEMA</text>
-    <text x="10" y="48" class="pillar-body">Schema Owner: CBC</text>
-    <text x="10" y="62" class="pillar-body">Tablespace: CBC_DATA</text>
+    <text x="74" y="20" text-anchor="middle" class="pillar-header" fill="#B45309">3. Core Engine SCHEMA</text>
+    <text x="10" y="48" class="pillar-body">Schema Owner: Core Engine</text>
+    <text x="10" y="62" class="pillar-body">Tablespace: Core Engine_DATA</text>
     <text x="10" y="82" class="pillar-body">Table Count:</text>
     <text x="10" y="96" class="pillar-body">≥ 70 Tables (73 act)</text>
     <text x="10" y="116" class="pillar-body">Terminal Table:</text>
@@ -114,12 +114,12 @@
     <rect width="148" height="235" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.2" filter="url(#card-shadow)"/>
     <rect width="148" height="28" rx="6" fill="#EFF6FF"/>
     <rect width="148" height="4" fill="#0284C7"/>
-    <text x="74" y="20" text-anchor="middle" class="pillar-header" fill="#0369A1">5. GATEWAYS &amp; PWP</text>
+    <text x="74" y="20" text-anchor="middle" class="pillar-header" fill="#0369A1">5. GATEWAYS &amp; Portal Web</text>
     <text x="10" y="48" class="pillar-body">Tomcat CBE Gateway:</text>
     <text x="10" y="62" class="pillar-body">Port 8080/tcp active</text>
     <text x="10" y="76" class="pillar-body">Port 8010/tcp active</text>
-    <text x="10" y="96" class="pillar-body">PWP XML-RPC Handshake:</text>
-    <text x="10" y="110" class="pillar-body">CBCLOGINRESPONSE ✅</text>
+    <text x="10" y="96" class="pillar-body">Portal Web XML-RPC Handshake:</text>
+    <text x="10" y="110" class="pillar-body">Core EngineLOGINRESPONSE ✅</text>
     <text x="10" y="124" class="pillar-body">Heartbeat Poll &lt; 30ms</text>
     <text x="10" y="144" class="pillar-body">Status Assertion:</text>
     <text x="10" y="158" class="pillar-body">CbcCbeStatus: 0</text>

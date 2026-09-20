@@ -19,8 +19,8 @@
 
   <!-- Top Title Bar -->
   <rect x="16" y="12" width="888" height="46" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
-  <text x="32" y="32" class="venn-title">Empirical CVE Reconciliation Matrix: OpenSCAP OVAL vs. MNO Operator VA Scan</text>
-  <text x="32" y="47" class="venn-sub">Comparative Analysis on MNO Fleet Production Ansible Node (192.0.2.100) • 100% Confirmation of Operator Findings</text>
+  <text x="32" y="32" class="venn-title">Empirical CVE Reconciliation Matrix: OpenSCAP OVAL vs. Portal Operator VA Scan</text>
+  <text x="32" y="47" class="venn-sub">Comparative Analysis on Knowledge Portal Fleet Production Ansible Node (192.0.2.100) • 100% Confirmation of Operator Findings</text>
 
   <!-- Visual Venn Graphic Area -->
   <g transform="translate(16, 70)">

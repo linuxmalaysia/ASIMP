@@ -65,7 +65,7 @@
       <rect width="4" height="74" rx="2" fill="#2563EB"/>
       <text x="16" y="20" class="card-header" fill="#1D4ED8">1.2 Sovereign Controller Staging (Rule 32.21)</text>
       <text x="16" y="38" class="card-body">Path: ~/offline-repos/malaysia/rhel8-security-errata/</text>
-      <text x="16" y="52" class="card-body">Hosts: mno-dc1-prod-ctl (192.0.2.110) | mno-dc2-prod-ctl (192.0.2.100)</text>
+      <text x="16" y="52" class="card-body">Hosts: portal-dc1-prod-ctl (192.0.2.110) | portal-dc2-prod-ctl (192.0.2.100)</text>
       <text x="16" y="66" class="card-meta">Mandate: Centralized staging strictly on controllers; no manual node copies</text>
     </g>
 
@@ -135,8 +135,8 @@
       <text x="16" y="20" class="card-header" fill="#1F2937">2.3 Sequential Reboot &amp; Health Verification</text>
       <text x="16" y="38" class="card-body">Discipline: Node-by-node rolling execution (serial: 1)</text>
       <text x="16" y="52" class="card-body">Kernel Check: needs-restarting -r / reboot if required</text>
-      <text x="16" y="68" class="card-body">Port Assertions: Port 22/SSH, Patroni 5432, CBC 8080/8010</text>
-      <text x="16" y="84" class="card-meta">Cluster Guard: Zero downtime across PWP HA and CBC daemons</text>
+      <text x="16" y="68" class="card-body">Port Assertions: Port 22/SSH, Patroni 5432, Core Engine 8080/8010</text>
+      <text x="16" y="84" class="card-meta">Cluster Guard: Zero downtime across Portal Web HA and Core Engine daemons</text>
     </g>
   </g>
 

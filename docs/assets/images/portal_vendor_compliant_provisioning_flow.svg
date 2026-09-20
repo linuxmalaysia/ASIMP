@@ -30,7 +30,7 @@
     <circle cx="28" cy="29" r="14" fill="#64748B" />
     <text x="28" y="33" class="badge-step" text-anchor="middle">1</text>
     <text x="56" y="26" class="step-title">Declarative Ansible Provisioning (Playbook 06i)</text>
-    <text x="56" y="44" class="step-code">playbooks-mno-dc1-prod/.../06i_configure_cbc_info_provider.yml</text>
+    <text x="56" y="44" class="step-code">playbooks-portal-dc1-prod/.../06i_configure_cbc_info_provider.yml</text>
   </g>
 
   <path d="M 440 78 L 440 104" class="arrow-line" marker-end="url(#blue-arrow)" />
@@ -41,7 +41,7 @@
     <circle cx="28" cy="29" r="14" fill="#2563EB" />
     <text x="28" y="33" class="badge-step" text-anchor="middle">2</text>
     <text x="56" y="26" class="step-title">Fixed Staging Import File Drop</text>
-    <text x="56" y="44" class="step-code">/var/vasp/psm/imp/info_prov.imp  (CBE_NAME=PWC-MNO, ALLOW_NEW_MESSAGE_PLMN_REQ=Y)</text>
+    <text x="56" y="44" class="step-code">/var/app/config/info_prov.imp  (APP_NAME=PWC-PORTAL, ALLOW_NEW_PORTAL_REQ=Y)</text>
   </g>
 
   <path d="M 440 163 L 440 190" class="arrow-line" marker-end="url(#blue-arrow)" />
@@ -52,17 +52,17 @@
     <circle cx="28" cy="28" r="14" fill="#D97706" />
     <text x="28" y="32" class="badge-step" text-anchor="middle">3</text>
     <text x="56" y="25" class="step-title">Vendor Ingest &amp; Schema Staging</text>
-    <text x="56" y="42" class="step-code">su - vaspadm -c "cbc plmn import /var/vasp/psm/imp/info_prov.imp"</text>
+    <text x="56" y="42" class="step-code">su - appadmin -c "portal tenant import /var/app/config/info_prov.imp"</text>
 
     <!-- Sub actions -->
     <path d="M 75 52 L 75 66 L 90 66" class="branch-line" marker-end="url(#dark-arrow)" />
-    <text x="100" y="70" class="bullet-text">Validates grammar, character lengths, repetition rates, and PLMN bounds</text>
+    <text x="100" y="70" class="bullet-text">Validates grammar, character lengths, repetition rates, and TENANT_ID bounds</text>
 
     <path d="M 75 66 L 75 84 L 90 84" class="branch-line" marker-end="url(#dark-arrow)" />
     <text x="100" y="88" class="bullet-text">Creates Inactive Candidate Configuration Set (returns Set-ID, e.g. Set 104)</text>
 
     <path d="M 75 84 L 75 98 L 90 98" class="branch-line" marker-end="url(#dark-arrow)" />
-    <text x="100" y="101" class="bullet-text">Stages verified configuration rows into PostgreSQL Schema CBC (State: INACTIVE)</text>
+    <text x="100" y="101" class="bullet-text">Stages verified configuration rows into PostgreSQL Schema Core Engine (State: INACTIVE)</text>
   </g>
 
   <path d="M 440 298 L 440 324" class="arrow-line" marker-end="url(#blue-arrow)" />
