@@ -61,7 +61,7 @@ All documentation in `docs/` serves as the single source of truth for Mintlify d
 
 Project operational and domain-specific knowledge is represented using Google Antigravity-compatible Agent Skills. These are placed inside the `.agents/skills/` directory.
 
-Each skill is self-contained in its own directory (e.g., `.agents/skills/<skill-folder>/`) and contains a `SKILL.md` file. Each `SKILL.md` includes OKF v0.1 YAML frontmatter and a standard Deep State of Mind (DSOM) AI Protocol footer, bridging Google Jules and Antigravity capabilities.
+Each skill is self-contained in its own directory (e.g., `.agents/skills/<skill-folder>/`) and contains a `SKILL.md` file. Each `SKILL.md` includes OKF v0.2 YAML frontmatter and a standard Deep State of Mind (DSOM) AI Protocol footer, bridging Google Jules and Antigravity capabilities.
 
 ### Available Agent Skills
 
@@ -117,18 +117,19 @@ To maintain the high-fidelity auditability of ASIMP, developers and agents must 
 
 ---
 
-## 📖 Google Open Knowledge Format (OKF) v0.1 Specification
+## 📖 Google Open Knowledge Format (OKF) v0.2 Specification
 
-All documentation within this repository conforms to the Google Open Knowledge Format (OKF) v0.1.
+All documentation within this repository conforms to the Google Open Knowledge Format (OKF) v0.2.
 
 ### 📐 Required Frontmatter Fields
 
 Every Markdown file must begin with a YAML frontmatter block containing:
-1. `okf_version`: Declaring `"0.1"`.
-2. `type`: File category (e.g., `instructions`, `documentation`).
-3. `title`: Page header string.
-4. `timestamp`: ISO-8601 creation/modification time.
-5. `topics`: A list of relevant tags or keywords.
+1. `okf_version`: Declaring `"0.2"`.
+2. `trust_level`: Trust verification level (e.g., `"verified"`).
+3. `type`: File category (e.g., `instructions`, `documentation`).
+4. `title`: Page header string.
+5. `timestamp`: ISO-8601 creation/modification time.
+6. `topics`: A list of relevant tags or keywords.
 
 ---
 

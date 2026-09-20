@@ -46,9 +46,9 @@ No update needed (already has footer): ./AGENTS.md
 
 ---
 
-## 🗂️ How to Enforce Google OKF v0.1 Frontmatter
+## 🗂️ How to Enforce Google OKF v0.2 Frontmatter
 
-To scan and update workspace `.md` documents with the five mandatory YAML fields (okf_version, type, title, timestamp, topics):
+To scan and update workspace `.md` documents with the six mandatory YAML fields (okf_version, trust_level, type, title, timestamp, topics):
 
 ### Command Block
 
@@ -59,9 +59,8 @@ python3 scripts/add_okf_frontmatter.py
 ### Expected Output
 
 ```text
-Updated OKF v0.1 frontmatter in README.md with: ['okf_version: "0.2"
-trust_level: "verified"']
-No OKF v0.1 updates needed for docs/index.md
+Updated OKF v0.2 frontmatter in README.md with: ['okf_version: "0.2"', 'trust_level: "verified"']
+No OKF v0.2 updates needed for docs/index.md
 ```
 
 ---

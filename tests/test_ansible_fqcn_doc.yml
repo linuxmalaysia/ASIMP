@@ -68,11 +68,12 @@
     - name: Assert the OKF metadata fields are present and correct
       ansible.builtin.assert:
         that:
-          - doc_frontmatter.okf_version == "0.1"
+          - doc_frontmatter.okf_version == "0.2"
+          - doc_frontmatter.trust_level == "verified"
           - doc_frontmatter.type == "documentation"
           - doc_frontmatter.title == expected_title
           - doc_frontmatter.layout == "default"
-        fail_msg: "docs/ansible_fqcn.md frontmatter must declare okf_version '0.1', type 'documentation', the exact title, and layout 'default'"
+        fail_msg: "docs/ansible_fqcn.md frontmatter must declare okf_version '0.2', trust_level 'verified', type 'documentation', the exact title, and layout 'default'"
 
     - name: Assert the frontmatter timestamp is a well-formed ISO-8601 UTC timestamp
       ansible.builtin.assert:

@@ -108,6 +108,7 @@ class TestAddOkfFrontmatter(unittest.TestCase):
         res = self._read(path)
         self.assertTrue(res.startswith("---"))
         self.assertIn('okf_version: "0.2"', res)
+        self.assertIn('trust_level: "verified"', res)
         self.assertIn('type: documentation', res)
         self.assertIn('title: "ASIMP Main Readme"', res)
         self.assertIn('timestamp: "2026-08-05T12:00:00Z"', res)
@@ -116,7 +117,7 @@ class TestAddOkfFrontmatter(unittest.TestCase):
     def test_process_file_partial_frontmatter(self) -> None:
         # Existing frontmatter missing some fields
         path = "docs/page.md"
-        # Has title, but missing okf_version, type, timestamp, topics
+        # Has title, but missing okf_version, trust_level, type, timestamp, topics
         original = "---\ntitle: \"Existing Title\"\n---\n# My Heading\nBody"
         self._write(path, original)
 
@@ -125,7 +126,8 @@ class TestAddOkfFrontmatter(unittest.TestCase):
         res = self._read(path)
         self.assertTrue(res.startswith("---"))
         self.assertIn('title: "Existing Title"', res) # Kept original
-        self.assertIn('okf_version: "0.1"', res)
+        self.assertIn('okf_version: "0.2"', res)
+        self.assertIn('trust_level: "verified"', res)
         self.assertIn('type: documentation', res)
         self.assertIn('timestamp: "2026-08-05T12:00:00Z"', res)
         self.assertIn('topics: [asimp, docs, manual, security]', res)
@@ -140,7 +142,8 @@ class TestAddOkfFrontmatter(unittest.TestCase):
 
         res = self._read(path)
         self.assertTrue(res.startswith("---"))
-        self.assertIn('okf_version: "0.1"', res)
+        self.assertIn('okf_version: "0.2"', res)
+        self.assertIn('trust_level: "verified"', res)
         self.assertIn('topics: [custom1, custom2]', res)
 
     def test_process_file_complete_frontmatter(self) -> None:
@@ -149,6 +152,7 @@ class TestAddOkfFrontmatter(unittest.TestCase):
         original = (
             "---\n"
             'okf_version: "0.2"\n'
+            'trust_level: "verified"\n'
             "type: documentation\n"
             'title: "Full Title"\n'
             'timestamp: "2026-08-05T12:00:00Z"\n'
