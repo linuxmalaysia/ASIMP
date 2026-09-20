@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 560" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #FFFFFF; }
+      .lane-box { fill: #FAFAFA; stroke: #CBD5E1; stroke-width: 1px; stroke-dasharray: 4 4; rx: 6px; }
+      .lane-hdr { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 11px; fill: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
+      .node-box { rx: 6px; ry: 6px; stroke-width: 1.5px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05)); }
+      .node-pwp { fill: #EFF6FF; stroke: #2563EB; }
+      .node-gw { fill: #F0FDF4; stroke: #16A34A; }
+      .node-cbc { fill: #FEF3C7; stroke: #D97706; }
+      .node-core { fill: #F5F3FF; stroke: #7C3AED; }
+      .node-ran { fill: #FFF1F2; stroke: #E11D48; }
+      .node-ue { fill: #F1F5F9; stroke: #0F172A; }
+      .node-title { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 11.5px; fill: #0F172A; }
+      .node-sub { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; fill: #475569; }
+      .flow-arrow { stroke: #0F172A; stroke-width: 1.75px; fill: none; stroke-linecap: round; }
+      .flow-text { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; fill: #1E293B; }
+      .proto-tag { font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; fill: #2563EB; }
+      .badge-num { font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 700; fill: #FFFFFF; }
+    </style>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#0F172A" />
+    </marker>
+    <marker id="blue-arrowhead" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#2563EB" />
+    </marker>
+  </defs>
+
+  <rect width="100%" height="100%" class="bg" />
+
+  <!-- Lifeline Header Blocks -->
+  <!-- 1. Operator -->
+  <g transform="translate(30, 20)">
+    <rect width="110" height="46" class="node-box node-ue" />
+    <text x="55" y="24" class="node-title" text-anchor="middle">Operator</text>
+    <text x="55" y="38" class="node-sub" text-anchor="middle">NOC / Civil</text>
+    <line x1="55" y1="46" x2="55" y2="520" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="4 4" />
+  </g>
+
+  <!-- 2. PWP API -->
+  <g transform="translate(160, 20)">
+    <rect width="130" height="46" class="node-box node-pwp" />
+    <text x="65" y="24" class="node-title" text-anchor="middle">Public Warning</text>
+    <text x="65" y="38" class="node-sub" text-anchor="middle">pwp-api :8866</text>
+    <line x1="65" y1="46" x2="65" y2="520" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="4 4" />
+  </g>
+
+  <!-- 3. CBE Gateway -->
+  <g transform="translate(310, 20)">
+    <rect width="130" height="46" class="node-box node-gw" />
+    <text x="65" y="24" class="node-title" text-anchor="middle">CBE Gateway</text>
+    <text x="65" y="38" class="node-sub" text-anchor="middle">Tomcat :8080</text>
+    <line x1="65" y1="46" x2="65" y2="520" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="4 4" />
+  </g>
+
+  <!-- 4. CBC Core -->
+  <g transform="translate(460, 20)">
+    <rect width="140" height="46" class="node-box node-cbc" />
+    <text x="70" y="24" class="node-title" text-anchor="middle">CBC Core (cbcd)</text>
+    <text x="70" y="38" class="node-sub" text-anchor="middle">PostgreSQL DB &amp; Daemons</text>
+    <line x1="70" y1="46" x2="70" y2="520" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="4 4" />
+  </g>
+
+  <!-- 5. Telecom Core (MME / AMF) -->
+  <g transform="translate(620, 20)">
+    <rect width="140" height="46" class="node-box node-core" />
+    <text x="70" y="24" class="node-title" text-anchor="middle">Telecom Core</text>
+    <text x="70" y="38" class="node-sub" text-anchor="middle">4G MME &amp; 5G AMF</text>
+    <line x1="70" y1="46" x2="70" y2="520" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="4 4" />
+  </g>
+
+  <!-- 6. Radio Towers & Handsets -->
+  <g transform="translate(780, 20)">
+    <rect width="130" height="46" class="node-box node-ran" />
+    <text x="65" y="24" class="node-title" text-anchor="middle">RAN &amp; Handsets</text>
+    <text x="65" y="38" class="node-sub" text-anchor="middle">eNodeB/gNodeB &amp; UE</text>
+    <line x1="65" y1="46" x2="65" y2="520" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="4 4" />
+  </g>
+
+  <!-- Flow 1: Alert Creation -->
+  <g transform="translate(0, 85)">
+    <line x1="85" y1="0" x2="225" y2="0" class="flow-arrow" marker-end="url(#arrowhead)" />
+    <circle cx="95" cy="-7" r="8" fill="#1E3A8A" />
+    <text x="95" y="-4" class="badge-num" text-anchor="middle">1</text>
+    <text x="110" y="-4" class="flow-text">Create Nationwide Alert</text>
+    <text x="110" y="12" class="proto-tag">Select PLMN (502-153)</text>
+  </g>
+
+  <!-- Flow 2: XML-RPC Login Handshake -->
+  <g transform="translate(0, 140)">
+    <line x1="225" y1="0" x2="375" y2="0" class="flow-arrow" marker-end="url(#arrowhead)" />
+    <circle cx="235" cy="-7" r="8" fill="#1E3A8A" />
+    <text x="235" y="-4" class="badge-num" text-anchor="middle">2</text>
+    <text x="250" y="-4" class="flow-text">CBCLOGINREQUEST</text>
+    <text x="250" y="12" class="proto-tag">XML-RPC Digest Auth</text>
+  </g>
+
+  <g transform="translate(0, 185)">
+    <line x1="375" y1="0" x2="225" y2="0" stroke="#16A34A" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#blue-arrowhead)" />
+    <text x="365" y="-6" class="flow-text" text-anchor="end" fill="#166534">CBCLOGINRESPONSE (Authenticated)</text>
+  </g>
+
+  <!-- Flow 3: NEW_MESSAGE_PLMN_REQ -->
+  <g transform="translate(0, 235)">
+    <line x1="225" y1="0" x2="375" y2="0" class="flow-arrow" marker-end="url(#arrowhead)" />
+    <circle cx="235" cy="-7" r="8" fill="#1E3A8A" />
+    <text x="235" y="-4" class="badge-num" text-anchor="middle">3</text>
+    <text x="250" y="-4" class="flow-text">NEW_MESSAGE_PLMN_REQ</text>
+    <text x="250" y="12" class="proto-tag">Nationwide Broadcast Scope</text>
+  </g>
+
+  <!-- Flow 4: Core Validation & Schema Store -->
+  <g transform="translate(0, 285)">
+    <line x1="375" y1="0" x2="530" y2="0" class="flow-arrow" marker-end="url(#arrowhead)" />
+    <circle cx="385" cy="-7" r="8" fill="#1E3A8A" />
+    <text x="385" y="-4" class="badge-num" text-anchor="middle">4</text>
+    <text x="400" y="-4" class="flow-text">IPC Alert Dispatch</text>
+    <text x="400" y="12" class="proto-tag">Check ALLOW_NEW_MESSAGE_PLMN_REQ</text>
+  </g>
+
+  <!-- DB Internal Save note -->
+  <g transform="translate(530, 315)">
+    <path d="M 0 0 C 35 -10, 35 30, 5 22" fill="none" stroke="#D97706" stroke-width="1.5" marker-end="url(#arrowhead)" />
+    <text x="45" y="12" class="proto-tag" fill="#B45309">Store to SUBSCRIPTION_STORE</text>
+  </g>
+
+  <!-- Flow 5: Telecom Radio Core Signaling -->
+  <g transform="translate(0, 375)">
+    <line x1="530" y1="0" x2="690" y2="0" class="flow-arrow" marker-end="url(#arrowhead)" />
+    <circle cx="540" cy="-7" r="8" fill="#1E3A8A" />
+    <text x="540" y="-4" class="badge-num" text-anchor="middle">5</text>
+    <text x="555" y="-4" class="flow-text">Write-Replace Warning</text>
+    <text x="555" y="12" class="proto-tag">4G: SBc-AP / 29168/sctp | 5G: SBA / 443</text>
+  </g>
+
+  <!-- Flow 6: S1-AP / NG-AP to BTS -->
+  <g transform="translate(0, 430)">
+    <line x1="690" y1="0" x2="845" y2="0" class="flow-arrow" marker-end="url(#arrowhead)" />
+    <circle cx="700" cy="-7" r="8" fill="#1E3A8A" />
+    <text x="700" y="-4" class="badge-num" text-anchor="middle">6</text>
+    <text x="715" y="-4" class="flow-text">Fan-out to All Towers</text>
+    <text x="715" y="12" class="proto-tag">S1-AP / NG-AP Protocol</text>
+  </g>
+
+  <!-- Flow 7: Air Broadcast to Phones -->
+  <g transform="translate(0, 485)">
+    <rect x="765" y="-12" width="160" height="38" rx="4" fill="#FEF2F2" stroke="#EF4444" stroke-width="1.5" />
+    <text x="845" y="4" class="flow-text" text-anchor="middle" fill="#991B1B">7. SIB Over-The-Air Broadcast</text>
+    <text x="845" y="18" class="proto-tag" text-anchor="middle" fill="#B91C1C">SIB10/11/12 (4G) &amp; SIB6/7/8 (5G)</text>
+  </g>
+</svg>

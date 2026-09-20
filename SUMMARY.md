@@ -23,6 +23,7 @@ topics: ["asimp", "summary", "documentation", "index"]
 * [Ubuntu 24.04/26.04 LTS Guide](docs/ubuntu_lts_hardening.md)
 * [Debian Hardening Guide](docs/debian_hardening.md)
 * [openSUSE Hardening Guide](docs/opensuse_hardening.md)
+* [MNO Testbed OpenSCAP Audit Report](docs/mno_testbed_openscap_va_report.md)
 * [Configuration & Variables](docs/configuration.md)
 * [Troubleshooting & Fallbacks](docs/troubleshooting.md)
 * [Legal Notice](docs/legal-notice.md)

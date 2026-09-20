@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 320" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #FFFFFF; }
+      .venn-title { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 15px; font-weight: 700; fill: #0F172A; }
+      .venn-sub { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 11px; fill: #64748B; }
+      .circle-title { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 12px; font-weight: 700; }
+      .circle-meta { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 10px; fill: #475569; }
+      .circle-stat { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 22px; font-weight: 800; }
+      .callout-title { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 11px; font-weight: 700; fill: #15803D; }
+      .callout-text { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 9.5px; fill: #166534; }
+    </style>
+    <filter id="shadow" x="-2%" y="-2%" width="104%" height="104%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#0F172A" flood-opacity="0.05"/>
+    </filter>
+  </defs>
+
+  <rect width="920" height="320" class="bg"/>
+
+  <!-- Top Title Bar -->
+  <rect x="16" y="12" width="888" height="46" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="32" y="32" class="venn-title">Empirical CVE Reconciliation Matrix: OpenSCAP OVAL vs. MNO Operator VA Scan</text>
+  <text x="32" y="47" class="venn-sub">Comparative Analysis on MNO Fleet Production Ansible Node (192.0.2.100) • 100% Confirmation of Operator Findings</text>
+
+  <!-- Visual Venn Graphic Area -->
+  <g transform="translate(16, 70)">
+    <rect width="888" height="236" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1" filter="url(#shadow)"/>
+
+    <!-- Left Circle / Oval Area: OpenSCAP Total (680) -->
+    <ellipse cx="370" cy="118" rx="190" ry="94" fill="#E0F2FE" fill-opacity="0.65" stroke="#0284C7" stroke-width="2"/>
+
+    <!-- Right Circle / Oval Area: VA Scan Total (663) - Nested fully inside common overlap -->
+    <ellipse cx="510" cy="118" rx="170" ry="86" fill="#FEE2E2" fill-opacity="0.60" stroke="#DC2626" stroke-width="2"/>
+
+    <!-- Left Distinct Sector: 17 OVAL-Only CVEs -->
+    <text x="240" y="105" class="circle-stat" fill="#0369A1" text-anchor="middle">17</text>
+    <text x="240" y="124" class="circle-title" fill="#0369A1" text-anchor="middle">OVAL-Only CVEs</text>
+    <text x="240" y="140" class="circle-meta" text-anchor="middle">Recent Red Hat Errata</text>
+    <text x="240" y="154" class="circle-meta" text-anchor="middle">(Post-VA Scan Date)</text>
+
+    <!-- Center Intersecting Sector: 663 Common CVEs -->
+    <rect x="390" y="58" width="160" height="118" rx="6" fill="#FFFFFF" fill-opacity="0.9" stroke="#86EFAC" stroke-width="1.5"/>
+    <text x="470" y="88" class="circle-stat" fill="#15803D" text-anchor="middle">663</text>
+    <text x="470" y="108" class="circle-title" fill="#15803D" text-anchor="middle">CONFIRMED CVEs</text>
+    <text x="470" y="126" class="callout-title" text-anchor="middle">100.0% RECONCILED</text>
+    <text x="470" y="142" class="circle-meta" text-anchor="middle">Both Tools Independently</text>
+    <text x="470" y="156" class="circle-meta" text-anchor="middle">Confirmed Vulnerable</text>
+
+    <!-- Right Distinct Sector: 0 VA-Only CVEs -->
+    <text x="635" y="105" class="circle-stat" fill="#DC2626" text-anchor="middle">0</text>
+    <text x="635" y="124" class="circle-title" fill="#DC2626" text-anchor="middle">VA-Only CVEs</text>
+    <text x="635" y="140" class="circle-meta" text-anchor="middle">Zero Missing In OVAL</text>
+    <text x="635" y="154" class="circle-meta" text-anchor="middle">(100% Coverage)</text>
+
+    <!-- Bottom Legend / Note -->
+    <rect x="20" y="186" width="848" height="38" rx="4" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1"/>
+    <text x="34" y="202" class="callout-title">● KEY TAKEAWAY FOR OPERATOR:</text>
+    <text x="34" y="215" class="callout-text">OpenSCAP OVAL fully validates the operator VA scan without contradiction. 379 of the 663 CVEs (57.1%) reside in the Linux kernel and are resolved by a single kernel errata patch.</text>
+  </g>
+</svg>

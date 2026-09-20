@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 460" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #FFFFFF; }
+      .main-title { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 15px; font-weight: 700; fill: #0F172A; }
+      .main-sub { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 11px; fill: #64748B; }
+      .col-title { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 11.5px; font-weight: 700; }
+      .card-header { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 11px; font-weight: 700; }
+      .card-body { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 9.2px; fill: #334155; }
+      .card-meta { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 9px; fill: #64748B; }
+      .flow-label { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 9px; font-weight: 600; fill: #0284C7; }
+      .badge-text { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 8.5px; font-weight: 700; fill: #FFFFFF; }
+      .gate-text { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 9px; font-weight: 700; fill: #9A3412; }
+    </style>
+    <filter id="cardShadow" x="-2%" y="-2%" width="104%" height="104%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#0F172A" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284C7"/>
+    </marker>
+    <marker id="arrowRed" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#DC2626"/>
+    </marker>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="920" height="460" class="bg"/>
+
+  <!-- Master Header Banner -->
+  <rect x="16" y="12" width="888" height="46" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1"/>
+  <text x="32" y="32" class="main-title">MNO Fleet Testbed: Two-Stage Air-Gapped Errata Architecture</text>
+  <text x="32" y="48" class="main-sub">Strict Operational Decoupling: Controller Package Staging (Stage 1) vs. Rolling Cluster Remediation (Stage 2) • Rule 32.21 &amp; Rule 32.36</text>
+
+  <!-- ================= STAGE 1 COLUMN (Left) ================= -->
+  <g transform="translate(16, 68)">
+    <rect width="436" height="376" rx="8" fill="#F8FAFC" stroke="#93C5FD" stroke-width="1.5"/>
+
+    <!-- Header -->
+    <rect width="436" height="36" rx="8" fill="#EFF6FF"/>
+    <rect y="26" width="436" height="10" fill="#EFF6FF"/>
+    <line x1="0" y1="36" x2="436" y2="36" stroke="#BFDBFE" stroke-width="1"/>
+    <text x="14" y="22.5" class="col-title" fill="#1D4ED8">STAGE 1: CONTROLLER STAGING &amp; PREPARATION</text>
+
+    <rect x="296" y="9" width="128" height="18" rx="9" fill="#2563EB"/>
+    <text x="360" y="21.5" class="badge-text" text-anchor="middle">AUTONOMOUS / SAFE</text>
+
+    <!-- Step 1.1 -->
+    <g transform="translate(18, 48)">
+      <rect width="400" height="66" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1" filter="url(#cardShadow)"/>
+      <rect width="4" height="66" rx="2" fill="#0284C7"/>
+      <text x="16" y="20" class="card-header" fill="#0F172A">1.1 Errata Stream &amp; Archive Ingestion</text>
+      <text x="16" y="38" class="card-body">• Stream 212 MB archive via Jump 1 (198.51.100.10)</text>
+      <text x="16" y="52" class="card-body">• File: rhel8-security-errata-brf-stage1.tar.gz</text>
+    </g>
+
+    <!-- Flow Down -->
+    <path d="M 218 114 L 218 134" stroke="#0284C7" stroke-width="2" marker-end="url(#arrowBlue)" fill="none"/>
+    <text x="226" y="126" class="flow-label">Unpack &amp; Validate</text>
+
+    <!-- Step 1.2 -->
+    <g transform="translate(18, 138)">
+      <rect width="400" height="74" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1" filter="url(#cardShadow)"/>
+      <rect width="4" height="74" rx="2" fill="#2563EB"/>
+      <text x="16" y="20" class="card-header" fill="#1D4ED8">1.2 Test Controller Staging (ctl-node-01)</text>
+      <text x="16" y="38" class="card-body">• Path: /home/ASSET-10022/offline-repos/rhel8-security-errata/</text>
+      <text x="16" y="52" class="card-body">• Host: 192.0.2.10 (/home: 33 GB free headroom)</text>
+      <text x="16" y="66" class="card-meta">Assert: VENDOR == "Red Hat, Inc.", GPG Key 199e2f91fd431d51</text>
+    </g>
+
+    <!-- Flow Down -->
+    <path d="M 218 212 L 218 232" stroke="#0284C7" stroke-width="2" marker-end="url(#arrowBlue)" fill="none"/>
+    <text x="226" y="224" class="flow-label">Index &amp; Pre-Flight</text>
+
+    <!-- Step 1.3 -->
+    <g transform="translate(18, 236)">
+      <rect width="400" height="122" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1" filter="url(#cardShadow)"/>
+      <rect width="4" height="122" rx="2" fill="#16A34A"/>
+      <text x="16" y="20" class="card-header" fill="#15803D">1.3 Metadata Synthesis &amp; Non-Mutating Check</text>
+      <text x="16" y="38" class="card-body">• Indexing: createrepo_c --update &lt;repo-path&gt;</text>
+      <text x="16" y="52" class="card-body">• Config: Deploy rhel8-airgap-errata.repo across 5 nodes</text>
+      <text x="16" y="66" class="card-body">• Dry Run: dnf check-update (0 packages installed)</text>
+      <text x="16" y="80" class="card-body">• Scope: 100% resolution of 853 Levels 8-10 CVEs validated</text>
+      <text x="16" y="98" class="card-meta">Zero production mutation: System state remains untouched</text>
+    </g>
+  </g>
+
+  <!-- Central Authorization Gate Indicator -->
+  <g transform="translate(458, 230)">
+    <line x1="0" y1="-140" x2="0" y2="190" stroke="#CBD5E1" stroke-width="1" stroke-dasharray="4 4"/>
+    <rect x="-6" y="-20" width="12" height="40" rx="4" fill="#F97316"/>
+  </g>
+
+  <!-- ================= STAGE 2 COLUMN (Right) ================= -->
+  <g transform="translate(468, 68)">
+    <rect width="436" height="376" rx="8" fill="#F8FAFC" stroke="#FCA5A5" stroke-width="1.5"/>
+
+    <!-- Header -->
+    <rect width="436" height="36" rx="8" fill="#FEF2F2"/>
+    <rect y="26" width="436" height="10" fill="#FEF2F2"/>
+    <line x1="0" y1="36" x2="436" y2="36" stroke="#FECACA" stroke-width="1"/>
+    <text x="14" y="22.5" class="col-title" fill="#B91C1C">STAGE 2: ROLLING UPDATE &amp; REBOOT SEQUENCE</text>
+
+    <rect x="274" y="9" width="150" height="18" rx="9" fill="#DC2626"/>
+    <text x="349" y="21.5" class="badge-text" text-anchor="middle">HUMAN AUTHORIZED ONLY</text>
+
+    <!-- Step 2.1: Human Boundary Gate -->
+    <g transform="translate(18, 48)">
+      <rect width="400" height="52" rx="6" fill="#FFFBEB" stroke="#FDE68A" stroke-width="1" filter="url(#cardShadow)"/>
+      <rect width="4" height="52" rx="2" fill="#D97706"/>
+      <text x="16" y="20" class="card-header" fill="#B45309">⚠️ Scheduled Maintenance Window Gate</text>
+      <text x="16" y="38" class="gate-text">• AI Autonomous execution strictly PROHIBITED (Rule 32.36)</text>
+    </g>
+
+    <!-- Step 2.2: Phased Rolling Tiers -->
+    <g transform="translate(18, 110)">
+      <rect width="400" height="150" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1" filter="url(#cardShadow)"/>
+      <rect width="4" height="150" rx="2" fill="#DC2626"/>
+      <text x="16" y="20" class="card-header" fill="#991B1B">2.1 Sequential Rolling Execution (serial: 1)</text>
+      <text x="16" y="38" class="card-body">Tier 1: HAProxy Ingress (ha-node-01 - 192.0.2.50)</text>
+      <text x="16" y="52" class="card-body">Tier 2: Element Manager (em-node-01 - 192.0.2.40)</text>
+      <text x="16" y="66" class="card-body">Tier 3: PWP App &amp; PostgreSQL (pwp-node-01 - 192.0.2.30)</text>
+      <text x="16" y="80" class="card-body">Tier 4: CBC Core &amp; PostgreSQL 16 (cbc-node-01 - 192.0.2.20)</text>
+      <text x="16" y="94" class="card-body">Tier 5: Ansible Controller (ctl-node-01 - 192.0.2.10)</text>
+      <text x="16" y="112" class="card-meta">Execution: Inside persistent tmux session with chunked rsync</text>
+      <text x="16" y="126" class="card-meta">Reboot: needs-restarting -r triggers controlled reboot per node</text>
+      <text x="16" y="140" class="card-meta">Validation: Wait for port 22, uptime test, service health checks</text>
+    </g>
+
+    <!-- Flow Down -->
+    <path d="M 218 260 L 218 274" stroke="#DC2626" stroke-width="2" marker-end="url(#arrowRed)" fill="none"/>
+
+    <!-- Step 2.3: Verification -->
+    <g transform="translate(18, 278)">
+      <rect width="400" height="80" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1" filter="url(#cardShadow)"/>
+      <rect width="4" height="80" rx="2" fill="#16A34A"/>
+      <text x="16" y="20" class="card-header" fill="#15803D">2.2 Post-Remediation Compliance Verification</text>
+      <text x="16" y="38" class="card-body">• Run: audit_openscap_oval.yml across all 5 testbed nodes</text>
+      <text x="16" y="52" class="card-body">• Confirm: 0 Vulnerable Definitions in Levels 8, 9, 10</text>
+      <text x="16" y="66" class="card-meta">Formal testbed qualification sign-off for telecom governance</text>
+    </g>
+  </g>
+</svg>

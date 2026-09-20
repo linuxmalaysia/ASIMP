@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 380" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #FFFFFF; }
+      .title-main { font-family: 'Inter', -apple-system, sans-serif; font-size: 16px; font-weight: 700; fill: #0F172A; }
+      .title-sub { font-family: 'Inter', -apple-system, sans-serif; font-size: 10.5px; fill: #475569; }
+      .pillar-header { font-family: 'Inter', -apple-system, sans-serif; font-size: 11px; font-weight: 700; }
+      .pillar-body { font-family: 'JetBrains Mono', monospace; font-size: 9px; fill: #334155; }
+      .connector-line { stroke: #94A3B8; stroke-width: 1.5; stroke-dasharray: 4 3; fill: none; }
+      .hub-title { font-family: 'Inter', -apple-system, sans-serif; font-size: 13px; font-weight: 700; fill: #FFFFFF; }
+      .hub-sub { font-family: 'Inter', -apple-system, sans-serif; font-size: 9px; fill: #E0F2FE; }
+    </style>
+    <filter id="card-shadow" x="-3%" y="-3%" width="106%" height="106%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#0F172A" flood-opacity="0.06"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="380" class="bg"/>
+
+  <!-- Top Central Hub -->
+  <g transform="translate(280, 16)">
+    <rect width="400" height="56" rx="8" fill="#1E3A8A" filter="url(#card-shadow)"/>
+    <rect x="0" y="0" width="400" height="4" rx="2" fill="#38BDF8"/>
+    <text x="200" y="28" text-anchor="middle" class="hub-title">CBC SIX-PILLAR READINESS ARCHITECTURE</text>
+    <text x="200" y="44" text-anchor="middle" class="hub-sub">Declarative Telemetry &amp; Telecom Application Health Verification</text>
+  </g>
+
+  <!-- Tree Connectors -->
+  <!-- Vertical from Hub -->
+  <path d="M 480 72 L 480 100" stroke="#0284C7" stroke-width="2" fill="none"/>
+  <!-- Horizontal Bus -->
+  <path d="M 94 100 L 866 100" stroke="#0284C7" stroke-width="2" fill="none"/>
+  <!-- Drops to each card -->
+  <path d="M 94 100 L 94 125" stroke="#0284C7" stroke-width="2" fill="none"/>
+  <path d="M 248 100 L 248 125" stroke="#0284C7" stroke-width="2" fill="none"/>
+  <path d="M 402 100 L 402 125" stroke="#0284C7" stroke-width="2" fill="none"/>
+  <path d="M 558 100 L 558 125" stroke="#0284C7" stroke-width="2" fill="none"/>
+  <path d="M 712 100 L 712 125" stroke="#0284C7" stroke-width="2" fill="none"/>
+  <path d="M 866 100 L 866 125" stroke="#0284C7" stroke-width="2" fill="none"/>
+
+  <!-- ==================== PILLAR 1 ==================== -->
+  <g transform="translate(20, 125)">
+    <rect width="148" height="235" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.2" filter="url(#card-shadow)"/>
+    <rect width="148" height="28" rx="6" fill="#EFF6FF"/>
+    <rect width="148" height="4" fill="#2563EB"/>
+    <text x="74" y="20" text-anchor="middle" class="pillar-header" fill="#1E40AF">1. OS &amp; STORAGE</text>
+    <text x="10" y="48" class="pillar-body">/data/postgresql_db</text>
+    <text x="10" y="62" class="pillar-body">≥ 256GB LVM Sep</text>
+    <text x="10" y="82" class="pillar-body">/data/postgresql_wal</text>
+    <text x="10" y="96" class="pillar-body">≥ 128GB LVM Sep</text>
+    <text x="10" y="116" class="pillar-body">User Home Free</text>
+    <text x="10" y="130" class="pillar-body">≥ 1.5GB Headroom</text>
+    <text x="10" y="150" class="pillar-body">Kernel sysctl:</text>
+    <text x="10" y="164" class="pillar-body">shmmax 50% RAM</text>
+    <text x="10" y="178" class="pillar-body">swappiness=10</text>
+    <text x="10" y="198" class="pillar-body" fill="#16A34A">Status: 🟢 VERIFIED</text>
+  </g>
+
+  <!-- ==================== PILLAR 2 ==================== -->
+  <g transform="translate(174, 125)">
+    <rect width="148" height="235" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.2" filter="url(#card-shadow)"/>
+    <rect width="148" height="28" rx="6" fill="#F0FDF4"/>
+    <rect width="148" height="4" fill="#16A34A"/>
+    <text x="74" y="20" text-anchor="middle" class="pillar-header" fill="#15803D">2. POSTGRESQL 16</text>
+    <text x="10" y="48" class="pillar-body">v$database:</text>
+    <text x="10" y="62" class="pillar-body">OPEN READ WRITE</text>
+    <text x="10" y="82" class="pillar-body">TNS Listener:</text>
+    <text x="10" y="96" class="pillar-body">Port 1526 READY</text>
+    <text x="10" y="116" class="pillar-body">Background Daemons:</text>
+    <text x="10" y="130" class="pillar-body">pmon, smon, dbw0</text>
+    <text x="10" y="144" class="pillar-body">lgwr, ckpt, reco</text>
+    <text x="10" y="164" class="pillar-body">/etc/oratab:</text>
+    <text x="10" y="178" class="pillar-body">CBC:...:Y (Autostart)</text>
+    <text x="10" y="198" class="pillar-body" fill="#16A34A">Status: 🟢 VERIFIED</text>
+  </g>
+
+  <!-- ==================== PILLAR 3 ==================== -->
+  <g transform="translate(328, 125)">
+    <rect width="148" height="235" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.2" filter="url(#card-shadow)"/>
+    <rect width="148" height="28" rx="6" fill="#FEF3C7"/>
+    <rect width="148" height="4" fill="#D97706"/>
+    <text x="74" y="20" text-anchor="middle" class="pillar-header" fill="#B45309">3. CBC SCHEMA</text>
+    <text x="10" y="48" class="pillar-body">Schema Owner: CBC</text>
+    <text x="10" y="62" class="pillar-body">Tablespace: CBC_DATA</text>
+    <text x="10" y="82" class="pillar-body">Table Count:</text>
+    <text x="10" y="96" class="pillar-body">≥ 70 Tables (73 act)</text>
+    <text x="10" y="116" class="pillar-body">Terminal Table:</text>
+    <text x="10" y="130" class="pillar-body">SUBSCRIPTION_STORE</text>
+    <text x="10" y="150" class="pillar-body">Alarm Store:</text>
+    <text x="10" y="164" class="pillar-body">ALARM table valid</text>
+    <text x="10" y="198" class="pillar-body" fill="#16A34A">Status: 🟢 VERIFIED</text>
+  </g>
+
+  <!-- ==================== PILLAR 4 ==================== -->
+  <g transform="translate(484, 125)">
+    <rect width="148" height="235" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.2" filter="url(#card-shadow)"/>
+    <rect width="148" height="28" rx="6" fill="#F5F3FF"/>
+    <rect width="148" height="4" fill="#7C3AED"/>
+    <text x="74" y="20" text-anchor="middle" class="pillar-header" fill="#6D28D9">4. DAEMONS</text>
+    <text x="10" y="48" class="pillar-body">Service User: vaspadm</text>
+    <text x="10" y="62" class="pillar-body">cbc.service active</text>
+    <text x="10" y="82" class="pillar-body">Master Coordinator:</text>
+    <text x="10" y="96" class="pillar-body">/usr/sbin/cbcd</text>
+    <text x="10" y="116" class="pillar-body">Core Workers (14x):</text>
+    <text x="10" y="130" class="pillar-body">oman, trc, alh, sns</text>
+    <text x="10" y="144" class="pillar-body">cbckernel, cbeinterf</text>
+    <text x="10" y="164" class="pillar-body">No ORA-942 aborts</text>
+    <text x="10" y="198" class="pillar-body" fill="#16A34A">Status: 🟢 VERIFIED</text>
+  </g>
+
+  <!-- ==================== PILLAR 5 ==================== -->
+  <g transform="translate(638, 125)">
+    <rect width="148" height="235" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.2" filter="url(#card-shadow)"/>
+    <rect width="148" height="28" rx="6" fill="#EFF6FF"/>
+    <rect width="148" height="4" fill="#0284C7"/>
+    <text x="74" y="20" text-anchor="middle" class="pillar-header" fill="#0369A1">5. GATEWAYS &amp; PWP</text>
+    <text x="10" y="48" class="pillar-body">Tomcat CBE Gateway:</text>
+    <text x="10" y="62" class="pillar-body">Port 8080/tcp active</text>
+    <text x="10" y="76" class="pillar-body">Port 8010/tcp active</text>
+    <text x="10" y="96" class="pillar-body">PWP XML-RPC Handshake:</text>
+    <text x="10" y="110" class="pillar-body">CBCLOGINRESPONSE ✅</text>
+    <text x="10" y="124" class="pillar-body">Heartbeat Poll &lt; 30ms</text>
+    <text x="10" y="144" class="pillar-body">Status Assertion:</text>
+    <text x="10" y="158" class="pillar-body">CbcCbeStatus: 0</text>
+    <text x="10" y="198" class="pillar-body" fill="#16A34A">Status: 🟢 VERIFIED</text>
+  </g>
+
+  <!-- ==================== PILLAR 6 ==================== -->
+  <g transform="translate(792, 125)">
+    <rect width="148" height="235" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.2" filter="url(#card-shadow)"/>
+    <rect width="148" height="28" rx="6" fill="#FEF2F2"/>
+    <rect width="148" height="4" fill="#EF4444"/>
+    <text x="74" y="20" text-anchor="middle" class="pillar-header" fill="#B91C1C">6. LOGS &amp; REBOOT</text>
+    <text x="10" y="48" class="pillar-body">Log Directory:</text>
+    <text x="10" y="62" class="pillar-body">/var/log/cbc/ active</text>
+    <text x="10" y="82" class="pillar-body">Log Growth Rate:</text>
+    <text x="10" y="96" class="pillar-body">&lt; 50 KB/min steady</text>
+    <text x="10" y="116" class="pillar-body">alh.log Hygiene:</text>
+    <text x="10" y="130" class="pillar-body">0 unhandled crashloop</text>
+    <text x="10" y="150" class="pillar-body">Reboot Resilience:</text>
+    <text x="10" y="164" class="pillar-body">Clean autostart</text>
+    <text x="10" y="198" class="pillar-body" fill="#16A34A">Status: 🟢 VERIFIED</text>
+  </g>
+</svg>

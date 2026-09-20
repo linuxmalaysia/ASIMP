@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 440" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #FFFFFF; }
+      .title { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 15px; font-weight: 700; fill: #0F172A; }
+      .sub { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 10.5px; fill: #64748B; }
+      .node-header { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 11px; font-weight: 700; }
+      .node-meta { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 9.5px; fill: #334155; }
+      .node-status { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 9px; font-weight: 700; fill: #15803D; }
+      .conn-label { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 8.5px; fill: #0369A1; font-weight: 600; }
+    </style>
+    <filter id="shadow" x="-2%" y="-2%" width="104%" height="104%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#0F172A" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284C7"/>
+    </marker>
+  </defs>
+
+  <rect width="920" height="440" class="bg"/>
+
+  <!-- Top Banner -->
+  <rect x="16" y="12" width="888" height="46" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1"/>
+  <text x="32" y="32" class="title">MNO Dual-Data-Center Access Chain &amp; Ansible OpenSCAP Audit Topology</text>
+  <text x="32" y="47" class="sub">Multi-Hop Bastion Relay Architecture across MNO Fleet Production (DR) &amp; MNO KVDC Production (Primary) • Rule 32 / Rule 33 Compliant</text>
+
+  <!-- Workstation -->
+  <g transform="translate(16, 74)">
+    <rect width="180" height="84" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1" filter="url(#shadow)"/>
+    <rect width="180" height="24" rx="6" fill="#F1F5F9"/>
+    <text x="12" y="16" class="node-header" fill="#0F172A">1. Workstation (WSL2)</text>
+    <text x="12" y="40" class="node-meta">User: asimp</text>
+    <text x="12" y="56" class="node-meta">Local Control Node</text>
+    <text x="12" y="72" class="node-status">● LOCAL RUNNER</text>
+  </g>
+
+  <!-- Arrow to Jump 1 -->
+  <path d="M 196 116 L 224 116" stroke="#0284C7" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+  <text x="198" y="108" class="conn-label">:22222</text>
+
+  <!-- Jump 1 -->
+  <g transform="translate(232, 74)">
+    <rect width="180" height="84" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1" filter="url(#shadow)"/>
+    <rect width="180" height="24" rx="6" fill="#F1F5F9"/>
+    <text x="12" y="16" class="node-header" fill="#0284C7">2. Jump Box 1 (Relay)</text>
+    <text x="12" y="40" class="node-meta">198.51.100.5</text>
+    <text x="12" y="56" class="node-meta">Tunnel: eth3</text>
+    <text x="12" y="72" class="node-status">● GATEWAY ACTIVE</text>
+  </g>
+
+  <!-- Split Branch BRF vs KVDC -->
+  <path d="M 412 100 L 450 100 L 450 180 L 480 180" stroke="#0284C7" stroke-width="1.8" marker-end="url(#arrow)" fill="none"/>
+  <path d="M 412 130 L 450 130 L 450 310 L 480 310" stroke="#0284C7" stroke-width="1.8" marker-end="url(#arrow)" fill="none"/>
+  <text x="415" y="92" class="conn-label">BRF Route</text>
+  <text x="415" y="295" class="conn-label">KVDC Route</text>
+
+  <!-- BRF Bastion -->
+  <g transform="translate(488, 140)">
+    <rect width="180" height="80" rx="6" fill="#F0F9FF" stroke="#BAE6FD" stroke-width="1" filter="url(#shadow)"/>
+    <rect width="180" height="22" rx="6" fill="#E0F2FE"/>
+    <text x="12" y="15" class="node-header" fill="#0369A1">3A. BRF Edge Bastion</text>
+    <text x="12" y="38" class="node-meta">198.51.100.20</text>
+    <text x="12" y="54" class="node-meta">User: ASSET-10022</text>
+    <text x="12" y="70" class="node-status">● BRF DC INGRESS</text>
+  </g>
+
+  <!-- Arrow to BRF Controller -->
+  <path d="M 668 180 L 696 180" stroke="#0284C7" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+
+  <!-- BRF Controller -->
+  <g transform="translate(704, 140)">
+    <rect width="198" height="80" rx="6" fill="#F0FDF4" stroke="#BBF7D0" stroke-width="1" filter="url(#shadow)"/>
+    <rect width="198" height="22" rx="6" fill="#DCFCE7"/>
+    <text x="12" y="15" class="node-header" fill="#15803D">4A. MNO Fleet Controller</text>
+    <text x="12" y="38" class="node-meta">192.0.2.100 (8 VMs)</text>
+    <text x="12" y="54" class="node-meta">OpenSCAP OVAL Audit</text>
+    <text x="12" y="70" class="node-status">● 100% AUDIT COMPLETE</text>
+  </g>
+
+  <!-- KVDC Bastion -->
+  <g transform="translate(488, 270)">
+    <rect width="180" height="80" rx="6" fill="#F0F9FF" stroke="#BAE6FD" stroke-width="1" filter="url(#shadow)"/>
+    <rect width="180" height="22" rx="6" fill="#E0F2FE"/>
+    <text x="12" y="15" class="node-header" fill="#0369A1">3B. KVDC Edge Bastion</text>
+    <text x="12" y="38" class="node-meta">192.0.2.180</text>
+    <text x="12" y="54" class="node-meta">User: ASSET-10022</text>
+    <text x="12" y="70" class="node-status">● KVDC DC INGRESS</text>
+  </g>
+
+  <!-- Arrow to KVDC Controller -->
+  <path d="M 668 310 L 696 310" stroke="#0284C7" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+
+  <!-- KVDC Controller -->
+  <g transform="translate(704, 270)">
+    <rect width="198" height="80" rx="6" fill="#F0FDF4" stroke="#BBF7D0" stroke-width="1" filter="url(#shadow)"/>
+    <rect width="198" height="22" rx="6" fill="#DCFCE7"/>
+    <text x="12" y="15" class="node-header" fill="#15803D">4B. MNO KVDC Controller</text>
+    <text x="12" y="38" class="node-meta">192.0.2.110 (8 VMs)</text>
+    <text x="12" y="54" class="node-meta">OpenSCAP OVAL Audit</text>
+    <text x="12" y="70" class="node-status">● 100% AUDIT COMPLETE</text>
+  </g>
+
+  <!-- Footer Banner -->
+  <rect x="16" y="384" width="888" height="42" rx="4" fill="#F8FAFC" stroke="#E2E8F0"/>
+  <text x="32" y="405" class="node-meta" font-weight="bold">Summary Coverage:</text>
+  <text x="146" y="405" class="node-meta">Total 16 Production Nodes Audited • 100% Non-Destructive RPM Database Evaluation • RH KB 221883 Standard</text>
+  <text x="32" y="418" class="node-meta" fill="#15803D">Result: 2,810 Critical/High (Levels 8-10) Findings Reconciled • 100% Resolvable via dnf update across both sites</text>
+</svg>

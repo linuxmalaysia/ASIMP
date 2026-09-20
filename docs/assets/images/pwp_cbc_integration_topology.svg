@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #FFFFFF; }
+      .header-title { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 18px; font-weight: 700; fill: #0F172A; }
+      .header-sub { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 10.5px; fill: #475569; }
+      .badge-text { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 9.5px; font-weight: 700; fill: #FFFFFF; }
+      .section-title { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 12px; font-weight: 700; fill: #0F172A; }
+      .box-title { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 11px; font-weight: 700; }
+      .box-body { font-family: 'JetBrains Mono', monospace; font-size: 9px; fill: #334155; }
+      .flow-label { font-family: 'JetBrains Mono', monospace; font-size: 8.5px; font-weight: 600; fill: #0369A1; }
+      .flow-err { font-family: 'JetBrains Mono', monospace; font-size: 8.5px; font-weight: 600; fill: #DC2626; }
+      .pill-text { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-size: 8.5px; font-weight: 700; }
+    </style>
+    <filter id="shadow" x="-3%" y="-3%" width="106%" height="106%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#0F172A" flood-opacity="0.06"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#0284C7"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#16A34A"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#EF4444"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="480" class="bg"/>
+
+  <!-- Top Banner -->
+  <rect x="24" y="14" width="912" height="60" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="44" y="38" class="header-title">PWP Architecture &amp; CBC Gateway Integration Topology</text>
+  <text x="44" y="56" class="header-sub">Public Warning Platform (PWP) 3-Node HA Cluster • XML-RPC Gateway Handshake • SELinux &amp; Network Invariants</text>
+
+  <rect x="740" y="27" width="176" height="30" rx="15" fill="#1E3A8A"/>
+  <text x="760" y="46" class="badge-text">PWP-TO-CBC TELEMETRY</text>
+
+  <!-- ==================== LEFT: PWP 3-NODE HA CLUSTER ==================== -->
+  <rect x="24" y="88" width="410" height="372" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1" filter="url(#shadow)"/>
+  <rect x="24" y="88" width="410" height="34" rx="8" fill="#F1F5F9"/>
+  <rect x="24" y="116" width="410" height="6" fill="#F1F5F9"/>
+  <circle cx="42" cy="105" r="5" fill="#2563EB"/>
+  <text x="56" y="109" class="section-title">PWP High Availability Architecture (3-Node Cluster)</text>
+
+  <!-- Node 1 -->
+  <g transform="translate(40, 132)">
+    <rect width="378" height="96" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <rect width="4" height="96" rx="2" fill="#2563EB"/>
+    <text x="14" y="18" class="box-title" fill="#1E40AF">PWP App Node 1 (Leader / API Client)</text>
+    <text x="14" y="34" class="box-body">Services: pwp-api (8866), pwp-gateway (8877), pwp-ui</text>
+    <text x="14" y="48" class="box-body">Cache &amp; DB: Valkey/Redis (6379) • PostgreSQL 17 (5432)</text>
+    <text x="14" y="62" class="box-body">channelAdapters.xml: cbegatewayUrls &gt; http://&lt;cbc-ip&gt;:8080/cbegateway</text>
+    <text x="14" y="78" class="box-body">Credentials: infoProvider="ANWB Utrecht" • cbeName="Systest CBC"</text>
+    <text x="14" y="90" class="pill-text" fill="#16A34A">● ACTIVE XML-RPC CLIENT TO CBC</text>
+  </g>
+
+  <!-- Node 2 -->
+  <g transform="translate(40, 236)">
+    <rect width="378" height="88" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <rect width="4" height="88" rx="2" fill="#64748B"/>
+    <text x="14" y="18" class="box-title" fill="#334155">PWP App Node 2 &amp; Node 3 (Patroni Replicas)</text>
+    <text x="14" y="34" class="box-body">Patroni REST API: Port 8008/tcp (Health &amp; Failover)</text>
+    <text x="14" y="48" class="box-body">DCS Distributed Consensus: etcd cluster (2379/tcp, 2380/tcp)</text>
+    <text x="14" y="62" class="box-body">Streaming WAL: Streaming replication from primary node</text>
+    <text x="14" y="80" class="pill-text" fill="#0284C7">● DCS SYNCHRONIZED &amp; HOT STANDBY</text>
+  </g>
+
+  <!-- SELinux & Port Policy Subcard -->
+  <g transform="translate(40, 332)">
+    <rect width="378" height="114" rx="6" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+    <rect width="4" height="114" rx="2" fill="#0284C7"/>
+    <text x="14" y="18" class="box-title" fill="#0369A1">PWP SELinux &amp; Outbound Networking Invariant</text>
+    <text x="14" y="34" class="box-body">Issue: AVC denials { name_connect } on port 8080</text>
+    <text x="14" y="48" class="box-body">Port Label: semanage port -a -t http_port_t -p tcp 8080</text>
+    <text x="14" y="62" class="box-body">Module: ausearch -m avc -ts recent | audit2allow -M pwp_cbc_connect</text>
+    <text x="14" y="76" class="box-body">Install: semodule -i pwp_cbc_connect.pp</text>
+    <text x="14" y="94" class="box-body" fill="#15803D">Result: Eliminates "Permission denied" on XML-RPC connect</text>
+  </g>
+
+  <!-- ==================== MIDDLE: INTEGRATION BUS ==================== -->
+  <g transform="translate(444, 140)">
+    <!-- Connection lines -->
+    <!-- Forward request -->
+    <path d="M 0 50 L 66 50" stroke="#0284C7" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+    <text x="33" y="42" text-anchor="middle" class="flow-label">XML-RPC</text>
+    <text x="33" y="64" text-anchor="middle" class="flow-label">HTTP:8080</text>
+
+    <!-- Return response -->
+    <path d="M 66 120 L 0 120" stroke="#16A34A" stroke-width="2" marker-end="url(#arrow-green)" fill="none"/>
+    <text x="33" y="112" text-anchor="middle" class="flow-label" fill="#15803D">STATUS 0</text>
+    <text x="33" y="134" text-anchor="middle" class="flow-label" fill="#15803D">&lt; 30ms LAT</text>
+
+    <!-- Handshake Steps -->
+    <rect x="-4" y="170" width="76" height="116" rx="4" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <text x="34" y="185" text-anchor="middle" class="pill-text" fill="#0F172A">HANDSHAKE</text>
+    <text x="34" y="200" text-anchor="middle" class="flow-label">1. LOGIN REQ</text>
+    <text x="34" y="222" text-anchor="middle" class="flow-label">2. LOGIN RSP</text>
+    <text x="34" y="244" text-anchor="middle" class="flow-label">3. AVAIL REQ</text>
+    <text x="34" y="266" text-anchor="middle" class="flow-label">4. STATUS 0</text>
+  </g>
+
+  <!-- ==================== RIGHT: CBC CORE GATEWAY & ENGINE ==================== -->
+  <rect x="520" y="88" width="416" height="372" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1" filter="url(#shadow)"/>
+  <rect x="520" y="88" width="416" height="34" rx="8" fill="#F1F5F9"/>
+  <rect x="520" y="116" width="416" height="6" fill="#F1F5F9"/>
+  <circle cx="538" cy="105" r="5" fill="#16A34A"/>
+  <text x="552" y="109" class="section-title">CBC Gateway &amp; Core Application Engine</text>
+
+  <!-- Tomcat CBE Gateway Card -->
+  <g transform="translate(536, 132)">
+    <rect width="384" height="114" rx="6" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1.2"/>
+    <rect width="4" height="114" rx="2" fill="#16A34A"/>
+    <text x="14" y="18" class="box-title" fill="#15803D">Tomcat cbegateway (Apache Tomcat 9.0.86)</text>
+    <text x="14" y="34" class="box-body">Service: tomcat@cbegateway.service (Active)</text>
+    <text x="14" y="48" class="box-body">HTTP Connector: Port 8080/tcp (MUST BE UNCOMMENTED)</text>
+    <text x="14" y="62" class="box-body">AJP Connector: Port 8010/tcp (Legacy / Ghost Proxy)</text>
+    <text x="14" y="78" class="box-body">server.xml Invariant: Lines 69-75 Connector port 8080</text>
+    <text x="14" y="94" class="box-body">Context: /cbegateway/ (Endpoints: XML-RPC API)</text>
+    <text x="14" y="106" class="pill-text" fill="#15803D">● GHOST PROXY ISOLATED • PORT 8080 LISTENING</text>
+  </g>
+
+  <!-- CBC Subsystem Worker Card -->
+  <g transform="translate(536, 254)">
+    <rect width="384" height="96" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <rect width="4" height="96" rx="2" fill="#7C3AED"/>
+    <text x="14" y="18" class="box-title" fill="#6D28D9">CBC Subsystems (cbeinterf &amp; Master cbcd)</text>
+    <text x="14" y="34" class="box-body">Worker: cbeinterf-1 receives XML-RPC alert payload</text>
+    <text x="14" y="48" class="box-body">Credentials: /var/vasp/spool/cbe/info_prov.imp</text>
+    <text x="14" y="62" class="box-body">Reload: kill -HUP $(pgrep cbeinterf) or cbe_reload.sh</text>
+    <text x="14" y="78" class="box-body">Cell Validation: PLMN macro-cells (5% Delta Guardrail)</text>
+    <text x="14" y="90" class="pill-text" fill="#7C3AED">● DISPATCHES TO 5G/4G/3G PROTOCOL STACKS</text>
+  </g>
+
+  <!-- PostgreSQL 16 CBC Database -->
+  <g transform="translate(536, 358)">
+    <rect width="384" height="88" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+    <rect width="4" height="88" rx="2" fill="#D97706"/>
+    <text x="14" y="18" class="box-title" fill="#B45309">PostgreSQL 16 Enterprise Database (SID CBC)</text>
+    <text x="14" y="34" class="box-body">Listener: Port 1526/tcp READY • Instance: OPEN READ WRITE</text>
+    <text x="14" y="48" class="box-body">Schema Tables: &gt;= 70 tables (SUBSCRIPTION_STORE, ALARM)</text>
+    <text x="14" y="62" class="box-body">Mounts: /data/postgresql_db (252GB) • /data/postgresql_wal (128GB)</text>
+    <text x="14" y="80" class="pill-text" fill="#15803D">● 100% PERSISTENT &amp; AUDITED</text>
+  </g>
+</svg>
