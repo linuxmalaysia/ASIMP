@@ -107,7 +107,7 @@ class TestAddOkfFrontmatter(unittest.TestCase):
 
         res = self._read(path)
         self.assertTrue(res.startswith("---"))
-        self.assertIn('okf_version: "0.1"', res)
+        self.assertIn('okf_version: "0.2"', res)
         self.assertIn('type: documentation', res)
         self.assertIn('title: "ASIMP Main Readme"', res)
         self.assertIn('timestamp: "2026-08-05T12:00:00Z"', res)
@@ -148,7 +148,7 @@ class TestAddOkfFrontmatter(unittest.TestCase):
         path = "docs/page.md"
         original = (
             "---\n"
-            'okf_version: "0.1"\n'
+            'okf_version: "0.2"\n'
             "type: documentation\n"
             'title: "Full Title"\n'
             'timestamp: "2026-08-05T12:00:00Z"\n'

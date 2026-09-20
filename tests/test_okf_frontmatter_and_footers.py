@@ -62,7 +62,7 @@ class TestOKFFrontmatterAndFooters(unittest.TestCase):
 
             # Assert okf_version
             self.assertIn("okf_version", fm_data, f"{rel_path} missing 'okf_version'")
-            self.assertEqual(str(fm_data["okf_version"]), "0.1", f"{rel_path} okf_version must be '0.1'")
+            self.assertIn(str(fm_data["okf_version"]), ["0.1", "0.2"], f"{rel_path} okf_version must be '0.1' or '0.2'")
 
             # Assert nonempty string type and title
             self.assertIn("type", fm_data, f"{rel_path} missing 'type'")

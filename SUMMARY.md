@@ -1,5 +1,6 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: "documentation"
 title: "ASIMP Summary Index"
 timestamp: "2026-08-15T00:00:00Z"

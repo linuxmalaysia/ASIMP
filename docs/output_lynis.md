@@ -1,5 +1,6 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: report
 title: "Output of Lynis Auditing Report"
 timestamp: "2026-08-05T23:54:50Z"

@@ -1,5 +1,6 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: "reference"
 title: "ASIMP Standard Footer Patcher Reference"
 description: "Detailed specification of scripts/add_asimp_footer.py for automating standard attributions."

@@ -1,5 +1,6 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: "reference"
 title: "Jekyll Pre-processor Reference"
 description: "Detailed specification of scripts/prepare_docs.py for automatic Jekyll front matter generation."

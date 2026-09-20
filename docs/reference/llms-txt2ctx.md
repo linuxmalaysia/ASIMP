@@ -1,5 +1,6 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: "reference"
 title: "LLM XML Context Compiler Reference"
 sidebarTitle: "LLMs.txt XML Context Compiler"

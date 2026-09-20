@@ -13,7 +13,8 @@ metadata:
   author: Google Jules & Antigravity
   version: "1.0.0"
   project: ASIMP
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 sidebarTitle: "EL CIS L2 Hardening"
 topics: [scap, openscap, rhel, almalinux, rockylinux, oraclelinux, cis, level2, hardening]
 ---

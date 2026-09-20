@@ -1,5 +1,6 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: "reference"
 title: "Role lynis-ansible Reference"
 description: "Detailed specification of the lynis-ansible role system auditing configurations."

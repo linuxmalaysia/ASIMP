@@ -1,5 +1,6 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: "concept"
 title: "Diátaxis Documentation Framework"
 description: "Overview of how the four documentation quadrants organize technical content for human developers and autonomous agents."

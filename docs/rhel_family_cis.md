@@ -1,6 +1,7 @@
 ---
 layout: default
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: documentation
 title: "Enterprise Linux CIS Level 2 Audit & Hardening Guide"
 sidebarTitle: "Enterprise Linux CIS L2"

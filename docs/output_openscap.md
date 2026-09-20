@@ -1,5 +1,6 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: report
 title: "Output of OpenSCAP Evaluation Report"
 sidebarTitle: "Output of OpenSCAP Evaluation Report"

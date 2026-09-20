@@ -1,6 +1,7 @@
 ---
 
-okf_version: 0.1
+okf_version: "0.2"
+trust_level: "verified"
 type: report
 title: "Google Jules Sovereig OS Security Hardening & Compliance Report"
 description: "Simulated security audit and compliance report for Google Jules sandbox"

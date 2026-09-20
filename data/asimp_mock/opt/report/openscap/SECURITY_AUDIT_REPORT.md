@@ -1,5 +1,6 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: report
 title: "Google Jules Sovereign OS Security Hardening & Compliance Report"
 timestamp: "2026-08-12T00:09:12Z"

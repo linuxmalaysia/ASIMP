@@ -1,5 +1,6 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: report
 title: "Knowledge Sharing Portal Testbed: AlmaLinux 10 OpenSCAP OVAL vs. Operator VA Scan Audit Report & Technical Manual"
 sidebarTitle: "Knowledge Portal OpenSCAP VA Report"

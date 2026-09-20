@@ -1,5 +1,6 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: "guide"
 title: "Operational Recipes Index"
 description: "Index of task-oriented how-to guides for performing security compliance scans, patching roles, and running tests."

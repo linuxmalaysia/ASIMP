@@ -1,5 +1,6 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: "guide"
 title: "Execute Tool Workflows"
 description: "How to use ASIMP's python and shell utility scripts to automate common compliance, patching, and documentation validation tasks."
@@ -58,7 +59,8 @@ python3 scripts/add_okf_frontmatter.py
 ### Expected Output
 
 ```text
-Updated OKF v0.1 frontmatter in README.md with: ['okf_version: "0.1"']
+Updated OKF v0.1 frontmatter in README.md with: ['okf_version: "0.2"
+trust_level: "verified"']
 No OKF v0.1 updates needed for docs/index.md
 ```
 

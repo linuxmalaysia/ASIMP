@@ -1,5 +1,6 @@
 ---
-okf_version: "0.1"
+okf_version: "0.2"
+trust_level: "verified"
 type: meta
 title: "Changelog"
 timestamp: "2026-08-05T12:00:00Z"

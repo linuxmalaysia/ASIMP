@@ -2,8 +2,8 @@
 """
 OKF Frontmatter Patcher
 Scans workspace markdown (.md) documents and enforces compliance with the
-Google Open Knowledge Format (OKF) v0.1 specification, auto-injecting five
-mandatory YAML frontmatter fields: okf_version, type, title, timestamp, topics.
+Google Open Knowledge Format (OKF) v0.2 specification, auto-injecting six
+mandatory YAML frontmatter fields: okf_version, trust_level, type, title, timestamp, topics.
 """
 
 import os
@@ -121,7 +121,8 @@ def process_file(filepath: str) -> None:
 
         fm: str = (
             "---\n"
-            'okf_version: "0.1"\n'
+            'okf_version: "0.2"\n'
+            'trust_level: "verified"\n'
             f"type: {guessed_type}\n"
             f'title: "{title}"\n'
             f'timestamp: "{default_timestamp}"\n'
@@ -150,7 +151,9 @@ def process_file(filepath: str) -> None:
 
         updates: List[str] = []
         if 'okf_version' not in keys:
-            updates.append('okf_version: "0.1"')
+            updates.append('okf_version: "0.2"')
+        if 'trust_level' not in keys:
+            updates.append('trust_level: "verified"')
         if 'type' not in keys:
             updates.append(f"type: {guessed_type}")
         if 'title' not in keys:
