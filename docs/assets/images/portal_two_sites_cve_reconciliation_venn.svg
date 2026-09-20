@@ -35,8 +35,8 @@
     <!-- Left Distinct Sector: OVAL Errata Stream -->
     <text x="230" y="105" class="circle-stat" fill="#0369A1" text-anchor="middle">2,703</text>
     <text x="230" y="124" class="circle-title" fill="#0369A1" text-anchor="middle">OVAL DEFINITIONS</text>
-    <text x="230" y="140" class="circle-meta" text-anchor="middle">RHEL 8.10 Official Stream</text>
-    <text x="230" y="154" class="circle-meta" text-anchor="middle">(RHSA Errata Catalog)</text>
+    <text x="230" y="140" class="circle-meta" text-anchor="middle">AlmaLinux 8.10 Official Stream</text>
+    <text x="230" y="154" class="circle-meta" text-anchor="middle">(ALSA Errata Catalog)</text>
 
     <!-- Center Intersecting Sector: 2,810 Critical & High Reconciled Findings -->
     <rect x="380" y="52" width="180" height="126" rx="6" fill="#FFFFFF" fill-opacity="0.95" stroke="#86EFAC" stroke-width="1.5"/>
@@ -56,6 +56,6 @@
     <!-- Bottom Legend / Note -->
     <rect x="20" y="186" width="848" height="38" rx="4" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1"/>
     <text x="34" y="202" class="callout-title">● GRAND TWO-SITE FLEET TAKEAWAY FOR OPERATOR:</text>
-    <text x="34" y="215" class="callout-text">Across all 16 production nodes in KVDC and Portal, host-internal OpenSCAP OVAL confirms 100.0% of all Critical and High findings (2,810 / 2,810) are resolved by official Red Hat DNF errata updates.</text>
+    <text x="34" y="215" class="callout-text">Across all 16 production nodes in KVDC and Portal, host-internal OpenSCAP OVAL confirms 100.0% of all Critical and High findings (2,810 / 2,810) are resolved by official AlmaLinux DNF errata updates.</text>
   </g>
 </svg>

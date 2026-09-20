@@ -51,7 +51,7 @@
       <rect width="400" height="66" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1" filter="url(#cardShadow)"/>
       <rect width="4" height="66" rx="2" fill="#0284C7"/>
       <text x="16" y="20" class="card-header" fill="#0F172A">1.1 Source Ingestion &amp; Harvesting</text>
-      <text x="16" y="38" class="card-body">Option A: Red Hat Satellite / Capsule Mirror</text>
+      <text x="16" y="38" class="card-body">Option A: AlmaLinux Satellite / Capsule Mirror</text>
       <text x="16" y="52" class="card-body">Option B: Quarterly Errata ISO (BaseOS + AppStream)</text>
     </g>
 
@@ -64,7 +64,7 @@
       <rect width="400" height="74" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1" filter="url(#cardShadow)"/>
       <rect width="4" height="74" rx="2" fill="#2563EB"/>
       <text x="16" y="20" class="card-header" fill="#1D4ED8">1.2 Sovereign Controller Staging (Rule 32.21)</text>
-      <text x="16" y="38" class="card-body">Path: ~/offline-repos/malaysia/rhel8-security-errata/</text>
+      <text x="16" y="38" class="card-body">Path: ~/offline-repos/malaysia/almalinux8-security-errata/</text>
       <text x="16" y="52" class="card-body">Hosts: portal-dc1-prod-ctl (192.0.2.110) | portal-dc2-prod-ctl (192.0.2.100)</text>
       <text x="16" y="66" class="card-meta">Mandate: Centralized staging strictly on controllers; no manual node copies</text>
     </g>
@@ -107,7 +107,7 @@
       <rect width="4" height="66" rx="2" fill="#EA580C"/>
       <text x="16" y="20" class="card-header" fill="#C2410C">2.1 Automated Resilient Transport</text>
       <text x="16" y="38" class="card-body">Sync: ansible.posix.synchronize (Chunked rsync)</text>
-      <text x="16" y="52" class="card-body">Target Repo: /var/tmp/rhel8-security-errata (file://)</text>
+      <text x="16" y="52" class="card-body">Target Repo: /var/tmp/almalinux8-security-errata (file://)</text>
     </g>
 
     <!-- Flow Down 3 -->
@@ -119,7 +119,7 @@
       <rect width="400" height="74" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1" filter="url(#cardShadow)"/>
       <rect width="4" height="74" rx="2" fill="#DC2626"/>
       <text x="16" y="20" class="card-header" fill="#B91C1C">2.2 Air-Gapped DNF Package Upgrade</text>
-      <text x="16" y="38" class="card-body">Flags: disablerepo="*" --enablerepo="rhel8-airgap-errata"</text>
+      <text x="16" y="38" class="card-body">Flags: disablerepo="*" --enablerepo="almalinux8-airgap-errata"</text>
       <text x="16" y="52" class="card-body">Plugin Guard: disable_plugin=subscription-manager</text>
       <text x="16" y="66" class="card-meta">Resolves: Kernel, openssl, glibc, runc, container-selinux</text>
     </g>

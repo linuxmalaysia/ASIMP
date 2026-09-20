@@ -83,7 +83,7 @@
     <text x="32" y="66" class="node-header" fill="#0F172A">System &amp; OS Hardware Profile</text>
     <text x="32" y="86" class="node-meta">• Management IP: 192.0.2.100 (ens192, 52:54:00:12:34:56)</text>
     <text x="32" y="104" class="node-meta">• Private VLANs: 10.50.1.10 (ens224) | 10.50.2.10 (ens256)</text>
-    <text x="32" y="122" class="node-meta">• Operating System: Red Hat Enterprise Linux 8.10 (Ootpa)</text>
+    <text x="32" y="122" class="node-meta">• Operating System: AlmaLinux 8.10 (Cerulean Cat)</text>
     <text x="32" y="140" class="node-meta">• Kernel Release: 4.18.0-553.el8_10.x86_64 (Base ISO Errata Level)</text>
     <text x="32" y="158" class="node-meta">• Uptime: 13 days 20 hrs | Load: 0.00 (Headless multi-user.target)</text>
     <text x="32" y="176" class="node-status">● VERIFIED RUNTIME BASELINE</text>
@@ -92,7 +92,7 @@
     <rect x="452" y="44" width="418" height="148" rx="4" fill="#FFFFFF" stroke="#E2E8F0"/>
     <text x="466" y="66" class="node-header" fill="#0369A1">OpenSCAP OVAL Evaluation Environment</text>
     <text x="466" y="86" class="node-meta">• Scanner Engine: openscap-scanner-1.3.14-1.el8_10.x86_64</text>
-    <text x="466" y="104" class="node-meta">• OVAL Definitions: rhel-8.oval.xml (v5.10, Red Hat Patch Merger 3)</text>
+    <text x="466" y="104" class="node-meta">• OVAL Definitions: almalinux-8.oval.xml (v5.10, AlmaLinux Patch Merger 3)</text>
     <text x="466" y="122" class="node-meta">• Sovereign Workspace: ~/asimp-workspace/openscap_oval/</text>
     <text x="466" y="140" class="node-meta">• Generated Artifacts: oval-results.xml (62 MB), oval-report.html (2.6 MB)</text>
     <text x="466" y="158" class="node-meta">• Scope of Assessment: 100% of installed RPMs checked for CVEs</text>

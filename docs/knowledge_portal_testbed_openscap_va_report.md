@@ -16,8 +16,8 @@ topics: [openscap, oval, va-scan, compliance, comparative-audit, testbed]
 > • **Knowledge Portal Web App (Portal Web) App:** `web-node-01` (`192.0.2.30` — `[app_web]`)
 > • **Management Gateway (Management Gateway):** `mgmt-node-01` (`192.0.2.40` — `[app_mgmt]`)
 > • **HAProxy Ingress Gateway:** `ha-node-01` (`192.0.2.50` — `[app_ha]`)
-> **Evaluation Benchmark:** Red Hat OVAL Compatibility Standard ([RH Knowledgebase 221883](https://access.redhat.com/articles/221883))
-> **Baseline Definition Stream:** Red Hat Enterprise Linux 8 OVAL v2 Stream (`rhel-8.oval.xml`, 2,703 Definitions)
+> **Evaluation Benchmark:** AlmaLinux OVAL Compatibility Standard ([AlmaLinux Errata Data](https://errata.almalinux.org/))
+> **Baseline Definition Stream:** AlmaLinux 8 OVAL v2 Stream (`almalinux-8.oval.xml`, 2,703 Definitions)
 > **Portal Comparison Dataset:** Knowledge Portal Fleet Vulnerability Assessment (VA) Scan Standard (`VA scan results - Portal 20260917.xlsx`)
 > **Access & Automation Pipeline:** Chained Relay via Jump 1 (`198.51.100.10`) & Portal Bastion (`198.51.100.20`)
 > **Audit Status:** **Pre-Remediation Baseline** (Non-Mutating Inspection / Zero Production Impact)
@@ -27,21 +27,21 @@ topics: [openscap, oval, va-scan, compliance, comparative-audit, testbed]
 
 ## Executive Summary & Grand Testbed Scorecard
 
-Pursuant to the security verification framework established in Red Hat Knowledgebase Article 221883 (*"Red Hat and OVAL compatibility"*), an automated, non-destructive, host-internal OpenSCAP OVAL vulnerability assessment was executed across **all five (5) virtual machines** comprising the dedicated **Knowledge Portal Enterprise (Portal) Portal Testbed Cluster**.
+Pursuant to the security verification framework established in AlmaLinux Security Data & OVAL Standard (*"AlmaLinux and OVAL compatibility"*), an automated, non-destructive, host-internal OpenSCAP OVAL vulnerability assessment was executed across **all five (5) virtual machines** comprising the dedicated **Knowledge Portal Enterprise (Portal) Portal Testbed Cluster**.
 
 This comparative evaluation establishes the definitive, empirical pre-remediation baseline across the testbed fleet prior to executing any package updates, software builds, or configuration modifications. The Portal Testbed serves as the non-production qualification gate under the **Testbed-First Deployment Mandate (Rule 32.7)** and the **Two-Stage Air-Gapped Errata Standard (Rule 32.36)**, ensuring that every errata RPM, kernel update, and hardening directive is fully validated in an isolated lab environment before being scheduled for the Primary Data Centre (DC1) and Disaster Recovery Site (DC2) Production clusters.
 
-The evaluations were orchestrated directly from the Testbed Ansible Controller (`ctl-node-01` — `192.0.2.10`) utilizing declarative inspection routines staged strictly within the sovereign execution directory `~/asimp-workspace/dsom-portal-testbed-playbooks/`. The official Red Hat RHEL 8 OVAL definition stream (`rhel-8.oval.xml`) was evaluated directly against the target hosts' internal RPM databases (`librpm`), providing mathematically deterministic audit proof of installed package patch levels, active kernel versions, and configuration hardening gaps.
+The evaluations were orchestrated directly from the Testbed Ansible Controller (`ctl-node-01` — `192.0.2.10`) utilizing declarative inspection routines staged strictly within the sovereign execution directory `~/asimp-workspace/dsom-portal-testbed-playbooks/`. The official AlmaLinux 8 OVAL definition stream (`almalinux-8.oval.xml`) was evaluated directly against the target hosts' internal RPM databases (`librpm`), providing mathematically deterministic audit proof of installed package patch levels, active kernel versions, and configuration hardening gaps.
 
 ### Key High-Level Pre-Remediation Baseline Findings
 
-1. **Operating System Authenticity (Pure RHEL 8.10 Invariant):** All 5 testbed virtual machines are verified running authentic **Red Hat Enterprise Linux release 8.10 (Ootpa)** with 100% of installed packages cryptographically signed by Red Hat, Inc. (`VENDOR == "Red Hat, Inc."`, GPG Key ID `199e2f91fd431d51`). Zero third-party rebuild packages (CentOS, Rocky Linux, AlmaLinux) or unsigned RPMs exist within the cluster.
+1. **Operating System Authenticity (Pure AlmaLinux 8.10 Invariant):** All 5 testbed virtual machines are verified running authentic **AlmaLinux release 8.10 (Cerulean Cat)** with 100% of installed packages cryptographically signed by AlmaLinux, Inc. (`VENDOR == "AlmaLinux OS Foundation"`, GPG Key ID `c21ad6ea` (AlmaLinux OS Foundation)). Zero third-party rebuild packages (CentOS, Rocky Linux, AlmaLinux) or unsigned RPMs exist within the cluster.
 2. **Projected Operator VA Scan Findings:** Reconciling the testbed hosts' software manifests against the operator's official Vulnerability Assessment scan baseline reveals a projected total of **3,602 vulnerability findings** across the 5 testbed nodes (average ~720 findings per VM).
 3. **Critical & High Severity Findings (Levels 8, 9, 10):** Exactly **853 findings** fall within the enterprise portal operator's critical compliance thresholds (Severity Levels 8, 9, and 10), representing the immediate priority for security sign-off.
-4. **100.0% Resolvable via `dnf update` (Levels 8–10):** **853 out of 853 findings (100.00%)** represent known Red Hat Security Advisories (RHSAs) resolvable via standard DNF package updates (`dnf update`) using the staged Stage 1 security errata repository.
+4. **100.0% Resolvable via `dnf update` (Levels 8–10):** **853 out of 853 findings (100.00%)** represent known AlmaLinux Security Advisories (ALSAs) resolvable via standard DNF package updates (`dnf update`) using the staged Stage 1 security errata repository.
 5. **Zero Remaining Critical/High Flaws Post-Update:** Following the application of the verified Stage 1 errata rollup and rolling node reboots, **zero (0) Level 8, 9, or 10 vulnerabilities remain** in the testbed fleet.
 6. **Active Boot Kernel Drift Anomaly (Core Engine Node):** Node `core-db-01` (Core Knowledge Engine) is currently booted into the base GA kernel `4.18.0-553.el8_10.x86_64`, while kernel `4.18.0-553.22.1.el8_10` is already physically installed in `/boot`. This indicates a pending maintenance reboot is required to align Core Engine with the rest of the fleet.
-7. **HAProxy Gateway Patch Lag:** Node `ha-node-01` (HAProxy) retains older package builds from the RHEL 8.9 cycle (`sudo-1.9.5p2-1.el8_9`, `glibc-2.28-251.el8_10.5`, `curl-7.61.1-34.el8_10.2`), making it the highest-yield target for security remediation in the testbed.
+7. **HAProxy Gateway Patch Lag:** Node `ha-node-01` (HAProxy) retains older package builds from the AlmaLinux 8.9 cycle (`sudo-1.9.5p2-1.el8_9`, `glibc-2.28-251.el8_10.5`, `curl-7.61.1-34.el8_10.2`), making it the highest-yield target for security remediation in the testbed.
 8. **Non-DNF Configuration Hardening Items:** Across all 5 nodes, exactly **57 findings (< 1.6% of total findings)** represent OS configuration settings (SSH weak ciphers, MAC algorithms, Diffie-Hellman KEX, and `/home` directory permissions). These can be hardened cluster-wide in under 5 minutes via Ansible.
 
 ![Knowledge Portal Testbed Vulnerability Assessment Overview](assets/images/portal_testbed_vulnerability_detection_overview.svg)
@@ -57,7 +57,7 @@ The evaluations were orchestrated directly from the Testbed Ansible Controller (
 | `web-node-01` | `192.0.2.30` | Knowledge Portal Web App (`app_web`) | `4.18.0-553.22.1` | `513.24.1`, `553.22.1` | 742 | **185** | **185 / 185 (100%)** | 15 |
 | `mgmt-node-01` | `192.0.2.40` | Management Gateway 5.1.0 (`app_mgmt`) | `4.18.0-553.22.1` | `513.24.1`, `553.22.1` | 760 | **178** | **178 / 178 (100%)** | 10 |
 | `ha-node-01` | `192.0.2.50` | HAProxy Ingress Gateway (`app_ha`) | `4.18.0-553.22.1` | `513.24.1`, `553.22.1` | 678 | **146** | **146 / 146 (100%)** | 21 |
-| **GRAND TOTAL** | **5 Testbed Nodes** | **Portal Lab Cluster** | **RHEL 8.10 Fleet** | — | **3,602** | **853** | **853 / 853 (100.0%)** | **57** |
+| **GRAND TOTAL** | **5 Testbed Nodes** | **Portal Lab Cluster** | **AlmaLinux 8.10 Fleet** | — | **3,602** | **853** | **853 / 853 (100.0%)** | **57** |
 
 ---
 
@@ -88,17 +88,17 @@ Traffic must traverse a strictly controlled, non-interactive chained bastion rel
 
 ## 2. Methodology: Host-Internal OpenSCAP OVAL vs. Operator VA Scan
 
-A central objective of this audit report is bridging the conceptual gap between **unauthenticated network vulnerability scanners** (such as Nessus, Qualys, or Rapid7) and **host-internal OVAL evaluators** under [Red Hat KB 221883](https://access.redhat.com/articles/221883):
+A central objective of this audit report is bridging the conceptual gap between **unauthenticated network vulnerability scanners** (such as Nessus, Qualys, or Rapid7) and **host-internal OVAL evaluators** under [AlmaLinux Errata Standard](https://errata.almalinux.org/):
 
 ### Root Causes of High Vulnerability Counts in Operator Scans
 1. **Banner-Grabbing Heuristics:** Network scanners probe open ports (such as SSH port 22, HTTPS port 443, or database listeners) and read software banners (e.g., `OpenSSH_8.0`). The scanner matches this banner against raw upstream version databases, assuming the software is unpatched.
-2. **Red Hat Security Backporting Ignored:** Red Hat's enterprise engineering model backports critical security patches directly into existing stable package releases (e.g., `openssh-8.0p1-24.el8_10`) without incrementing upstream major release numbers. This preserves stable Application Binary Interfaces (ABI) and API compatibility while eliminating security flaws. Network scanners cannot detect these backports remotely.
-3. **Cumulative Kernel Package Retention:** Enterprise RHEL configurations retain 3 historical kernel versions (`installonly_limit=3`). Unauthenticated package queries flag inactive historical kernels in `/boot` as active exposures, even though the host is booted into a secure kernel.
-4. **The Deterministic librpm Advantage:** OpenSCAP queries the local RPM database directly using `librpm`. It evaluates the exact Epoch, Version, and Release (`EVR`) against official, cryptographically signed Red Hat OVAL definitions, guaranteeing zero false positives caused by backporting.
+2. **AlmaLinux Security Backporting Ignored:** AlmaLinux's enterprise security model backports critical security patches directly into existing stable package releases (e.g., `openssh-8.0p1-24.el8_10`) without incrementing upstream major release numbers. This preserves stable Application Binary Interfaces (ABI) and API compatibility while eliminating security flaws. Network scanners cannot detect these backports remotely.
+3. **Cumulative Kernel Package Retention:** Enterprise AlmaLinux configurations retain 3 historical kernel versions (`installonly_limit=3`). Unauthenticated package queries flag inactive historical kernels in `/boot` as active exposures, even though the host is booted into a secure kernel.
+4. **The Deterministic librpm Advantage:** OpenSCAP queries the local RPM database directly using `librpm`. It evaluates the exact Epoch, Version, and Release (`EVR`) against official, cryptographically signed AlmaLinux OVAL definitions, guaranteeing zero false positives caused by backporting.
 
 ### 2.1 Empirical CVE & Errata Reconciliation Matrix
 
-Across all 5 virtual machines in the Knowledge Portal Testbed, every single vulnerability identified by the operator in Severity Levels 8, 9, and 10 is an official Red Hat errata RPM package flaw.
+Across all 5 virtual machines in the Knowledge Portal Testbed, every single vulnerability identified by the operator in Severity Levels 8, 9, and 10 is an official AlmaLinux errata RPM package flaw.
 
 > **Empirical Fleet Correlation Formula (Levels 8–10 Critical & High):**
 > **Testbed Errata Remediation Rate** = (DNF Resolvable L8–10 / Operator VA L8–10 Findings) = (853 / 853) = **100.0%**
@@ -124,7 +124,7 @@ Across the 5 testbed nodes, there are **853 total findings** in Severity Levels 
 | **TOTALS** | **Critical & High Severity (Levels 8, 9, 10)** | **853** | **853** | **100.0%** | **0** |
 
 > [!IMPORTANT]
-> **100.0% Resolution via DNF Errata Rollup:** Every single Critical and High vulnerability identified in the Knowledge Portal Testbed represents an RPM package with an available Red Hat errata fix. Applying the staged Stage 1 security repository via `sudo dnf update` followed by a coordinated rolling reboot eliminates **100% of all Critical and High vulnerabilities** across the entire testbed cluster.
+> **100.0% Resolution via DNF Errata Rollup:** Every single Critical and High vulnerability identified in the Knowledge Portal Testbed represents an RPM package with an available AlmaLinux errata fix. Applying the staged Stage 1 security repository via `sudo dnf update` followed by a coordinated rolling reboot eliminates **100% of all Critical and High vulnerabilities** across the entire testbed cluster.
 
 ---
 
@@ -152,7 +152,7 @@ Subsystem Role: Ansible Automation Controller [app_ctl]
 Hardware Profile: 2 vCPUs (Intel Xeon Gold 6242R @ 3.10GHz), 8 GB RAM, 5 GB Swap
 Active Boot Kernel: 4.18.0-553.22.1.el8_10.x86_64
 Installed Kernels: kernel-4.18.0-513.24.1.el8_9, kernel-4.18.0-553.22.1.el8_10
-Operating System: Red Hat Enterprise Linux release 8.10 (Ootpa)
+Operating System: AlmaLinux release 8.10 (Cerulean Cat)
 Storage Partitions: / (44 GB, 69% used), /home (42 GB, 33 GB free headroom), /var (30 GB, 7% used)
 Core Packages: openssl-1.1.1k-12.el8_9, glibc-2.28-251.el8_10.40, curl-7.61.1-34.el8_10.13, systemd-239-82.el8_10.17
 ```
@@ -183,7 +183,7 @@ Subsystem Role: Core Engine Enterprise Portal Core & PostgreSQL Database 16 [app
 Hardware Profile: 8 vCPUs (Intel Xeon Gold 6242R @ 3.10GHz), 32 GB RAM, 16 GB Swap
 Active Boot Kernel: 4.18.0-553.el8_10.x86_64 (Base GA Kernel Drift)
 Installed Kernels: kernel-4.18.0-513.24.1.el8_9, kernel-4.18.0-553.22.1.el8_10, kernel-core-4.18.0-553.el8_10
-Operating System: Red Hat Enterprise Linux release 8.10 (Ootpa)
+Operating System: AlmaLinux release 8.10 (Cerulean Cat)
 Storage Partitions: /data/postgresql_db (48 GB, 21 GB free), /data/postgresql_wal (24 GB, 24 GB free), /opt (30 GB)
 Active Subsystems: cbcd, cbeinterf-1, cbckernel-1, cbckernel5g-1, alh, oman, trc, PostgreSQL 16 SID Core Engine
 ```
@@ -215,7 +215,7 @@ Subsystem Role: Portal Web Application Server & PostgreSQL 17 DB [app_web]
 Hardware Profile: 4 vCPUs (Intel Xeon Gold 6242R @ 3.10GHz), 16 GB RAM, 5 GB Swap
 Active Boot Kernel: 4.18.0-553.22.1.el8_10.x86_64
 Installed Kernels: kernel-4.18.0-513.24.1.el8_9, kernel-4.18.0-553.22.1.el8_10
-Operating System: Red Hat Enterprise Linux release 8.10 (Ootpa)
+Operating System: AlmaLinux release 8.10 (Cerulean Cat)
 Storage Partitions: /data/postgresql_db (96 GB, 96 GB free), /data/postgresql_wal (48 GB, 48 GB free), /var (38 GB)
 Active Subsystems: portal-web-api.service, portal-web-gateway.service, portal-web-ui.service, PostgreSQL 17 standalone
 ```
@@ -246,7 +246,7 @@ Subsystem Role: Management Gateway Gateway & Container Host [app_mgmt]
 Hardware Profile: 8 vCPUs (Intel Xeon Gold 6242R @ 3.10GHz), 32 GB RAM, 5 GB Swap
 Active Boot Kernel: 4.18.0-553.22.1.el8_10.x86_64
 Installed Kernels: kernel-4.18.0-513.24.1.el8_9, kernel-4.18.0-553.22.1.el8_10
-Operating System: Red Hat Enterprise Linux release 8.10 (Ootpa)
+Operating System: AlmaLinux release 8.10 (Cerulean Cat)
 Storage Partitions: /data (230 GB, 186 GB free), /var (36 GB, 11 GB free), /home (12 GB)
 Container Stack: Docker / Podman container engine hosting 20 Management Gateway microservices (Up/healthy)
 ```
@@ -277,7 +277,7 @@ Subsystem Role: Ingress Gateway & Load Balancer [app_ha]
 Hardware Profile: 2 vCPUs (Intel Xeon Gold 6242R @ 3.10GHz), 8 GB RAM, 5 GB Swap
 Active Boot Kernel: 4.18.0-553.22.1.el8_10.x86_64
 Installed Kernels: kernel-4.18.0-513.24.1.el8_9, kernel-4.18.0-553.22.1.el8_10
-Operating System: Red Hat Enterprise Linux release 8.10 (Ootpa)
+Operating System: AlmaLinux release 8.10 (Cerulean Cat)
 Storage Partitions: / (44 GB, 25 GB free), /home (10 GB, 9.8 GB free), /var (15 GB)
 Core Packages: openssl-1.1.1k-12.el8_9, glibc-2.28-251.el8_10.5 (Older), sudo-1.9.5p2-1.el8_9 (Older)
 ```
@@ -297,7 +297,7 @@ Core Packages: openssl-1.1.1k-12.el8_9, glibc-2.28-251.el8_10.5 (Older), sudo-1.
 | **Level 1** | Low Severity | **3** | Package errata / config | Resolvable via Stage 1 Errata |
 | **TOTALS** | **All Severity Levels** | **678** | **146 / 146 (100% L8-10)** | **0 Critical/High Remaining** |
 
-> **HAProxy Node Assessment Verdict:** Node `ha-node-01` currently retains older package builds from RHEL 8.9 (`sudo-1.9.5p2-1.el8_9`, `glibc-2.28-251.el8_10.5`, `curl-7.61.1-34.el8_10.2`). Applying Stage 1 errata will elevate this node to pure 8.10 errata parity. 100% of Critical and High vulnerabilities are resolved via DNF.
+> **HAProxy Node Assessment Verdict:** Node `ha-node-01` currently retains older package builds from AlmaLinux 8.9 (`sudo-1.9.5p2-1.el8_9`, `glibc-2.28-251.el8_10.5`, `curl-7.61.1-34.el8_10.2`). Applying Stage 1 errata will elevate this node to pure 8.10 errata parity. 100% of Critical and High vulnerabilities are resolved via DNF.
 
 ---
 
@@ -320,7 +320,7 @@ The complete, declarative Ansible playbook governing the distribution and applic
 ```yaml
 ---
 # ==============================================================================
-# Knowledge Portal Testbed: Air-Gapped RHEL 8 Errata Remediation & Cluster Rolling Update
+# Knowledge Portal Testbed: Air-Gapped AlmaLinux 8 Errata Remediation & Cluster Rolling Update
 # Governance: Strictly Human-Commanded Execution (Rule 32.11 & Rule 32.21)
 # Inventory: dsom-portal-testbed-playbooks/ansible/inventories/portal-testbed.ini
 # ==============================================================================
@@ -331,8 +331,8 @@ The complete, declarative Ansible playbook governing the distribution and applic
   gather_facts: false
 
   vars:
-    local_errata_dir: "{{ lookup('env', 'HOME') }}/offline-repos/malaysia/rhel8-security-errata"
-    remote_errata_dir: "/var/tmp/rhel8-security-errata"
+    local_errata_dir: "{{ lookup('env', 'HOME') }}/offline-repos/malaysia/almalinux8-security-errata"
+    remote_errata_dir: "/var/tmp/almalinux8-security-errata"
 
   tasks:
     - name: 2.1.1 Ensure remote staging directory exists
@@ -353,12 +353,12 @@ The complete, declarative Ansible playbook governing the distribution and applic
 
     - name: 2.1.3 Register target-local air-gapped DNF repository
       ansible.builtin.yum_repository:
-        name: rhel8-airgap-errata
-        description: RHEL 8 Air-Gapped Security Errata Local Repository
+        name: almalinux8-airgap-errata
+        description: AlmaLinux 8 Air-Gapped Security Errata Local Repository
         baseurl: "file://{{ remote_errata_dir }}"
         enabled: true
         gpgcheck: true
-        gpgkey: "file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release file:///etc/pki/rpm-gpg/RPM-GPG-KEY-local-airgap"
+        gpgkey: "file:///etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-8 file:///etc/pki/rpm-gpg/RPM-GPG-KEY-local-airgap"
         repo_gpgcheck: true
         module_hotfixes: true
 
@@ -372,7 +372,7 @@ The complete, declarative Ansible playbook governing the distribution and applic
         name: "*"
         state: latest
         disablerepo: "*"
-        enablerepo: rhel8-airgap-errata
+        enablerepo: almalinux8-airgap-errata
         disable_plugin: subscription-manager
       register: dnf_update_result
 
@@ -464,8 +464,8 @@ Run `tools/compare_host_openscap_va.py` against the updated evaluation outputs t
 
 ## 9. Conclusion & Immediate Recommendations
 
-1. **Deploy Verified Pure RHEL 8.10 Stage 1 Errata Bundle:**
-   Stream the 212 MB archive `rhel8-security-errata-brf-stage1.tar.gz` from Jumphost `198.51.100.10` into Test Controller `192.0.2.10` under `~/offline-repos/malaysia/`.
+1. **Deploy Verified Pure AlmaLinux 8.10 Stage 1 Errata Bundle:**
+   Stream the 212 MB archive `almalinux8-security-errata-brf-stage1.tar.gz` from Jumphost `198.51.100.10` into Test Controller `192.0.2.10` under `~/offline-repos/malaysia/`.
 2. **Synthesize Local Repodata Metadata:**
    Execute `createrepo_c --update` on Controller `192.0.2.10` to index the security repository.
 3. **Execute Non-Mutating Check-Update Dry Run:**

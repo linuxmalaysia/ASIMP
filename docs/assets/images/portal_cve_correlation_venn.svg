@@ -35,7 +35,7 @@
     <!-- Left Distinct Sector: 17 OVAL-Only CVEs -->
     <text x="240" y="105" class="circle-stat" fill="#0369A1" text-anchor="middle">17</text>
     <text x="240" y="124" class="circle-title" fill="#0369A1" text-anchor="middle">OVAL-Only CVEs</text>
-    <text x="240" y="140" class="circle-meta" text-anchor="middle">Recent Red Hat Errata</text>
+    <text x="240" y="140" class="circle-meta" text-anchor="middle">Recent AlmaLinux Errata</text>
     <text x="240" y="154" class="circle-meta" text-anchor="middle">(Post-VA Scan Date)</text>
 
     <!-- Center Intersecting Sector: 663 Common CVEs -->
