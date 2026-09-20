@@ -12,7 +12,7 @@ topics: ["asimp", "dsom", "brain", "walkthrough"]
 ## Session Anchor — 2026-09-20
 
 1. **Comparative Audit Report & Technical Manual:**
-   Added `docs/knowledge_portal_testbed_openscap_va_report.md` detailing the host-internal OpenSCAP OVAL vs. 3rd-party VA scan reconciliation on AlmaLinux 10.0 (Seafoam Kitty).
+   Added `docs/knowledge_portal_testbed_openscap_va_report.md` detailing the host-internal OpenSCAP OVAL vs. 3rd-party VA scan reconciliation on AlmaLinux 10.0 (Purple Lion).
 
 2. **Sanitized Architecture Diagrams:**
    Added 20 sanitized SVG diagrams in `docs/assets/images/` representing Knowledge Sharing Portal platform topology, multi-hop bastion access, and two-stage air-gapped errata architecture.

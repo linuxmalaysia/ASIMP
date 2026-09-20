@@ -36,7 +36,7 @@ The evaluations were orchestrated directly from the Testbed Ansible Controller (
 
 ### Key High-Level Pre-Remediation Baseline Findings
 
-1. **Operating System Authenticity (Pure AlmaLinux 10.0 Invariant):** All 5 testbed virtual machines are verified running authentic **AlmaLinux release 10.0 (Seafoam Kitty)** with 100% of installed packages cryptographically signed by AlmaLinux, Inc. (`VENDOR == "AlmaLinux OS Foundation"`, GPG Key ID `c21ad6ea` (AlmaLinux OS Foundation)). Zero third-party rebuild packages (CentOS, Rocky Linux, AlmaLinux) or unsigned RPMs exist within the cluster.
+1. **Operating System Authenticity (Pure AlmaLinux 10.0 Invariant):** All 5 testbed virtual machines are verified running authentic **AlmaLinux release 10.0 (Purple Lion)** with 100% of installed packages cryptographically signed by AlmaLinux, Inc. (`VENDOR == "AlmaLinux OS Foundation"`, GPG Key ID `c21ad6ea` (AlmaLinux OS Foundation)). Zero third-party rebuild packages (CentOS, Rocky Linux, AlmaLinux) or unsigned RPMs exist within the cluster.
 2. **Projected Operator VA Scan Findings:** Reconciling the testbed hosts' software manifests against the operator's official Vulnerability Assessment scan baseline reveals a projected total of **3,602 vulnerability findings** across the 5 testbed nodes (average ~720 findings per VM).
 3. **Critical & High Severity Findings (Levels 8, 9, 10):** Exactly **853 findings** fall within the enterprise portal operator's critical compliance thresholds (Severity Levels 8, 9, and 10), representing the immediate priority for security sign-off.
 4. **100.0% Resolvable via `dnf update` (Levels 8–10):** **853 out of 853 findings (100.00%)** represent known AlmaLinux Security Advisories (ALSAs) resolvable via standard DNF package updates (`dnf update`) using the staged Stage 1 security errata repository.
@@ -153,7 +153,7 @@ Subsystem Role: Ansible Automation Controller [app_ctl]
 Hardware Profile: 2 vCPUs (Intel Xeon Gold 6242R @ 3.10GHz), 8 GB RAM, 5 GB Swap
 Active Boot Kernel: 6.12.0-108.el10_0.x86_64
 Installed Kernels: kernel-4.18.0-513.24.1.el8_9, kernel-6.12.0-108.el10_0
-Operating System: AlmaLinux release 10.0 (Seafoam Kitty)
+Operating System: AlmaLinux release 10.0 (Purple Lion)
 Storage Partitions: / (44 GB, 69% used), /home (42 GB, 33 GB free headroom), /var (30 GB, 7% used)
 Core Packages: openssl-1.1.1k-12.el8_9, glibc-2.28-251.el8_10.40, curl-7.61.1-34.el8_10.13, systemd-239-82.el8_10.17
 ```
@@ -184,7 +184,7 @@ Subsystem Role: Core Engine Enterprise Portal Core & PostgreSQL Database 16 [app
 Hardware Profile: 8 vCPUs (Intel Xeon Gold 6242R @ 3.10GHz), 32 GB RAM, 16 GB Swap
 Active Boot Kernel: 6.12.0-52.el10.x86_64 (Base GA Kernel Drift)
 Installed Kernels: kernel-4.18.0-513.24.1.el8_9, kernel-6.12.0-108.el10_0, kernel-core-6.12.0-52.el10
-Operating System: AlmaLinux release 10.0 (Seafoam Kitty)
+Operating System: AlmaLinux release 10.0 (Purple Lion)
 Storage Partitions: /data/postgresql_db (48 GB, 21 GB free), /data/postgresql_wal (24 GB, 24 GB free), /opt (30 GB)
 Active Subsystems: cbcd, cbeinterf-1, cbckernel-1, cbckernel5g-1, alh, oman, trc, PostgreSQL 16 SID Core Engine
 ```
@@ -216,7 +216,7 @@ Subsystem Role: Portal Web Application Server & PostgreSQL 17 DB [app_web]
 Hardware Profile: 4 vCPUs (Intel Xeon Gold 6242R @ 3.10GHz), 16 GB RAM, 5 GB Swap
 Active Boot Kernel: 6.12.0-108.el10_0.x86_64
 Installed Kernels: kernel-4.18.0-513.24.1.el8_9, kernel-6.12.0-108.el10_0
-Operating System: AlmaLinux release 10.0 (Seafoam Kitty)
+Operating System: AlmaLinux release 10.0 (Purple Lion)
 Storage Partitions: /data/postgresql_db (96 GB, 96 GB free), /data/postgresql_wal (48 GB, 48 GB free), /var (38 GB)
 Active Subsystems: portal-web-api.service, portal-web-gateway.service, portal-web-ui.service, PostgreSQL 17 standalone
 ```
@@ -247,7 +247,7 @@ Subsystem Role: Management Gateway Gateway & Container Host [app_mgmt]
 Hardware Profile: 8 vCPUs (Intel Xeon Gold 6242R @ 3.10GHz), 32 GB RAM, 5 GB Swap
 Active Boot Kernel: 6.12.0-108.el10_0.x86_64
 Installed Kernels: kernel-4.18.0-513.24.1.el8_9, kernel-6.12.0-108.el10_0
-Operating System: AlmaLinux release 10.0 (Seafoam Kitty)
+Operating System: AlmaLinux release 10.0 (Purple Lion)
 Storage Partitions: /data (230 GB, 186 GB free), /var (36 GB, 11 GB free), /home (12 GB)
 Container Stack: Docker / Podman container engine hosting 20 Management Gateway microservices (Up/healthy)
 ```
@@ -278,7 +278,7 @@ Subsystem Role: Ingress Gateway & Load Balancer [app_ha]
 Hardware Profile: 2 vCPUs (Intel Xeon Gold 6242R @ 3.10GHz), 8 GB RAM, 5 GB Swap
 Active Boot Kernel: 6.12.0-108.el10_0.x86_64
 Installed Kernels: kernel-4.18.0-513.24.1.el8_9, kernel-6.12.0-108.el10_0
-Operating System: AlmaLinux release 10.0 (Seafoam Kitty)
+Operating System: AlmaLinux release 10.0 (Purple Lion)
 Storage Partitions: / (44 GB, 25 GB free), /home (10 GB, 9.8 GB free), /var (15 GB)
 Core Packages: openssl-1.1.1k-12.el8_9, glibc-2.39-5.el10 (Older), sudo-1.9.15p1-1.el10 (Older)
 ```
@@ -542,7 +542,7 @@ ASIMP utilizes the `reporting-ASIMP` role and the Python XML parser `parse_opens
 1. **First-Pass BEFORE Audit:**
    - Executes OpenSCAP OVAL evaluation against target hosts before any package modifications:
      ```bash
-     oscap xccdf eval --profile cpe:/o:almalinux:almalinux:10 \
+     oscap xccdf eval --profile xccdf_org.ssgproject.content_profile_standard \
        --results /var/log/openscap-before-results.xml \
        --report /var/log/openscap-before-report.html \
        /usr/share/xml/scap/ssg/content/ssg-almalinux10-ds.xml

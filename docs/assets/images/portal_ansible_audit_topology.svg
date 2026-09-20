@@ -83,7 +83,7 @@
     <text x="32" y="66" class="node-header" fill="#0F172A">System &amp; OS Hardware Profile</text>
     <text x="32" y="86" class="node-meta">• Management IP: 192.0.2.100 (ens192, 52:54:00:12:34:56)</text>
     <text x="32" y="104" class="node-meta">• Private VLANs: 10.50.1.10 (ens224) | 10.50.2.10 (ens256)</text>
-    <text x="32" y="122" class="node-meta">• Operating System: AlmaLinux 10.0 (Seafoam Kitty)</text>
+    <text x="32" y="122" class="node-meta">• Operating System: AlmaLinux 10.0 (Purple Lion)</text>
     <text x="32" y="140" class="node-meta">• Kernel Release: 6.12.0-52.el10.x86_64 (Base ISO Errata Level)</text>
     <text x="32" y="158" class="node-meta">• Uptime: 13 days 20 hrs | Load: 0.00 (Headless multi-user.target)</text>
     <text x="32" y="176" class="node-status">● VERIFIED RUNTIME BASELINE</text>

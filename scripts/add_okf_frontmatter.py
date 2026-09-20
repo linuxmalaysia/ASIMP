@@ -95,7 +95,7 @@ def extract_title_from_content(content: str, filepath: str) -> str:
 
 
 def process_file(filepath: str) -> None:
-    """Check a markdown file and append or update OKF v0.1 compliant frontmatter fields.
+    """Check a markdown file and append or update OKF v0.2 compliant frontmatter fields.
 
     Args:
         filepath: The path of the markdown file to process.
@@ -133,13 +133,16 @@ def process_file(filepath: str) -> None:
         new_content: str = fm + content
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(new_content)
-        print(f"Added complete OKF v0.1 frontmatter to {filepath}")
+        print(f"Added complete OKF v0.2 frontmatter to {filepath}")
     else:
         parts = stripped.split('---', 2)
         fm_content: str = parts[1]
         body: str = parts[2]
 
-        lines: List[str] = fm_content.split('\n')
+        # Normalize okf_version "0.1" -> "0.2" inside fm_content
+        fm_content_normalized = re.sub(r'okf_version\s*:\s*["\']?0\.1["\']?', 'okf_version: "0.2"', fm_content)
+
+        lines: List[str] = fm_content_normalized.split('\n')
         keys: Dict[str, str] = {}
         for line in lines:
             line_strip: str = line.strip()
@@ -164,22 +167,25 @@ def process_file(filepath: str) -> None:
         if 'timestamp' not in keys:
             updates.append(f'timestamp: "{default_timestamp}"')
         if 'topics' not in keys:
-            tags_list: List[str] = extract_list('tags', fm_content)
+            tags_list: List[str] = extract_list('tags', fm_content_normalized)
             if tags_list:
                 topics_str = "[" + ", ".join(tags_list) + "]"
             else:
                 topics_str = "[" + ", ".join(guessed_topics) + "]"
             updates.append(f"topics: {topics_str}")
 
-        if updates:
-            fm_content_clean: str = fm_content.rstrip('\n')
-            new_fm_content: str = fm_content_clean + "\n" + "\n".join(updates) + "\n"
+        if updates or fm_content_normalized != fm_content:
+            fm_content_clean: str = fm_content_normalized.rstrip('\n')
+            if updates:
+                new_fm_content: str = fm_content_clean + "\n" + "\n".join(updates) + "\n"
+            else:
+                new_fm_content: str = fm_content_clean + "\n"
             new_content = f"---\n{new_fm_content}---\n" + body
             with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(new_content)
-            print(f"Updated OKF v0.1 frontmatter in {filepath} with: {updates}")
+            print(f"Updated OKF v0.2 frontmatter in {filepath}")
         else:
-            print(f"No OKF v0.1 updates needed for {filepath}")
+            print(f"No OKF v0.2 updates needed for {filepath}")
 
 
 def main() -> None:

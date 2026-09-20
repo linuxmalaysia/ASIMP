@@ -114,6 +114,18 @@ class TestAddOkfFrontmatter(unittest.TestCase):
         self.assertIn('timestamp: "2026-08-05T12:00:00Z"', res)
         self.assertIn('topics: [asimp, readme, security, baseline, hardening]', res)
 
+    def test_process_file_version_01_upgrade(self) -> None:
+        # Existing frontmatter with okf_version "0.1" should be upgraded to "0.2" and get trust_level "verified"
+        path = "docs/page.md"
+        original = "---\nokf_version: \"0.1\"\ntitle: \"Legacy Doc\"\n---\n# Heading\nBody"
+        self._write(path, original)
+
+        add_okf_frontmatter.process_file(path)
+
+        res = self._read(path)
+        self.assertIn('okf_version: "0.2"', res)
+        self.assertIn('trust_level: "verified"', res)
+
     def test_process_file_partial_frontmatter(self) -> None:
         # Existing frontmatter missing some fields
         path = "docs/page.md"

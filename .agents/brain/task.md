@@ -11,7 +11,7 @@ topics: ["asimp", "dsom", "brain", "task"]
 
 - [x] Ingest and sanitize OpenSCAP OVAL vs. Operator Vulnerability Assessment report and 20 SVG architecture diagrams.
 - [x] Anonymize all IP addresses, server hostnames, credentials, asset IDs, and organization terms to Knowledge Sharing Portal enterprise standards.
-- [x] Upgrade baseline OS target to AlmaLinux 10.0 (Seafoam Kitty) with `almalinux-10.oval.xml` and ALSA errata definitions.
+- [x] Upgrade baseline OS target to AlmaLinux 10.0 (Purple Lion) with `almalinux-10.oval.xml` and ALSA errata definitions.
 - [x] Enforce GPG signature checking (`gpgcheck: true`, `gpgkey`, `repo_gpgcheck: true`) in air-gapped DNF repo configuration.
 - [x] Add Technical Manual & How-To covering post-VA OS updates, BEFORE/AFTER report generation via OpenSCAP and `parse_openscap_score.py`, and Ansible with Python `uv`.
 - [x] Upgrade frontmatter across workspace to OKF v0.2 standard with `trust_level: "verified"`.
