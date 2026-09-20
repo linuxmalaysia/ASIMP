@@ -103,7 +103,7 @@ Across all 5 virtual machines in the Knowledge Portal Testbed, every single vuln
 > **Empirical Fleet Correlation Formula (Levels 8–10 Critical & High):**
 > **Testbed Errata Remediation Rate** = (DNF Resolvable L8–10 / Operator VA L8–10 Findings) = (853 / 853) = **100.0%**
 
-![Grand Testbed Empirical Reconciliation Matrix](assets/images/portal_testbed_cve_reconciliation_venn.svg)
+![Grand Testbed Empirical Reconciliation Matrix: 2,692 VA-only phantom exposures, 910 actionable overlapping items, including 853 errata packages and 57 non-DNF hardening items](assets/images/portal_testbed_cve_reconciliation_venn.svg)
 *Grand Empirical Reconciliation Matrix: Host-Internal OpenSCAP OVAL vs. Portal Operator VA Scan across all 5 testbed nodes*
 
 ---
@@ -358,7 +358,7 @@ The complete, declarative Ansible playbook governing the distribution and applic
         baseurl: "file://{{ remote_errata_dir }}"
         enabled: true
         gpgcheck: true
-        gpgkey: "file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release"
+        gpgkey: "file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release file:///etc/pki/rpm-gpg/RPM-GPG-KEY-local-airgap"
         repo_gpgcheck: true
         module_hotfixes: true
 
