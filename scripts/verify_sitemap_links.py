@@ -236,45 +236,44 @@ def compare_file_contents(filepath_a: str, filepath_b: str, file_type: str) -> N
         sys.exit(1)
     print(f"[+] Deployed copy {filepath_b} is perfectly synchronized with root {filepath_a} ({file_type}).")
 
-def main() -> None:
-    print("[*] Starting Sitemap and Link Integrity Verification...")
-
-    # 1. Compare docs/ sitemaps against root sitemaps to ensure perfect sync before URL verification
-    compare_file_contents("sitemap.txt", "docs/sitemap.txt", "txt sitemap")
-    compare_file_contents("sitemap.xml", "docs/sitemap.xml", "xml sitemap")
-
-    # 2. Parse and verify sitemap.txt URLs
+def load_sitemap_txt(filepath: str = "sitemap.txt") -> list:
+    """Reads and returns non-empty URLs from sitemap.txt."""
     try:
-        with open("sitemap.txt", "r") as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             txt_urls = [line.strip() for line in f if line.strip()]
     except FileNotFoundError:
-        print("[-] sitemap.txt not found in root directory!")
+        print(f"[-] {filepath} not found in root directory!")
         sys.exit(1)
 
-    print(f"[*] Found {len(txt_urls)} URLs in sitemap.txt")
+    print(f"[*] Found {len(txt_urls)} URLs in {filepath}")
+    return txt_urls
 
-    # 3. Parse and verify sitemap.xml URLs
+def parse_sitemap_xml(filepath: str = "sitemap.xml") -> list:
+    """Parses and returns <loc> URLs from sitemap.xml."""
     try:
-        tree = ET.parse("sitemap.xml")
+        tree = ET.parse(filepath)
         root = tree.getroot()
         namespace = {"ns": "http://www.sitemaps.org/schemas/sitemap/0.9"}
-        xml_urls = [loc.text for loc in root.findall(".//ns:loc", namespace)]
+        xml_urls = [loc.text for loc in root.findall(".//ns:loc", namespace) if loc.text]
     except FileNotFoundError:
-        print("[-] sitemap.xml not found in root directory!")
+        print(f"[-] {filepath} not found in root directory!")
         sys.exit(1)
     except ET.ParseError as e:
-        print(f"[-] XML parsing failed for sitemap.xml: {e}")
+        print(f"[-] XML parsing failed for {filepath}: {e}")
         sys.exit(1)
 
-    print(f"[*] Found {len(xml_urls)} URLs in sitemap.xml")
+    print(f"[*] Found {len(xml_urls)} URLs in {filepath}")
+    return xml_urls
 
-    # 4. Structural matching checks
+def validate_sitemap_urls_match(txt_urls: list, xml_urls: list) -> None:
+    """Ensures txt and xml sitemap URL lists match structurally."""
     if set(txt_urls) != set(xml_urls):
         print("[-] Mismatch between sitemap.txt and sitemap.xml URL lists!")
         sys.exit(1)
     print("[+] Structural check passed: sitemap.txt and sitemap.xml URL lists match perfectly.")
 
-    # 5. Check sitemap GitHub Pages URLs
+def verify_sitemap_gh_pages_urls(txt_urls: list) -> bool:
+    """Verifies that all URLs in sitemap use the allowed GitHub Pages domain and are valid."""
     gh_pages_urls = []
     for u in txt_urls:
         parsed = urlparse(u)
@@ -284,20 +283,22 @@ def main() -> None:
             print(f"[-] Invalid host in sitemaps: {u} (Only linuxmalaysia.github.io is allowed in sitemaps)")
             sys.exit(1)
 
-    success = True
     print(f"[*] Verifying all {len(gh_pages_urls)} GitHub Pages URLs...")
     with ThreadPoolExecutor(max_workers=5) as executor:
         gh_results = list(executor.map(verify_github_pages_url, gh_pages_urls))
-    if not all(gh_results):
-        success = False
 
-    # 6. Verify GitBook URLs loaded from the separate validation inventory
-    print(f"[*] Loading validation inventory of {len(GITBOOK_URLS)} GitBook URLs...")
+    return all(gh_results)
+
+def verify_gitbook_inventory_urls(gitbook_urls: list) -> bool:
+    """Samples and checks GitBook inventory URLs concurrently."""
+    print(f"[*] Loading validation inventory of {len(gitbook_urls)} GitBook URLs...")
     print("[*] Verifying a sample of 5 GitBook URLs from the inventory to check live routing...")
-    random.seed(42) # Deterministic sample selection
-    sample_gitbook = random.sample(GITBOOK_URLS, min(5, len(GITBOOK_URLS)))
+    random.seed(42)  # Deterministic sample selection
+    sample_gitbook = random.sample(gitbook_urls, min(5, len(gitbook_urls)))
     with ThreadPoolExecutor(max_workers=5) as executor:
         gb_results = list(executor.map(check_url, sample_gitbook))
+
+    success = True
     for u, (is_ok, failure_type) in zip(sample_gitbook, gb_results):
         if is_ok:
             print(f"[+] GitBook inventory URL OK (Live): {u}")
@@ -305,7 +306,31 @@ def main() -> None:
             print(f"[-] GitBook inventory URL FAILED ({failure_type}): {u}")
             success = False
 
-    if not success:
+    return success
+
+def main() -> None:
+    print("[*] Starting Sitemap and Link Integrity Verification...")
+
+    # 1. Compare docs/ sitemaps against root sitemaps to ensure perfect sync before URL verification
+    compare_file_contents("sitemap.txt", "docs/sitemap.txt", "txt sitemap")
+    compare_file_contents("sitemap.xml", "docs/sitemap.xml", "xml sitemap")
+
+    # 2. Parse sitemap.txt URLs
+    txt_urls = load_sitemap_txt("sitemap.txt")
+
+    # 3. Parse sitemap.xml URLs
+    xml_urls = parse_sitemap_xml("sitemap.xml")
+
+    # 4. Structural matching checks
+    validate_sitemap_urls_match(txt_urls, xml_urls)
+
+    # 5. Check sitemap GitHub Pages URLs
+    gh_success = verify_sitemap_gh_pages_urls(txt_urls)
+
+    # 6. Verify GitBook URLs loaded from the separate validation inventory
+    gb_success = verify_gitbook_inventory_urls(GITBOOK_URLS)
+
+    if not (gh_success and gb_success):
         print("[-] Link verification FAILED! There are broken links or validation failures.")
         sys.exit(1)
 
