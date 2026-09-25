@@ -119,6 +119,7 @@
               "skills/ansible-galaxy-roles",
               "skills/ansible-testing-linting",
               "skills/asimp-core-workflow",
+              "skills/dsom-infrastructure-playbook-documenter",
               "skills/el-cis-level2-hardening",
               "skills/jekyll-docs-deployment",
               "skills/jinja2-template-overrides",

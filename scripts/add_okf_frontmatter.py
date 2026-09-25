@@ -175,7 +175,7 @@ def process_file(filepath: str) -> None:
             updates.append(f"topics: {topics_str}")
 
         if updates or fm_content_normalized != fm_content:
-            fm_content_clean: str = fm_content_normalized.rstrip('\n')
+            fm_content_clean: str = fm_content_normalized.strip('\n')
             if updates:
                 new_fm_content: str = fm_content_clean + "\n" + "\n".join(updates) + "\n"
             else:
