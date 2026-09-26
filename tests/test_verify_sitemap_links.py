@@ -91,6 +91,72 @@ class TestVerifySitemapLinks(unittest.TestCase):
         except SystemExit:
             self.fail("compare_file_contents exited unexpectedly on matching files")
 
+    def test_load_sitemap_txt_success(self) -> None:
+        with open("test_sitemap.txt", "w", encoding="utf-8") as f:
+            f.write("https://linuxmalaysia.github.io/ASIMP/\n\nhttps://linuxmalaysia.github.io/ASIMP/docs/\n")
+        urls = verify_sitemap_links.load_sitemap_txt("test_sitemap.txt")
+        self.assertEqual(urls, [
+            "https://linuxmalaysia.github.io/ASIMP/",
+            "https://linuxmalaysia.github.io/ASIMP/docs/"
+        ])
+
+    def test_load_sitemap_txt_not_found(self) -> None:
+        with self.assertRaises(SystemExit) as cm:
+            verify_sitemap_links.load_sitemap_txt("missing.txt")
+        self.assertEqual(cm.exception.code, 1)
+
+    def test_parse_sitemap_xml_success(self) -> None:
+        xml_content = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            '<url><loc>https://linuxmalaysia.github.io/ASIMP/</loc></url>'
+            '</urlset>'
+        )
+        with open("test_sitemap.xml", "w", encoding="utf-8") as f:
+            f.write(xml_content)
+        urls = verify_sitemap_links.parse_sitemap_xml("test_sitemap.xml")
+        self.assertEqual(urls, ["https://linuxmalaysia.github.io/ASIMP/"])
+
+    def test_parse_sitemap_xml_not_found(self) -> None:
+        with self.assertRaises(SystemExit) as cm:
+            verify_sitemap_links.parse_sitemap_xml("missing.xml")
+        self.assertEqual(cm.exception.code, 1)
+
+    def test_parse_sitemap_xml_parse_error(self) -> None:
+        with open("bad_sitemap.xml", "w", encoding="utf-8") as f:
+            f.write("invalid xml content")
+        with self.assertRaises(SystemExit) as cm:
+            verify_sitemap_links.parse_sitemap_xml("bad_sitemap.xml")
+        self.assertEqual(cm.exception.code, 1)
+
+    def test_validate_sitemap_urls_match_success(self) -> None:
+        txt_urls = ["https://linuxmalaysia.github.io/ASIMP/"]
+        xml_urls = ["https://linuxmalaysia.github.io/ASIMP/"]
+        try:
+            verify_sitemap_links.validate_sitemap_urls_match(txt_urls, xml_urls)
+        except SystemExit:
+            self.fail("validate_sitemap_urls_match exited unexpectedly on matching lists")
+
+    def test_validate_sitemap_urls_match_mismatch(self) -> None:
+        txt_urls = ["https://linuxmalaysia.github.io/ASIMP/a"]
+        xml_urls = ["https://linuxmalaysia.github.io/ASIMP/b"]
+        with self.assertRaises(SystemExit) as cm:
+            verify_sitemap_links.validate_sitemap_urls_match(txt_urls, xml_urls)
+        self.assertEqual(cm.exception.code, 1)
+
+    def test_verify_sitemap_gh_pages_urls_invalid_host(self) -> None:
+        bad_urls = ["https://disallowed-domain.com/"]
+        with self.assertRaises(SystemExit) as cm:
+            verify_sitemap_links.verify_sitemap_gh_pages_urls(bad_urls)
+        self.assertEqual(cm.exception.code, 1)
+
+    @patch("verify_sitemap_links.check_url")
+    def test_verify_gitbook_inventory_urls_success(self, mock_check_url: MagicMock) -> None:
+        mock_check_url.return_value = (True, "OK")
+        urls = ["https://malaysia-open-source-community.gitbook.io/test"]
+        res = verify_sitemap_links.verify_gitbook_inventory_urls(urls)
+        self.assertTrue(res)
+
     @patch("verify_sitemap_links.check_url")
     def test_main_success(self, mock_check_url: MagicMock) -> None:
         mock_check_url.return_value = (True, "OK")
