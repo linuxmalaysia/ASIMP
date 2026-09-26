@@ -45,6 +45,140 @@ class TestAddOkfFrontmatter(unittest.TestCase):
         with open(filepath, "r", encoding="utf-8") as f:
             return f.read()
 
+    def test_process_file_trims_padding_when_adding_missing_fields(self) -> None:
+        path = "docs/page.md"
+        existing = 'title: "Existing Title"'
+        expected_header = (
+            "---\n"
+            f"{existing}\n"
+            'okf_version: "0.2"\n'
+            'trust_level: "verified"\n'
+            "type: documentation\n"
+            'timestamp: "2026-08-05T12:00:00Z"\n'
+            "topics: [asimp, docs, manual, security]"
+        )
+        for leading, trailing in ((1, 1), (3, 1), (1, 3), (3, 3)):
+            with self.subTest(leading=leading, trailing=trailing):
+                self._write(
+                    path,
+                    "---" + "\n" * leading + existing + "\n" * trailing
+                    + "---\n# Heading\nBody\n",
+                )
+
+                add_okf_frontmatter.process_file(path)
+
+                header, body = self._read(path).split("\n---\n", 1)
+                self.assertEqual(header, expected_header)
+                self.assertTrue(body.endswith("# Heading\nBody\n"))
+
+    def test_process_file_trims_padding_on_version_only_upgrade(self) -> None:
+        path = "docs/page.md"
+        # Every required field exists: this exercises the rewrite without additions.
+        retained = (
+            'trust_level: "draft"\n'
+            "type: reference\n"
+            'title: "Custom Title"\n'
+            'timestamp: "2025-01-02T03:04:05Z"\n'
+            "topics: [custom]"
+        )
+        for version in ('0.1', '"0.1"', "'0.1'"):
+            with self.subTest(version=version):
+                self._write(
+                    path,
+                    f"---\n\n\nokf_version: {version}\n{retained}\n\n\n"
+                    "---\n# Body\n",
+                )
+
+                add_okf_frontmatter.process_file(path)
+
+                header = self._read(path).split("\n---\n", 1)[0]
+                self.assertEqual(header, '---\nokf_version: "0.2"\n' + retained)
+
+    def test_process_file_preserves_internal_blank_lines_and_yaml_indentation(self) -> None:
+        path = "docs/page.md"
+        retained = (
+            "# Keep this metadata comment\n"
+            'title: "Panduan Keselamatan – 安全"\n'
+            "\n"
+            "description: |\n"
+            "  First paragraph.\n"
+            "\n"
+            "  Second paragraph.  \n"
+            "tags:\n"
+            "  - ansible\n"
+            "  - security\n"
+            "custom: value  "
+        )
+        body = "# Body\n\n```yaml\nokf_version: \"0.1\"\n```\n\n---\nFooter\n"
+        self._write(path, "---\n\n" + retained + "\n\n---\n" + body)
+
+        add_okf_frontmatter.process_file(path)
+
+        result = self._read(path)
+        self.assertTrue(result.startswith("---\n" + retained + "\n"))
+        header, result_body = result.split("\n---\n", 1)
+        self.assertIn("\ntopics: [ansible, security]", header)
+        # Ignore separator spacing; preserve all Markdown content, including its fences.
+        self.assertEqual(result_body.lstrip("\n"), body)
+
+    def test_process_file_normalises_header_when_each_required_field_is_missing(self) -> None:
+        path = "docs/page.md"
+        fields = {
+            "okf_version": 'okf_version: "0.2"',
+            "trust_level": 'trust_level: "verified"',
+            "type": "type: documentation",
+            "title": 'title: "Heading"',
+            "timestamp": 'timestamp: "2026-08-05T12:00:00Z"',
+            "topics": "topics: [asimp, docs, manual, security]",
+        }
+        for missing in fields:
+            with self.subTest(missing=missing):
+                retained = "\n".join(value for key, value in fields.items() if key != missing)
+                self._write(path, f"---\n\n{retained}\n\n---\n# Heading\n")
+
+                add_okf_frontmatter.process_file(path)
+
+                header = self._read(path).split("\n---\n", 1)[0]
+                self.assertEqual(header, "---\n" + retained + "\n" + fields[missing])
+
+    def test_process_file_does_not_rewrite_complete_padded_frontmatter(self) -> None:
+        path = "docs/page.md"
+        original = (
+            "---\n\n\n"
+            'okf_version: "0.2"\n'
+            'trust_level: "draft"\n'
+            "type: reference\n"
+            'title: "Existing Title"\n'
+            'timestamp: "2025-01-02T03:04:05Z"\n'
+            "topics: [custom]\n\n\n"
+            "---\n# Heading\nBody\n"
+        )
+        self._write(path, original)
+
+        with patch("builtins.open", wraps=open) as file_open:
+            add_okf_frontmatter.process_file(path)
+
+        # Normalisation is conditional on a metadata update, not merely padding.
+        file_open.assert_called_once_with(path, "r", encoding="utf-8")
+        self.assertEqual(self._read(path), original)
+
+    def test_process_file_second_pass_does_not_rewrite_normalised_frontmatter(self) -> None:
+        path = "docs/page.md"
+        for version in ('okf_version: "0.1"\n', ""):
+            with self.subTest(version=version):
+                self._write(path, f'---\n\n{version}title: "Title"\n\n---\n# Body\n')
+                add_okf_frontmatter.process_file(path)
+                first_pass = self._read(path)
+                self.assertTrue(first_pass.startswith("---\n" + (
+                    'okf_version: "0.2"' if version else 'title: "Title"'
+                )))
+
+                with patch("builtins.open", wraps=open) as file_open:
+                    add_okf_frontmatter.process_file(path)
+
+                file_open.assert_called_once_with(path, "r", encoding="utf-8")
+                self.assertEqual(self._read(path), first_pass)
+
     def test_guess_type_and_topics(self) -> None:
         # test mapping logic for various filenames and paths
         cases = [
