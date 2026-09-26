@@ -95,10 +95,21 @@ def extract_title_from_content(content: str, filepath: str) -> str:
 
 
 def process_file(filepath: str) -> None:
-    """Check a markdown file and append or update OKF v0.2 compliant frontmatter fields.
+    """Add missing OKF frontmatter fields and upgrade version 0.1 to 0.2 in place.
+
+    Prepend a complete frontmatter block when none is detected. Existing fields
+    are retained except for the version upgrade; missing topics use parsed tags
+    when available, otherwise inferred topics. Missing timestamps use the fixed
+    value 2026-08-05T12:00:00Z. When updating an existing block, remove leading
+    and trailing blank lines within it. Leave the file untouched when no fields
+    need adding and no version upgrade is needed.
 
     Args:
-        filepath: The path of the markdown file to process.
+        filepath: Path to an existing UTF-8 markdown file to read and overwrite.
+
+    Raises:
+        OSError: If reading or writing the file fails.
+        UnicodeError: If decoding or encoding the file as UTF-8 fails.
     """
     with open(filepath, 'r', encoding='utf-8') as f:
         content: str = f.read()
@@ -175,7 +186,7 @@ def process_file(filepath: str) -> None:
             updates.append(f"topics: {topics_str}")
 
         if updates or fm_content_normalized != fm_content:
-            fm_content_clean: str = fm_content_normalized.rstrip('\n')
+            fm_content_clean: str = fm_content_normalized.strip('\n')
             if updates:
                 new_fm_content: str = fm_content_clean + "\n" + "\n".join(updates) + "\n"
             else:
