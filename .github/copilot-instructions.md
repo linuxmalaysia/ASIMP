@@ -55,7 +55,7 @@ ASIMP implements a **Measure, Harden, Re-Measure** sequence across three main ro
   ansible.builtin.apt:
     name: lynis
     state: present
-    update_cache: yes
+    update_cache: true
 ```
 
 ### 2. Idempotency on Shell Commands
