@@ -15,23 +15,37 @@ Activate this skill when:
 - Creating new roles or adding tasks under `roles/`.
 - Preparing files for commit and pull requests (specifically during the pre-commit steps).
 
-## Validation Commands
+## Validation Commands & 5-Tier Validation Ladder (Rule 32.43)
 
-You must run the following checks on playbooks whenever any YAML configs or tasks are changed.
+You must validate playbooks and roles through the 5-Tier Ascending Cost Validation Ladder:
 
-### 1. Playbook Syntax Verification
+### Tier 1: YAML Static Linting
+Verify basic YAML layout, 2-space indentation, and `.yml` formatting.
+
+### Tier 2: Playbook Syntax Verification
 Ensure there are no syntax errors in your Ansible YAML playbooks:
 ```bash
 ansible-playbook --syntax-check play.yml
 ansible-playbook --syntax-check play-localhost.yml
 ```
 
-### 2. Playbook Style & Lint Checking
+### Tier 3: Playbook Style & Production Profile Linting
 Validate code against standard community best practices using `ansible-lint`:
 ```bash
 ansible-lint play-localhost.yml
 ```
 All errors must be resolved before finalizing any change.
+
+### Tier 4: Check Mode / Dry Run
+Execute dry-run checks against a non-production testbed inventory to surface undefined variables and structural drift without mutation:
+```bash
+ansible-playbook --check --diff -i inventory play-localhost.yml
+```
+
+### Tier 5: Two-Pass Execution & Idempotence Assertion
+Perform two-pass execution strictly restricted to non-production testbed or staging inventories (see `dsom-infrastructure-playbook-documenter` skill):
+- **Run 1:** Converge testbed node.
+- **Run 2:** Assert `changed=0, failed=0`.
 
 ## 🧠 Deep State of Mind (DSOM) AI Protocol
 
