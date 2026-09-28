@@ -82,7 +82,7 @@ ASIMP implements a **Measure, Harden, Re-Measure** sequence across three main ro
 ### Rule 32.43: Automated Playbook Validation Ladder & Idempotence Assertion
 All playbook modifications must pass:
 1. Pre-execution static gates (FQCN, descriptive imperative names, explicit idempotency flags like `changed_when`, `no_log: true` on secrets).
-2. 5-Tier Validation Ladder (YAML static lint -> `ansible-playbook --syntax-check` -> `ansible-lint` -> check mode dry run -> two-pass execution where pass 2 asserts `changed=0, failed=0`).
+2. 5-Tier Validation Ladder (YAML static lint -> `ansible-playbook --syntax-check` -> `ansible-lint` -> check mode dry run -> two-pass execution restricted to testbed or staging inventories where pass 2 asserts `changed=0, failed=0`).
 3. Execution blast radius isolation (never run unvalidated playbooks directly on production).
 
 ### Rule 32.44: Red Hat CoP Automation Good Practices & Zen of Ansible

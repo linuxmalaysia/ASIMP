@@ -42,7 +42,7 @@ Before running any generated or modified Ansible code, enforce these determinist
 2. **Tier 2 (Ansible Syntax Check):** Run `ansible-playbook <playbook.yml> --syntax-check`.
 3. **Tier 3 (Ansible-Lint Production Profile):** Run `ansible-lint --profile production` or project-defined lint rules.
 4. **Tier 4 (Check Mode / Dry Run):** Run `ansible-playbook --check --diff` against a testbed inventory to surface undefined variables and structural drift.
-5. **Tier 5 (Two-Pass Execution & Idempotence Assertion):**
+5. **Tier 5 (Two-Pass Execution & Idempotence Assertion):** Both execution passes must strictly target non-production testbed or staging inventories (never production directly):
    - **Run 1 (Converge):** First execution applies state changes and converges host.
    - **Run 2 (Assert Idempotency):** Second pass must finish with `changed=0, failed=0`. Any positive change count indicates procedural flaw or non-declarative mutation.
 
