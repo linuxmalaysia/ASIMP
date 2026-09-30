@@ -1,0 +1,201 @@
+---
+# ==============================================================================
+# Sovereign Gitea & Ansible Execution Environment (EE) Deployment Playbook
+# ==============================================================================
+# Deploys a standalone, sovereign Gitea GitOps core and container registry
+# natively on unprivileged rootless Podman infrastructure via systemd Quadlets,
+# and integrates Ansible Execution Environment (EE) image publishing for
+# air-gapped carrier and enterprise bastion deployments.
+# ==============================================================================
+
+- name: Deploy Sovereign Gitea via Rootless Podman Quadlet & EE Integration
+  hosts: localhost
+  connection: local
+  gather_facts: true
+
+  vars:
+    gitea_user: "{{ ansible_facts['user_id'] | default('songket') }}"
+    gitea_home: "{{ ansible_facts['user_dir'] | default('/home/' + gitea_user) }}"
+    gitea_host_ip: "10.17.250.28"
+    gitea_http_port: 3000
+    gitea_ssh_port: 2222
+    gitea_certs_dir: "{{ gitea_home }}/.config/gitea/certs"
+    gitea_quadlet_dir: "{{ gitea_home }}/.config/containers/systemd"
+    gitea_admin_user: "dsom-admin"
+    gitea_admin_email: "admin@dsom.local"
+    gitea_admin_pass: "SovereignPass2026!"
+    gitea_org_name: "songketmailsdnbhd-group"
+    gitea_repo_name: "asimp-execution-environments"
+    ee_image_tag: "asimp-ee:latest"
+
+  tasks:
+    - name: Enable systemd user lingering for rootless container persistence
+      ansible.builtin.command:
+        cmd: "loginctl enable-linger {{ gitea_user }}"
+        creates: "/var/lib/systemd/linger/{{ gitea_user }}"
+      ignore_errors: true
+
+    - name: Ensure configuration and certificate directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ gitea_certs_dir }}"
+        - "{{ gitea_quadlet_dir }}"
+
+    - name: Check if Gitea TLS private key already exists
+      ansible.builtin.stat:
+        path: "{{ gitea_certs_dir }}/gitea.key"
+      register: gitea_key_stat
+
+    - name: Generate RSA 2048 private key for Gitea TLS
+      ansible.builtin.command:
+        cmd: "openssl genrsa -out {{ gitea_certs_dir }}/gitea.key 2048"
+      when: not gitea_key_stat.stat.exists
+
+    - name: Set readable permissions on TLS private key for rootless Podman UID mapping
+      ansible.builtin.file:
+        path: "{{ gitea_certs_dir }}/gitea.key"
+        mode: "0644"
+
+    - name: Check if Gitea TLS certificate exists
+      ansible.builtin.stat:
+        path: "{{ gitea_certs_dir }}/gitea.crt"
+      register: gitea_crt_stat
+
+    - name: Generate self-signed / sovereign TLS certificate
+      ansible.builtin.command:
+        cmd: >-
+          openssl req -new -x509 -key {{ gitea_certs_dir }}/gitea.key
+          -out {{ gitea_certs_dir }}/gitea.crt -days 1825
+          -subj "/C=MY/ST=Kuala Lumpur/L=Kuala Lumpur/O=Sovereign/OU=IT/CN={{ gitea_host_ip }}"
+          -addext "subjectAltName = DNS:{{ gitea_host_ip }}, IP:{{ gitea_host_ip }}, DNS:localhost, IP:127.0.0.1"
+      when: not gitea_crt_stat.stat.exists
+
+    - name: Deploy Quadlet gitea-stack.kube configuration
+      ansible.builtin.copy:
+        dest: "{{ gitea_quadlet_dir }}/gitea-stack.kube"
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Sovereign Gitea GitOps & EE Registry (Podman Kube Quadlet)
+          After=network-online.target
+
+          [Kube]
+          Yaml=gitea-stack.yaml
+          PublishPort=3000:3000
+          PublishPort=2222:22
+
+          [Install]
+          WantedBy=default.target
+
+    - name: Deploy Quadlet gitea-stack.yaml Kubernetes manifest
+      ansible.builtin.copy:
+        dest: "{{ gitea_quadlet_dir }}/gitea-stack.yaml"
+        mode: "0600"
+        content: |
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            labels:
+              app: gitea-stack
+            name: gitea-stack
+          spec:
+            containers:
+              - name: gitea-db
+                image: docker.io/library/postgres:15-alpine
+                args:
+                  - -c
+                  - max_connections=200
+                  - -c
+                  - shared_buffers=256MB
+                env:
+                  - name: POSTGRES_USER
+                    value: gitea
+                  - name: POSTGRES_PASSWORD
+                    value: "{{ gitea_admin_pass }}"
+                  - name: POSTGRES_DB
+                    value: gitea
+                volumeMounts:
+                  - mountPath: /var/lib/postgresql/data
+                    name: gitea-db-data
+
+              - name: gitea-app
+                image: docker.io/gitea/gitea:1.26.3
+                ports:
+                  - containerPort: 3000
+                    hostPort: 3000
+                  - containerPort: 22
+                    hostPort: 2222
+                env:
+                  - name: GITEA__database__DB_TYPE
+                    value: postgres
+                  - name: GITEA__database__HOST
+                    value: 127.0.0.1:5432
+                  - name: GITEA__database__NAME
+                    value: gitea
+                  - name: GITEA__database__USER
+                    value: gitea
+                  - name: GITEA__database__PASSWD
+                    value: "{{ gitea_admin_pass }}"
+                  - name: GITEA__server__PROTOCOL
+                    value: https
+                  - name: GITEA__server__DOMAIN
+                    value: "{{ gitea_host_ip }}"
+                  - name: GITEA__server__ROOT_URL
+                    value: "https://{{ gitea_host_ip }}:3000/"
+                  - name: GITEA__server__HTTP_PORT
+                    value: "3000"
+                  - name: GITEA__server__SSH_PORT
+                    value: "2222"
+                  - name: GITEA__server__SSH_LISTEN_PORT
+                    value: "22"
+                  - name: GITEA__server__CERT_FILE
+                    value: /etc/gitea/certs/gitea.crt
+                  - name: GITEA__server__KEY_FILE
+                    value: /etc/gitea/certs/gitea.key
+                  - name: GITEA__security__INSTALL_LOCK
+                    value: "true"
+                  - name: GITEA__packages__ENABLED
+                    value: "true"
+                volumeMounts:
+                  - mountPath: /data
+                    name: gitea-app-data
+                  - mountPath: /etc/gitea/certs
+                    name: gitea-certs
+                    readOnly: true
+
+            volumes:
+              - name: gitea-db-data
+                persistentVolumeClaim:
+                  claimName: gitea_db_data
+              - name: gitea-app-data
+                persistentVolumeClaim:
+                  claimName: gitea_app_data
+              - name: gitea-certs
+                hostPath:
+                  path: {{ gitea_certs_dir }}
+                  type: Directory
+
+    - name: Reload systemd user daemon
+      ansible.builtin.command:
+        cmd: "systemctl --user daemon-reload"
+      environment:
+        XDG_RUNTIME_DIR: "/run/user/{{ ansible_facts['user_uid'] | default('1000') }}"
+        DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ ansible_facts['user_uid'] | default('1000') }}/bus"
+      ignore_errors: true
+
+    - name: Verify or build Ansible Execution Environment image locally
+      ansible.builtin.command:
+        cmd: "{{ playbook_dir }}/../scripts/build_ee.sh {{ ee_image_tag }}"
+      register: ee_build_result
+      changed_when: "'Successfully built' in ee_build_result.stdout"
+
+    - name: Display Sovereign Gitea & Ansible EE integration status
+      ansible.builtin.debug:
+        msg:
+          - "Sovereign Gitea Quadlet manifest deployed to: {{ gitea_quadlet_dir }}/gitea-stack.yaml"
+          - "TLS Certificate path: {{ gitea_certs_dir }}/gitea.crt"
+          - "Ansible Execution Environment tagged as: {{ ee_image_tag }}"
+          - "Air-gapped Bastion Push Target: {{ gitea_host_ip }}:3000/{{ gitea_org_name }}/{{ ee_image_tag }}"

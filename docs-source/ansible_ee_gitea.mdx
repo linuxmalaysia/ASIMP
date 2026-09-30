@@ -1,0 +1,263 @@
+---
+title: "Ansible Execution Environments (EE) & Sovereign Gitea Integration Guide"
+sidebarTitle: "Ansible Execution Environments"
+description: "Topics: asimp, ansible, execution-environment, gitea, podman, quadlet, uv"
+---
+
+# Ansible Execution Environments (EE) & Sovereign Gitea Integration Guide
+
+This guide provides operational specifications and automated procedures for standardizing **Ansible Execution Environments (EE)** built via `ansible-builder` combined with Python `uv` acceleration, and integrating them with a self-hosted **Sovereign Gitea GitOps Core & Container Registry** running natively on unprivileged **Rootless Podman 5+ & Quadlets**.
+
+This architecture guarantees reproducible, lightweight, and completely air-gapped execution for carrier-grade and enterprise bastion deployments.
+
+---
+
+## 🧭 1. Architecture & Core Objectives
+
+Modern enterprise security policies mandate reproducible execution contexts, eliminating host-level Python dependency drift and unvetted external network calls during security audits or hardening runs.
+
+```
+       +--------------------------------------------------------------+
+       |                  ASIMP Build System                           |
+       |  ansible-builder v3 + Python uv + requirements.yml/txt       |
+       +------------------------------+-------------------------------+
+                                      |
+                                      v
+       +--------------------------------------------------------------+
+       |             Sovereign Gitea Container Registry               |
+       |          Rootless Podman 5+ & Quadlet Kube Stack             |
+       |             (HTTPS:3000 / SSH:2222 over TLS)                 |
+       +------------------------------+-------------------------------+
+                                      |
+                                      v
+       +--------------------------------------------------------------+
+       |          Air-Gapped Carrier & Enterprise Bastion             |
+       |       ansible-runner / ansible-navigator Execution           |
+       +--------------------------------------------------------------+
+```
+
+### Key Pillars
+
+1. **Lightweight & Fast Builds**: Python `uv` provides lightning-fast package resolution and installation inside `ansible-builder` container builds.
+2. **Rootless Podman 5+ Quadlet**: Sovereign Gitea runs natively under unprivileged user systemd units using `.kube` and Kubernetes YAML specifications without daemon overhead.
+3. **Air-Gapped Sovereignty**: Containerized execution environment images are published directly to the local Gitea Container Registry (`10.17.250.28:3000`), allowing enterprise bastions to pull pinned EE images without internet connectivity.
+
+---
+
+## 📦 2. Ansible Execution Environment Definition (`ansible-builder` + `uv`)
+
+The execution environment definition resides in `execution-environment/execution-environment.yml` adhering to the Ansible Builder version 3 schema:
+
+```yaml
+---
+version: 3
+
+images:
+  base_image:
+    name: quay.io/ansible/ansible-runner:latest
+
+options:
+  package_manager_path: /usr/bin/dnf
+
+additional_build_steps:
+  prepend_base:
+    - RUN pip install --no-cache-dir uv
+  prepend_builder:
+    - RUN pip install --no-cache-dir uv
+  append_builder:
+    - RUN uv pip install --system --no-cache-dir ansible-runner jmespath cryptography netaddr pyyaml
+  append_final:
+    - ENV ANSIBLE_NAVIGATOR_EXECUTION_ENVIRONMENT_IMAGE=asimp-ee:latest
+    - LABEL org.opencontainers.image.title="ASIMP Ansible Execution Environment"
+    - LABEL org.opencontainers.image.description="Standardized Ansible Execution Environment powered by ansible-builder and Python uv for air-gapped carrier and enterprise bastions."
+    - LABEL org.opencontainers.image.vendor="ASIMP / DSOM Protocol"
+
+dependencies:
+  ansible_core:
+    package_pip: ansible-core>=2.15.0
+  ansible_runner:
+    package_pip: ansible-runner>=2.3.0
+  galaxy: requirements.yml
+  python: requirements.txt
+  system: bindep.txt
+```
+
+### Building the Image
+
+Execute the automated build script:
+
+```bash
+# Build local EE container image
+./scripts/build_ee.sh asimp-ee:latest /tmp/asimp-ee-context
+```
+
+---
+
+## 🏗️ 3. Sovereign Gitea Deployment on Rootless Podman Quadlet
+
+Sovereign Gitea is deployed following the DSOM protocol specification using Podman 5+ Native Quadlet Kube (`gitea-stack.kube` and `gitea-stack.yaml`).
+
+### Quadlet Kube Unit (`~/.config/containers/systemd/gitea-stack.kube`)
+
+```ini
+[Unit]
+Description=Sovereign Gitea GitOps & EE Registry (Podman Kube Quadlet)
+After=network-online.target
+
+[Kube]
+Yaml=gitea-stack.yaml
+PublishPort=3000:3000
+PublishPort=2222:22
+
+[Install]
+WantedBy=default.target
+```
+
+### Quadlet Manifest (`~/.config/containers/systemd/gitea-stack.yaml`)
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: gitea-stack
+  name: gitea-stack
+spec:
+  containers:
+    - name: gitea-db
+      image: docker.io/library/postgres:15-alpine
+      args:
+        - -c
+        - max_connections=200
+        - -c
+        - shared_buffers=256MB
+      env:
+        - name: POSTGRES_USER
+          value: gitea
+        - name: POSTGRES_PASSWORD
+          value: "SovereignPass2026!"
+        - name: POSTGRES_DB
+          value: gitea
+      volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: gitea-db-data
+
+    - name: gitea-app
+      image: docker.io/gitea/gitea:1.26.3
+      ports:
+        - containerPort: 3000
+          hostPort: 3000
+        - containerPort: 22
+          hostPort: 2222
+      env:
+        - name: GITEA__database__DB_TYPE
+          value: postgres
+        - name: GITEA__database__HOST
+          value: 127.0.0.1:5432
+        - name: GITEA__database__NAME
+          value: gitea
+        - name: GITEA__database__USER
+          value: gitea
+        - name: GITEA__database__PASSWD
+          value: "SovereignPass2026!"
+        - name: GITEA__server__PROTOCOL
+          value: https
+        - name: GITEA__server__DOMAIN
+          value: "10.17.250.28"
+        - name: GITEA__server__ROOT_URL
+          value: "https://10.17.250.28:3000/"
+        - name: GITEA__server__HTTP_PORT
+          value: "3000"
+        - name: GITEA__server__SSH_PORT
+          value: "2222"
+        - name: GITEA__server__CERT_FILE
+          value: /etc/gitea/certs/gitea.crt
+        - name: GITEA__server__KEY_FILE
+          value: /etc/gitea/certs/gitea.key
+        - name: GITEA__security__INSTALL_LOCK
+          value: "true"
+        - name: GITEA__packages__ENABLED
+          value: "true"
+      volumeMounts:
+        - mountPath: /data
+          name: gitea-app-data
+        - mountPath: /etc/gitea/certs
+          name: gitea-certs
+          readOnly: true
+
+  volumes:
+    - name: gitea-db-data
+      persistentVolumeClaim:
+        claimName: gitea_db_data
+    - name: gitea-app-data
+      persistentVolumeClaim:
+        claimName: gitea_app_data
+    - name: gitea-certs
+      hostPath:
+        path: /home/songket/.config/gitea/certs
+        type: Directory
+```
+
+---
+
+## ⚡ 4. Automated Deployment & Publishing Playbook
+
+ASIMP includes a dedicated playbook `playbooks/gitea_podman_ee.yml` to automate TLS setup, Quadlet generation, daemon reloading, and EE image publishing:
+
+```bash
+# Execute automated Sovereign Gitea & EE deployment playbook
+ansible-playbook -i inventory playbooks/gitea_podman_ee.yml
+```
+
+### Tagging & Pushing EE Images to Gitea Container Registry
+
+Once Sovereign Gitea is active, publish the Execution Environment image:
+
+```bash
+# Login to Sovereign Gitea Container Registry over HTTPS
+podman login --tls-verify=false 10.17.250.28:3000 -u dsom-admin
+
+# Tag local EE image for Gitea package registry
+podman tag asimp-ee:latest 10.17.250.28:3000/songketmailsdnbhd-group/asimp-ee:latest
+
+# Push image to air-gapped registry
+podman push --tls-verify=false 10.17.250.28:3000/songketmailsdnbhd-group/asimp-ee:latest
+```
+
+---
+
+## 🔒 5. Air-Gapped Carrier & Enterprise Bastion Execution
+
+In air-gapped carrier bastions, run security audits and hardening playbooks using `ansible-runner` or `ansible-navigator` referencing the sovereign container image:
+
+```bash
+# Execute hardening using ansible-runner inside air-gapped EE container
+ansible-runner run /etc/ansible/runner --container-image 10.17.250.28:3000/songketmailsdnbhd-group/asimp-ee:latest
+
+# Or using ansible-navigator CLI
+ansible-navigator run playbooks/ubuntu_lts_hardening.yml \
+  --eei 10.17.250.28:3000/songketmailsdnbhd-group/asimp-ee:latest \
+  --mode stdout
+```
+
+---
+
+## 🛠️ 6. Maintenance & Status Checks
+
+Check service status and logs using user-level systemd:
+
+```bash
+# Service status
+systemctl --user status gitea-stack.service
+
+# Stream live container logs
+journalctl --user -u gitea-stack.service -f
+
+# Daemon reload after Quadlet modification
+systemctl --user daemon-reload
+systemctl --user restart gitea-stack.service
+```
+
+---
+
+ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu Malaysia (Piawai) | GNU General Public License v3.0 | [Legal Notice & Disclaimer](https://linuxmalaysia.github.io/ASIMP/legal-notice.html)

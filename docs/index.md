@@ -55,6 +55,7 @@ Explore the different sections of our system design, setup guides, and troublesh
 - **[Ubuntu 24.04/26.04 LTS Guide](ubuntu_lts_hardening.html)**: Hardening guide and standalone playbook for Ubuntu 24.04 LTS and 26.04 LTS.
 - **[Debian Hardening Guide](debian_hardening.html)**: Hardening guide and standalone playbook for Debian GNU/Linux 11, 12, and 13.
 - **[openSUSE Hardening Guide](opensuse_hardening.html)**: Hardening guide and standalone playbook for openSUSE (Leap, Tumbleweed, SLES, SLED) with dynamic sysctl tuning.
+- **[Ansible EE & Sovereign Gitea Guide](ansible_ee_gitea.html)**: Technical guide for Ansible Execution Environments built via `ansible-builder` + `uv` integrated with Sovereign Gitea on Rootless Podman Quadlets.
 
 ---
 

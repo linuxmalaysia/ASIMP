@@ -28,6 +28,7 @@
             "pages": [
               "README",
               "SUMMARY",
+              "ansible_ee_gitea",
               "debian_hardening",
               "index",
               "knowledge_portal_testbed_openscap_va_report",

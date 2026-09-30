@@ -24,6 +24,7 @@ topics: ["asimp", "summary", "documentation", "index"]
 * [Ubuntu 24.04/26.04 LTS Guide](docs/ubuntu_lts_hardening.md)
 * [Debian Hardening Guide](docs/debian_hardening.md)
 * [openSUSE Hardening Guide](docs/opensuse_hardening.md)
+* [Ansible EE & Sovereign Gitea Guide](docs/ansible_ee_gitea.md)
 * [Knowledge Sharing Portal OpenSCAP Audit Report](docs/knowledge_portal_testbed_openscap_va_report.md)
 * [Configuration & Variables](docs/configuration.md)
 * [Troubleshooting & Fallbacks](docs/troubleshooting.md)

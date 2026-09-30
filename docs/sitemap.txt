@@ -16,4 +16,5 @@ https://linuxmalaysia.github.io/ASIMP/rhel_family_cis.html
 https://linuxmalaysia.github.io/ASIMP/ubuntu_lts_hardening.html
 https://linuxmalaysia.github.io/ASIMP/debian_hardening.html
 https://linuxmalaysia.github.io/ASIMP/opensuse_hardening.html
+https://linuxmalaysia.github.io/ASIMP/ansible_ee_gitea.html
 https://linuxmalaysia.github.io/ASIMP/troubleshooting.html
