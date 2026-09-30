@@ -34,6 +34,47 @@ class TestLlmsTxt2Ctx(unittest.TestCase):
         self.assertEqual(d.sections.Docs[0].title, 'Link 1')
         self.assertEqual(d.sections.Docs[0].desc, 'A test link')
 
+    def test_attr_dict_accepts_iterable_pairs_and_keyword_overrides(self) -> None:
+        data = AttrDict([("title", "Old"), ("count", 0)], title="New", enabled=False)
+        self.assertIsInstance(data, dict)
+        self.assertEqual(dict(data), {"title": "New", "count": 0, "enabled": False})
+        self.assertEqual(data.title, "New")
+
+    def test_attr_dict_wraps_nested_values_without_mutating_input(self) -> None:
+        source = {"nested": {"child": {"value": None}}, "entries": [{"value": 0}, False, "", None]}
+        data = AttrDict(source)
+        self.assertIsNone(data.nested.child.value)
+        self.assertEqual(data.entries[0].value, 0)
+        self.assertEqual(data.entries[1:], [False, "", None])
+        data.nested.child.value = "changed"
+        data.entries[0].value = 42
+        self.assertIsNone(source["nested"]["child"]["value"])
+        self.assertEqual(source["entries"][0]["value"], 0)
+
+    def test_attr_dict_missing_attribute_and_key_have_distinct_errors(self) -> None:
+        data = AttrDict()
+        with self.assertRaisesRegex(AttributeError, "missing"):
+            _ = data.missing
+        with self.assertRaises(KeyError):
+            _ = data["missing"]
+        self.assertFalse(hasattr(data, "missing"))
+        self.assertEqual(getattr(data, "missing", "fallback"), "fallback")
+
+    def test_attr_dict_attribute_and_item_assignment_share_storage(self) -> None:
+        data = AttrDict()
+        data.title = "From attribute"
+        self.assertEqual(data["title"], "From attribute")
+        data["title"] = "From item"
+        self.assertEqual(data.title, "From item")
+        del data["title"]
+        self.assertFalse(hasattr(data, "title"))
+
+    def test_attr_dict_preserves_dictionary_methods_for_colliding_keys(self) -> None:
+        data = AttrDict(items="document items", keys="document keys")
+        self.assertEqual(data["items"], "document items")
+        self.assertEqual(set(data.keys()), {"items", "keys"})
+        self.assertEqual(dict(data.items()), {"items": "document items", "keys": "document keys"})
+
     def test_slugify(self) -> None:
         """Test that slugify generates clean and valid XML element names."""
         self.assertEqual(slugify('FastHTML quick start'), 'fasthtml-quick-start')
