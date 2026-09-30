@@ -6,8 +6,10 @@ import tempfile
 import unittest
 from pathlib import Path
 import subprocess
+from unittest.mock import patch
 
 from scripts.sync_docs import (
+    run_cmd,
     guard_a_source_and_json_integrity,
     guard_b_minimum_file_count_floor,
     guard_c_navigation_integrity,
@@ -39,6 +41,36 @@ class TestSyncDocsGuards(unittest.TestCase):
         missing_dir = Path(self.test_dir) / "nonexistent"
         with self.assertRaises(SystemExit):
             guard_a_source_and_json_integrity(missing_dir)
+
+    def test_guard_a_preserves_nested_json_and_unicode(self):
+        expected = {
+            "name": "Documentation – sécurité",
+            "navigation": {"tabs": [{"pages": ["index", "skills/example"]}]},
+            "enabled": False,
+            "count": 0,
+            "optional": None,
+        }
+        (self.docs_source / "docs.json").write_text(
+            json.dumps(expected, ensure_ascii=False), encoding="utf-8"
+        )
+        self.assertEqual(guard_a_source_and_json_integrity(self.docs_source), expected)
+
+    def test_guard_a_missing_json_exits_with_failure(self):
+        with self.assertRaises(SystemExit) as raised:
+            guard_a_source_and_json_integrity(self.docs_source)
+        self.assertEqual(raised.exception.code, 1)
+
+    def test_guard_a_unreadable_json_exits_with_failure(self):
+        (self.docs_source / "docs.json").mkdir()
+        with self.assertRaises(SystemExit) as raised:
+            guard_a_source_and_json_integrity(self.docs_source)
+        self.assertEqual(raised.exception.code, 1)
+
+    def test_guard_a_invalid_utf8_exits_with_failure(self):
+        (self.docs_source / "docs.json").write_bytes(b'{"name": "\xff"}')
+        with self.assertRaises(SystemExit) as raised:
+            guard_a_source_and_json_integrity(self.docs_source)
+        self.assertEqual(raised.exception.code, 1)
 
     def test_guard_a_invalid_json(self):
         docs_json = self.docs_source / "docs.json"
@@ -115,6 +147,41 @@ class TestSyncDocsGuards(unittest.TestCase):
         )
         self.assertEqual(len(deleted), 12)
         self.assertEqual(len(added), 1)
+
+
+class TestRunCmd(unittest.TestCase):
+    """Optional subprocess arguments must retain their runtime semantics."""
+
+    @patch("scripts.sync_docs.subprocess.run")
+    def test_omitted_and_explicit_none_options_inherit_process_context(self, mock_run):
+        command = ["example", "argument with spaces"]
+        mock_run.return_value = subprocess.CompletedProcess(command, 0, "résultat\n", "")
+        for options in ({}, {"cwd": None, "env": None}):
+            with self.subTest(options=options):
+                mock_run.reset_mock()
+                self.assertEqual(run_cmd(command, **options), (0, "résultat\n", ""))
+                mock_run.assert_called_once_with(
+                    command, cwd=None, env=None, stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace",
+                )
+
+    @patch("scripts.sync_docs.subprocess.run")
+    def test_explicit_path_and_environment_are_forwarded_even_when_empty(self, mock_run):
+        command = ["example", "literal; argument"]
+        cwd = Path("working directory")
+        mock_run.return_value = subprocess.CompletedProcess(command, 7, "partial\n", "failure\n")
+        for env in ({}, {"LANG": "C.UTF-8"}):
+            with self.subTest(env=env):
+                self.assertEqual(run_cmd(command, cwd=cwd, env=env), (7, "partial\n", "failure\n"))
+                self.assertEqual(mock_run.call_args.args, (command,))
+                self.assertEqual(mock_run.call_args.kwargs["cwd"], cwd)
+                self.assertIs(mock_run.call_args.kwargs["env"], env)
+
+    @patch("scripts.sync_docs.subprocess.run", side_effect=FileNotFoundError("missing executable"))
+    def test_launch_failure_is_propagated(self, mock_run):
+        with self.assertRaises(FileNotFoundError):
+            run_cmd(["missing-executable"])
+        mock_run.assert_called_once()
 
 
 if __name__ == "__main__":

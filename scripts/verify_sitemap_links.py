@@ -14,6 +14,7 @@ import xml.etree.ElementTree as ET
 import urllib.request
 import urllib.error
 import random
+from typing import Any, Optional, Tuple
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse
 
@@ -137,13 +138,13 @@ GITBOOK_URLS = [
 
 class ValidatingRedirectHandler(urllib.request.HTTPRedirectHandler):
     """Intercepts redirects and validates each target against ALLOWED_HOSTS before following."""
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
+    def redirect_request(self, req: urllib.request.Request, fp: Any, code: int, msg: str, headers: Any, newurl: str) -> Optional[urllib.request.Request]:
         parsed = urlparse(newurl)
         if parsed.scheme not in ("http", "https") or parsed.netloc not in ALLOWED_HOSTS:
             raise urllib.error.HTTPError(req.full_url, code, f"Redirect to disallowed host/scheme: {newurl}", headers, fp)
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
-def check_url(url: str) -> tuple:
+def check_url(url: str) -> Tuple[bool, str]:
     """Sends a request to verify the URL exists and is not broken.
 
     Returns:

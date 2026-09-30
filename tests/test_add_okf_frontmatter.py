@@ -199,6 +199,73 @@ class TestAddOkfFrontmatter(unittest.TestCase):
 
         self.assertEqual(self._read(path), original)
 
+    def test_partial_frontmatter_starts_immediately_after_delimiter(self) -> None:
+        """Updating an existing header must not insert leading blank lines."""
+        for leading_newlines in (1, 2, 4):
+            with self.subTest(leading_newlines=leading_newlines):
+                path = "docs/page.md"
+                self._write(
+                    path,
+                    "---" + "\n" * leading_newlines
+                    + 'title: "Existing Title"\n\n---\n# Body\n',
+                )
+
+                add_okf_frontmatter.process_file(path)
+
+                result = self._read(path)
+                self.assertTrue(result.startswith('---\ntitle: "Existing Title"\n'))
+                header = result.split("---", 2)[1]
+                self.assertTrue(header.endswith("topics: [asimp, docs, manual, security]\n"))
+                for key in ("title", "okf_version", "trust_level", "type", "timestamp", "topics"):
+                    self.assertEqual(sum(line.startswith(key + ":") for line in header.splitlines()), 1)
+
+                add_okf_frontmatter.process_file(path)
+                self.assertEqual(self._read(path), result)
+
+    def test_version_only_upgrade_trims_header_boundary_newlines(self) -> None:
+        """Exercise normalization with no missing fields to append."""
+        path = "docs/page.md"
+        fields = (
+            'okf_version: "0.1"\n'
+            'trust_level: "verified"\n'
+            "type: documentation\n"
+            'title: "Legacy"\n'
+            'timestamp: "2024-01-01T00:00:00Z"\n'
+            "topics: [legacy]"
+        )
+        self._write(path, "---\n\n" + fields + "\n\n---\n# Body\n")
+
+        add_okf_frontmatter.process_file(path)
+
+        result = self._read(path)
+        self.assertEqual(result.split("---", 2)[1], "\n" + fields.replace('"0.1"', '"0.2"') + "\n")
+        add_okf_frontmatter.process_file(path)
+        self.assertEqual(self._read(path), result)
+
+    def test_header_normalization_preserves_interior_spacing_and_body(self) -> None:
+        path = "docs/page.md"
+        fields = '# Keep this comment\ntitle: "Résumé"\n\nmetadata:\n  owner: équipe  '
+        body = '\n# Body\n\n```yaml\nokf_version: "0.1"\n```\n---\nEnd\n'
+        self._write(path, "---\n\n" + fields + "\n\n---" + body)
+
+        add_okf_frontmatter.process_file(path)
+
+        result = self._read(path)
+        self.assertTrue(result.startswith("---\n" + fields + "\n"))
+        self.assertTrue(result.endswith(body))
+
+    def test_complete_header_with_blank_lines_is_not_rewritten(self) -> None:
+        """Boundary trimming applies only when a metadata update is needed."""
+        path = "docs/page.md"
+        original = (
+            '---\n\nokf_version: "0.2"\ntrust_level: "verified"\n'
+            'type: documentation\ntitle: "Complete"\n'
+            'timestamp: "2024-01-01T00:00:00Z"\ntopics: []\n\n---\n# Body\n'
+        )
+        self._write(path, original)
+        add_okf_frontmatter.process_file(path)
+        self.assertEqual(self._read(path), original)
+
     def test_main_walking(self) -> None:
         # Create folder structure under current temp directory
         os.makedirs("docs", exist_ok=True)

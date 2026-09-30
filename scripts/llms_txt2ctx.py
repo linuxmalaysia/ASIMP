@@ -12,7 +12,7 @@ import sys
 from typing import Dict, Any, List, Tuple, Optional
 
 
-class AttrDict(dict):
+class AttrDict(dict[str, Any]):
     """A dictionary subclass that allows attribute-style access to its keys."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

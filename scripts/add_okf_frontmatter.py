@@ -175,11 +175,11 @@ def process_file(filepath: str) -> None:
             updates.append(f"topics: {topics_str}")
 
         if updates or fm_content_normalized != fm_content:
-            fm_content_clean: str = fm_content_normalized.rstrip('\n')
+            fm_content_clean: str = fm_content_normalized.strip('\n')
             if updates:
-                new_fm_content: str = fm_content_clean + "\n" + "\n".join(updates) + "\n"
+                new_fm_content = fm_content_clean + "\n" + "\n".join(updates) + "\n"
             else:
-                new_fm_content: str = fm_content_clean + "\n"
+                new_fm_content = fm_content_clean + "\n"
             new_content = f"---\n{new_fm_content}---\n" + body
             with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(new_content)

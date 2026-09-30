@@ -13,6 +13,8 @@ import sys
 import tempfile
 import unittest
 import random
+import urllib.error
+import urllib.request
 import sys
 import tempfile
 import unittest
@@ -60,6 +62,51 @@ class TestVerifySitemapLinks(unittest.TestCase):
         is_ok, failure_type = verify_sitemap_links.check_url("https://linuxmalaysia.github.io/ASIMP/")
         self.assertTrue(is_ok)
         self.assertEqual(failure_type, "OK")
+
+    @patch("verify_sitemap_links.urllib.request.build_opener")
+    def test_check_url_rejects_unsafe_urls_before_opening(self, mock_build_opener) -> None:
+        cases = [
+            ("file:///etc/passwd", "InvalidScheme:file"),
+            ("/ASIMP/index.html", "InvalidScheme:"),
+            ("https://linuxmalaysia.github.io.evil.invalid/", "DisallowedHost:linuxmalaysia.github.io.evil.invalid"),
+            ("https://user@linuxmalaysia.github.io/", "DisallowedHost:user@linuxmalaysia.github.io"),
+        ]
+        for url, reason in cases:
+            with self.subTest(url=url):
+                self.assertEqual(verify_sitemap_links.check_url(url), (False, reason))
+        mock_build_opener.assert_not_called()
+
+    @patch("verify_sitemap_links.urllib.request.build_opener")
+    def test_check_url_classifies_response_statuses(self, mock_build_opener) -> None:
+        url = "https://linuxmalaysia.github.io/ASIMP/"
+        opener = mock_build_opener.return_value
+        response = opener.open.return_value.__enter__.return_value
+        for status in (200, 204, 301, 404, 500):
+            with self.subTest(status=status):
+                response.status = status
+                expected = (True, "OK") if status == 200 else (False, f"HTTPStatus:{status}")
+                self.assertEqual(verify_sitemap_links.check_url(url), expected)
+                request = opener.open.call_args.args[0]
+                self.assertEqual(request.full_url, url)
+                self.assertEqual(request.get_method(), "GET")
+                self.assertEqual(opener.open.call_args.kwargs["timeout"], 10)
+                self.assertIsInstance(
+                    mock_build_opener.call_args.args[0], verify_sitemap_links.ValidatingRedirectHandler
+                )
+
+    @patch("verify_sitemap_links.urllib.request.build_opener")
+    def test_check_url_classifies_network_failures(self, mock_build_opener) -> None:
+        url = "https://linuxmalaysia.github.io/ASIMP/"
+        cases = [
+            (urllib.error.HTTPError(url, 403, "Forbidden", {}, None), "HTTPError:403"),
+            (urllib.error.HTTPError(url, 404, "Not found", {}, None), "HTTPError:404"),
+            (urllib.error.URLError("connection refused"), "URLError:connection refused"),
+            (TimeoutError("timed out"), "UnexpectedError:TimeoutError"),
+        ]
+        for error, reason in cases:
+            with self.subTest(reason=reason):
+                mock_build_opener.return_value.open.side_effect = error
+                self.assertEqual(verify_sitemap_links.check_url(url), (False, reason))
 
     def test_verify_github_pages_url_invalid_host(self) -> None:
         result = verify_sitemap_links.verify_github_pages_url("https://example.com/ASIMP/")
@@ -197,6 +244,51 @@ class TestVerifySitemapLinks(unittest.TestCase):
         with self.assertRaises(SystemExit) as cm:
             verify_sitemap_links.main()
         self.assertNotEqual(cm.exception.code, 0)
+
+class TestValidatingRedirectHandler(unittest.TestCase):
+    """Exercise redirect validation directly without performing HTTP requests."""
+
+    def setUp(self) -> None:
+        self.handler = verify_sitemap_links.ValidatingRedirectHandler()
+        self.request = urllib.request.Request("https://linuxmalaysia.github.io/ASIMP/")
+
+    def test_allowed_redirect_returns_request_for_target(self) -> None:
+        for scheme in ("http", "https"):
+            for host in sorted(verify_sitemap_links.ALLOWED_HOSTS):
+                with self.subTest(scheme=scheme, host=host):
+                    target = f"{scheme}://{host}/new-page"
+                    result = self.handler.redirect_request(self.request, None, 302, "Found", {}, target)
+                    self.assertIsInstance(result, urllib.request.Request)
+                    self.assertEqual(result.full_url, target)
+                    self.assertEqual(result.get_method(), "GET")
+
+    @patch("urllib.request.HTTPRedirectHandler.redirect_request")
+    def test_disallowed_redirect_never_reaches_parent_handler(self, parent_redirect) -> None:
+        targets = [
+            "https://evil.invalid/",
+            "https://linuxmalaysia.github.io.evil.invalid/",
+            "https://linuxmalaysia.github.io@evil.invalid/",
+            "https://linuxmalaysia.github.io:8443/",
+            "ftp://linuxmalaysia.github.io/ASIMP/",
+            "file:///etc/passwd",
+        ]
+        for target in targets:
+            with self.subTest(target=target):
+                with self.assertRaises(urllib.error.HTTPError) as raised:
+                    self.handler.redirect_request(self.request, None, 302, "Found", {}, target)
+                self.assertEqual(raised.exception.code, 302)
+                self.assertEqual(raised.exception.filename, self.request.full_url)
+                self.assertIn("Redirect to disallowed host/scheme", str(raised.exception))
+        parent_redirect.assert_not_called()
+
+    @patch("urllib.request.HTTPRedirectHandler.redirect_request", return_value=None)
+    def test_parent_can_decline_an_allowed_redirect(self, parent_redirect) -> None:
+        target = "https://linuxmalaysia.github.io/ASIMP/new"
+        headers = {"Location": target}
+        result = self.handler.redirect_request(self.request, None, 302, "Found", headers, target)
+        self.assertIsNone(result)
+        parent_redirect.assert_called_once_with(self.request, None, 302, "Found", headers, target)
+
 
 class TestMainConcurrentVerification(unittest.TestCase):
     """Tests for main()'s use of ThreadPoolExecutor to verify URLs concurrently.

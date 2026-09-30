@@ -75,6 +75,7 @@ The following table lists the available agent skills present in this repository:
 | `ansible-galaxy-roles` | `ansible-galaxy-roles` | Instructions for managing and installing Ansible Galaxy external role dependencies. |
 | `ansible-testing-linting` | `ansible-testing-linting` | Guidelines on running ansible-playbook syntax checks and ansible-lint. |
 | `asimp-core-workflow` | `asimp-core-workflow` | Highlights Phase 1, Phase 2, and Phase 3 of the core ASIMP workflow. |
+| `dsom-infrastructure-playbook-documenter` | `dsom-infrastructure-playbook-documenter` | Standards for playbook authoring, validation ladder, idempotency gates, and Red Hat CoP / Zen of Ansible compliance. |
 | `el-cis-level2-hardening` | `el-cis-level2-hardening` | Guides on Enterprise Linux CIS Level 2 auditing and hardening profiles. |
 | `jekyll-docs-deployment` | `jekyll-docs-deployment` | Procedures for pre-processing docs and managing GitHub Pages deployments. |
 | `jinja2-template-overrides` | `jinja2-template-overrides` | Rules for setting Jinja2 block trim headers with capitalized booleans. |
@@ -114,6 +115,32 @@ To maintain the high-fidelity auditability of ASIMP, developers and agents must 
 - Use Fully Qualified Collection Names (FQCN) for all tasks.
 - Avoid deprecated features and ensure strict idempotency of every command/shell execution.
 - Maintain standardized layouts for documentation and playbook structures.
+
+---
+
+## 🏛️ Governance Rules
+
+### Rule 32.43: Automated Ansible Playbook Validation Ladder & Idempotence Assertion Standard
+
+Whenever the AI generates, refactors, or fixes Ansible playbooks, roles, or tasks, it must strictly adhere to the Declarative Validation Ladder:
+1. **Deterministic Static Gates:** The AI must ensure all tasks use Fully Qualified Collection Names (FQCN, e.g. `ansible.builtin.package`), descriptive capitalized task names, and strictly prohibit bare `shell`/`command` tasks unless accompanied by explicit idempotency guards (`changed_when`, `creates`, or `removes`). Plaintext secrets are strictly banned, and tasks handling vaulted secrets must specify `no_log: true`.
+2. **Tiered Validation Sequence:** Playbook code must pass:
+   - (a) **Tier 1 & 2 Syntax validation:** `ansible-playbook <playbook.yml> --syntax-check`
+   - (b) **Tier 3 Static standards validation:** `ansible-lint --profile production` (or project-defined lint rules)
+   - (c) **Tier 4 Dry-run verification:** `ansible-playbook --check --diff` against testbed inventory where supported
+3. **The Two-Pass Idempotence Assertion:** In testbeds and staging environments, true declarative compliance requires a two-pass execution: Run 1 must converge successfully; Run 2 must complete with `changed=0, failed=0`. Any positive change count on Run 2 denotes procedural regression that must be corrected before production promotion.
+4. **Execution Blast Radius Isolation:** The AI is strictly prohibited from applying generated or unvalidated playbooks directly to production carrier inventories without prior syntax validation and operator review.
+
+### Rule 32.44: Ansible Community AI-Forge & Red Hat CoP Automation Good Practices Standard
+
+When authoring, refactoring, or auditing Ansible playbooks, roles, and inventories, the AI must enforce the Red Hat Communities of Practice (CoP) Automation Good Practices and the Zen of Ansible:
+1. **The Zen of Ansible Philosophical Gate:** Playbooks are declarative specifications, not procedural programs. The AI must prohibit Jinja2 Python abuse, deep YAML nesting, and excessive `when` conditional chains. Simple, readable, declarative automation takes precedence over complex abstractions.
+2. **Authoring Style Invariants:**
+   - (a) **Syntax & Layout:** 2-space indentation, `.yml` extension, structured YAML argument mapping (no `key=value` string syntax), and lowercase `true`/`false` booleans;
+   - (b) **Naming & Facts:** Imperative capitalized task names, `snake_case` identifiers, `<role_name>_` variable prefixes, `__<role_name>_` internal constant prefixes, and bracket fact notation (`ansible_facts['distribution']`);
+   - (c) **Module Trust & Hygiene:** Highest-trust module selection (`ansible.builtin` -> vendor collections -> custom), explicit `state:`, modern `loop:`, and `failed_when:` over `ignore_errors: true`;
+   - (d) **Template Discipline:** Mandatory `{{ ansible_managed | comment }}` header at the top of all Jinja2 configuration templates.
+3. **CoP 14-Category Review Checklist:** Code reviews of playbooks and roles must evaluate against the 14 standard categories (YAML Style, Naming, Module Usage, Task Structure, Handlers, Templates, Variables, Playbook Structure, Inventory, Error Handling, Idempotency, Argument Specs, Tags, Platform Support) and emit prioritized actionable recommendations.
 
 ---
 

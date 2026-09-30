@@ -55,7 +55,7 @@ ASIMP implements a **Measure, Harden, Re-Measure** sequence across three main ro
   ansible.builtin.apt:
     name: lynis
     state: present
-    update_cache: yes
+    update_cache: true
 ```
 
 ### 2. Idempotency on Shell Commands
@@ -74,6 +74,21 @@ ASIMP implements a **Measure, Harden, Re-Measure** sequence across three main ro
   register: score
   changed_when: false
 ```
+
+---
+
+## 🏛️ Governance Rules
+
+### Rule 32.43: Automated Playbook Validation Ladder & Idempotence Assertion
+All playbook modifications must pass:
+1. Pre-execution static gates (FQCN, descriptive imperative names, explicit idempotency guards `changed_when`/`creates`/`removes` for bare `ansible.builtin.shell`/`command`/`raw` tasks, `no_log: true` on secrets).
+2. 5-Tier Validation Ladder (YAML static lint -> `ansible-playbook --syntax-check` -> `ansible-lint` -> check mode dry run -> two-pass execution restricted to testbed or staging inventories where pass 2 asserts `changed=0, failed=0`).
+3. Execution blast radius isolation (never run unvalidated playbooks directly on production).
+
+### Rule 32.44: Red Hat CoP Automation Good Practices & Zen of Ansible
+1. Zen of Ansible: Declarative over procedural, simple over complex, convention over configuration. Prohibit Jinja2 Python abuse and deep `when:` nesting.
+2. Authoring standards: 2-space indentation, `.yml` extensions, structured YAML arguments, lowercase `true`/`false` booleans, bracket fact notation (`ansible_facts['...']`), `<role_name>_` variable prefixes, and `{{ ansible_managed | comment }}` in Jinja2 templates.
+3. Review against 14 CoP audit categories.
 
 ---
 

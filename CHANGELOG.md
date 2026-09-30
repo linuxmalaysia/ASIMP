@@ -13,6 +13,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-08-05
+
+### Added
+- **Automated Playbook Validation Ladder & Idempotence Assertion Standard (Rule 32.43)**: Enforced deterministic static gates, 5-tier validation ladder (`syntax-check`, `ansible-lint`, check mode dry-run, two-pass execution where pass 2 asserts `changed=0, failed=0`), and execution blast radius isolation.
+- **Red Hat CoP Automation Good Practices & Zen of Ansible Standard (Rule 32.44)**: Adopted Red Hat CoP authoring standards, Zen of Ansible principles (declarative over procedural, simple over complex), and 14-category review checklist.
+- **New Agent Skill (`dsom-infrastructure-playbook-documenter`)**: Added dedicated skill under `.agents/skills/dsom-infrastructure-playbook-documenter/SKILL.md` documenting SOPs for Rules 32.43 & 32.44.
+
+---
+
 ## [1.1.1] - 2026-08-05
 
 ### Added
