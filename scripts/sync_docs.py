@@ -18,7 +18,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 # Configuration defaults
 DEFAULT_OWNER = "linuxmalaysia"
@@ -29,7 +29,7 @@ DEFAULT_MIN_MDX_FILES = 5
 DEFAULT_MAX_DELETIONS = 10
 
 
-def run_cmd(cmd: List[str], cwd: Path = None, env: Dict[str, str] = None) -> Tuple[int, str, str]:
+def run_cmd(cmd: List[str], cwd: Optional[Path] = None, env: Optional[Dict[str, str]] = None) -> Tuple[int, str, str]:
     """Execute shell command safely with UTF-8 encoding.
 
     Args:
@@ -101,7 +101,7 @@ def guard_a_source_and_json_integrity(docs_source_dir: Path) -> Dict[str, Any]:
         sys.exit(1)
 
     try:
-        data = json.loads(docs_json_path.read_text(encoding="utf-8"))
+        data: Dict[str, Any] = json.loads(docs_json_path.read_text(encoding="utf-8"))
         print("[Guard A] PASSED: docs-source/ and valid docs.json found.")
         return data
     except Exception as e:
