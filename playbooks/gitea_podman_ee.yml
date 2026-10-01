@@ -15,7 +15,7 @@
 
   vars:
     gitea_user: "{{ ansible_facts['user_id'] | default('songket') }}"
-    gitea_db_pass: "{{ vault_gitea_db_pass | default(lookup('ansible.builtin.env', 'GITEA_DB_PASS', default='SovereignPass2026!')) }}"
+    gitea_db_pass: "{{ vault_gitea_db_pass | default(lookup('ansible.builtin.env', 'GITEA_DB_PASS', default='')) }}"
     gitea_host_ip: "10.17.250.28"
     gitea_http_port: 3000
     gitea_ssh_port: 2222
@@ -231,7 +231,6 @@
             push_args:
               dest: "{{ gitea_push_target }}"
               tls_verify: false
-          ignore_errors: true
 
         - name: Display Sovereign Gitea & Ansible EE integration status
           ansible.builtin.debug:
