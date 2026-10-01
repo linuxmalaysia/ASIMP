@@ -143,7 +143,7 @@
                       - name: POSTGRES_USER
                         value: gitea
                       - name: POSTGRES_PASSWORD
-                        value: "{{ gitea_db_pass }}"
+                        value: {{ gitea_db_pass | to_json }}
                       - name: POSTGRES_DB
                         value: gitea
                     volumeMounts:
@@ -167,7 +167,7 @@
                       - name: GITEA__database__USER
                         value: gitea
                       - name: GITEA__database__PASSWD
-                        value: "{{ gitea_db_pass }}"
+                        value: {{ gitea_db_pass | to_json }}
                       - name: GITEA__server__PROTOCOL
                         value: https
                       - name: GITEA__server__DOMAIN
