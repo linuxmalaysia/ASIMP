@@ -55,3 +55,8 @@
         that:
           - playbook_stat.stat.exists
           - playbook_stat.stat.isreg
+
+    - name: Perform syntax-check on playbooks/gitea_podman_ee.yml
+      ansible.builtin.command:
+        cmd: "{{ ansible_playbook_python | default('python3') }} -m ansible.cli.playbook --syntax-check {{ repo_root }}/playbooks/gitea_podman_ee.yml"
+      changed_when: false

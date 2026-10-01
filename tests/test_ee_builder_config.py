@@ -27,7 +27,7 @@ class TestEEBuilderConfig(unittest.TestCase):
         self.assertIn("images", data, "EE definition must specify images")
         self.assertEqual(
             data["images"]["base_image"]["name"],
-            "quay.io/ansible/ansible-runner:latest"
+            "quay.io/ansible/ansible-runner@sha256:0d531a89c9d1df52341d087b7a6270d4f24301548e65738805f63901b0f5b9d3"
         )
 
         steps = data.get("additional_build_steps", {})
@@ -51,6 +51,7 @@ class TestEEBuilderConfig(unittest.TestCase):
         with open(req_yml, "r", encoding="utf-8") as f:
             req_data = yaml.safe_load(f)
         self.assertIn("collections", req_data)
+        self.assertIn("roles", req_data)
 
     def test_build_ee_script(self) -> None:
         """Verify scripts/build_ee.sh exists and is executable."""

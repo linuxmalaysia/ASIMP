@@ -3,7 +3,7 @@ version: 3
 
 images:
   base_image:
-    name: quay.io/ansible/ansible-runner:latest
+    name: quay.io/ansible/ansible-runner@sha256:0d531a89c9d1df52341d087b7a6270d4f24301548e65738805f63901b0f5b9d3
 
 options:
   package_manager_path: /usr/bin/dnf

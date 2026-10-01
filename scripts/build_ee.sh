@@ -20,8 +20,9 @@ echo " Build Context: ${BUILD_CONTEXT}"
 echo "========================================================================"
 
 if ! command -v ansible-builder &>/dev/null; then
-    echo "[!] Warning: 'ansible-builder' executable not found in current PATH."
-    echo "[!] Install via: pip install ansible-builder or uv pip install ansible-builder"
+    echo "[!] Error: 'ansible-builder' executable not found in current PATH." >&2
+    echo "[!] Install via: pip install ansible-builder or uv pip install ansible-builder" >&2
+    exit 1
 fi
 
 if ! command -v podman &>/dev/null && ! command -v docker &>/dev/null; then
@@ -30,21 +31,17 @@ fi
 
 mkdir -p "${BUILD_CONTEXT}"
 
-if command -v ansible-builder &>/dev/null; then
-    echo "[*] Creating container build context and Containerfile via ansible-builder..."
-    ansible-builder create \
-        --filename "${EE_DIR}/execution-environment.yml" \
-        --output-filename Containerfile \
-        --output-dir "${BUILD_CONTEXT}"
+echo "[*] Creating container build context and Containerfile via ansible-builder..."
+ansible-builder create \
+    --filename "${EE_DIR}/execution-environment.yml" \
+    --output-filename Containerfile \
+    --output-dir "${BUILD_CONTEXT}"
 
-    echo "[*] Triggering container build for tag '${TAG}'..."
-    ansible-builder build \
-        --filename "${EE_DIR}/execution-environment.yml" \
-        --tag "${TAG}" \
-        --output-dir "${BUILD_CONTEXT}"
-    echo "[+] Successfully built Ansible Execution Environment image: ${TAG}"
-else
-    echo "[*] Dry-run context generator completed. Build context ready at ${BUILD_CONTEXT}."
-fi
+echo "[*] Triggering container build for tag '${TAG}'..."
+ansible-builder build \
+    --filename "${EE_DIR}/execution-environment.yml" \
+    --tag "${TAG}" \
+    --output-dir "${BUILD_CONTEXT}"
 
+echo "[+] Successfully built Ansible Execution Environment image: ${TAG}"
 echo "========================================================================"

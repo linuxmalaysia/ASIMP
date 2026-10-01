@@ -57,7 +57,7 @@ version: 3
 
 images:
   base_image:
-    name: quay.io/ansible/ansible-runner:latest
+    name: quay.io/ansible/ansible-runner@sha256:0d531a89c9d1df52341d087b7a6270d4f24301548e65738805f63901b0f5b9d3
 
 options:
   package_manager_path: /usr/bin/dnf
@@ -138,7 +138,7 @@ spec:
         - name: POSTGRES_USER
           value: gitea
         - name: POSTGRES_PASSWORD
-          value: "SovereignPass2026!"
+          value: "<GENERATE_HIGH_ENTROPY_DB_PASSWORD>"
         - name: POSTGRES_DB
           value: gitea
       volumeMounts:
@@ -162,7 +162,7 @@ spec:
         - name: GITEA__database__USER
           value: gitea
         - name: GITEA__database__PASSWD
-          value: "SovereignPass2026!"
+          value: "<GENERATE_HIGH_ENTROPY_DB_PASSWORD>"
         - name: GITEA__server__PROTOCOL
           value: https
         - name: GITEA__server__DOMAIN
@@ -235,11 +235,15 @@ In air-gapped carrier bastions, run security audits and hardening playbooks usin
 
 ```bash
 # Execute hardening using ansible-runner inside air-gapped EE container
-ansible-runner run /etc/ansible/runner --container-image 10.17.250.28:3000/songketmailsdnbhd-group/asimp-ee:latest
+ansible-runner run /etc/ansible/runner \
+  --process-isolation \
+  --process-isolation-executable podman \
+  --container-image 10.17.250.28:3000/songketmailsdnbhd-group/asimp-ee:latest
 
-# Or using ansible-navigator CLI
+# Or using ansible-navigator CLI with scoped TLS verify pull arguments
 ansible-navigator run playbooks/ubuntu_lts_hardening.yml \
   --eei 10.17.250.28:3000/songketmailsdnbhd-group/asimp-ee:latest \
+  --pull-arguments=--tls-verify=false \
   --mode stdout
 ```
 
