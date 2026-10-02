@@ -229,7 +229,7 @@
             push: true
             push_args:
               dest: "{{ gitea_push_target }}"
-              tls_verify: false
+              tls_verify: true
 
         - name: Display Sovereign Gitea & Ansible EE integration status
           ansible.builtin.debug:

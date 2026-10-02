@@ -214,14 +214,18 @@ ansible-playbook -i inventory playbooks/gitea_podman_ee.yml
 Once Sovereign Gitea is active, publish the Execution Environment image:
 
 ```bash
-# Login to Sovereign Gitea Container Registry over HTTPS
-podman login --tls-verify=false 10.17.250.28:3000 -u dsom-admin
+# Trust Sovereign Gitea CA certificate for this registry endpoint (host:port)
+sudo mkdir -p /etc/containers/certs.d/10.17.250.28:3000
+sudo cp ~/.config/gitea/certs/gitea.crt /etc/containers/certs.d/10.17.250.28:3000/ca.crt
+
+# Login to Sovereign Gitea Container Registry over HTTPS (TLS verification enabled)
+podman login 10.17.250.28:3000 -u dsom-admin
 
 # Tag local EE image for Gitea package registry
 podman tag asimp-ee:latest 10.17.250.28:3000/songketmailsdnbhd-group/asimp-ee:latest
 
-# Push image to air-gapped registry
-podman push --tls-verify=false 10.17.250.28:3000/songketmailsdnbhd-group/asimp-ee:latest
+# Push image to air-gapped registry over verified TLS
+podman push 10.17.250.28:3000/songketmailsdnbhd-group/asimp-ee:latest
 ```
 
 ---
@@ -237,10 +241,9 @@ ansible-runner run /etc/ansible/runner \
   --process-isolation-executable podman \
   --container-image 10.17.250.28:3000/songketmailsdnbhd-group/asimp-ee:latest
 
-# Or using ansible-navigator CLI with scoped TLS verify pull arguments
+# Or using ansible-navigator CLI with trusted CA & verified TLS pull behavior
 ansible-navigator run playbooks/ubuntu_lts_hardening.yml \
   --eei 10.17.250.28:3000/songketmailsdnbhd-group/asimp-ee:latest \
-  --pull-arguments=--tls-verify=false \
   --mode stdout
 ```
 
