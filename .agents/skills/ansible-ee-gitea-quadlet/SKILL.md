@@ -39,9 +39,10 @@ Apply this skill when:
    - Database passwords loaded from Vault or environment variables and serialized via `{{ gitea_db_pass | to_json }}`.
    - User systemd service managed via `ansible.builtin.systemd_service` with `scope: user`.
 
-4. **Air-Gapped Bastion Execution**:
+4. **Air-Gapped Bastion Execution & Registry Security**:
+   - Requires a trusted registry CA, permitting disabled TLS verification (`--pull-arguments=--tls-verify=false`) strictly on isolated air-gapped networks.
+   - Requires the EE container image to be referenced by immutable digest or tag (`10.17.250.28:3000/songketmailsdnbhd-group/asimp-ee@sha256:...`).
    - `ansible-runner` runs with process isolation: `ansible-runner run /etc/ansible/runner --process-isolation --process-isolation-executable podman --container-image ...`.
-   - `ansible-navigator` passes pull arguments for untrusted/self-signed registries: `ansible-navigator run ... --pull-arguments=--tls-verify=false`.
 
 ---
 

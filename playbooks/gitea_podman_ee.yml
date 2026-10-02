@@ -213,7 +213,6 @@
             scope: user
             daemon_reload: true
             state: started
-            enabled: true
           environment:
             XDG_RUNTIME_DIR: "/run/user/{{ resolved_gitea_uid }}"
             DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ resolved_gitea_uid }}/bus"

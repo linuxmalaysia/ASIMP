@@ -43,19 +43,18 @@ fi
 # Ensure output directory for container context exists
 mkdir -p "${BUILD_CONTEXT}"
 
-# Generate Containerfile and build context directory using ansible-builder
+# Generate Containerfile and build context directory using ansible-builder v3 options
 echo "[*] Creating container build context and Containerfile via ansible-builder..."
 ansible-builder create \
-    --filename "${EE_DIR}/execution-environment.yml" \
-    --output-filename Containerfile \
-    --output-dir "${BUILD_CONTEXT}"
+    --file "${EE_DIR}/execution-environment.yml" \
+    --context "${BUILD_CONTEXT}"
 
-# Trigger container image build and tag using ansible-builder
+# Trigger container image build and tag using ansible-builder v3 options
 echo "[*] Triggering container build for tag '${TAG}'..."
 ansible-builder build \
-    --filename "${EE_DIR}/execution-environment.yml" \
+    --file "${EE_DIR}/execution-environment.yml" \
     --tag "${TAG}" \
-    --output-dir "${BUILD_CONTEXT}"
+    --context "${BUILD_CONTEXT}"
 
 echo "[+] Successfully built Ansible Execution Environment image: ${TAG}"
 echo "========================================================================"
