@@ -10,6 +10,7 @@ topics: ["summary", "gitbook", "dsom", "diataxis"]
 # Summary
 
 * [System Overview](README.md)
+* [Installation & Module Guide](../INSTALL.md)
 
 ## Explanation & Architecture
 * [DSOM Governance Framework](explanation/dsom-governance.md)

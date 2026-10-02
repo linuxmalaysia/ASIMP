@@ -74,20 +74,25 @@ The platform executes hardening and compliance in a three-phase pipeline:
 
 ## 📋 Prerequisites & Installation
 
-### 1. Python & Local Tools Setup
-Ensure you have Python 3 installed. It is recommended to create a virtual environment to avoid package conflicts:
+For full details across all modules, refer to the **[Comprehensive Installation Guide (`INSTALL.md`)](INSTALL.md)** or run the automated setup script:
 
 ```bash
-python3 -m venv /tmp/venv
-source /tmp/venv/bin/activate
-pip install -r requirements.txt
+# Automated environment setup with uv and Ansible Galaxy
+./scripts/install_all.sh
 ```
 
-### 2. Install Ansible Galaxy Roles
-Download the required external roles defined in `requirements.yml` (e.g., Dev-Sec SSH, OpenStack hardening, Chrony):
+### Quick Manual Setup (`uv` + `ansible-galaxy`):
 
 ```bash
-ansible-galaxy install -r requirements.yml
+# 1. Create Python virtual environment using uv
+uv venv .venv
+source .venv/bin/activate
+
+# 2. Install Python dependencies
+uv pip install -r requirements.txt
+
+# 3. Install Ansible Galaxy external roles
+ansible-galaxy install -r requirements.yml --ignore-errors
 ```
 
 ---

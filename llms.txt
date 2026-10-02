@@ -24,6 +24,7 @@ ASIMP performs dynamic auditing before and after configurations are modified. It
 - `play-localhost.yml`: Self-hardening of the localhost node.
 
 ## Navigation & Links
+- [Comprehensive Installation Guide](INSTALL.md)
 - [History & Design Philosophy](HISTORY.md)
 - [Changelog](CHANGELOG.md)
 - [Architecture & Workflow Docs](docs/architecture.md)
