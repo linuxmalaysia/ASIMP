@@ -1,6 +1,6 @@
 # Install influxdata.chrony role from the Ansible Galaxy
 - src: influxdata.chrony
-  version: "master"
+  version: "fd59d597769661c8819d07a7db915ab835b952e1"
 
 # Install SSH Hardening
 - src: dev-sec.ssh-hardening
