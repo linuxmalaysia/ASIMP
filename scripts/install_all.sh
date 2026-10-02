@@ -27,8 +27,8 @@ echo "[*] Python 3 detected: $(python3 --version)"
 
 # 2. Check for uv or prompt installation instructions
 if ! command -v uv &>/dev/null; then
-    echo "[*] Python 'uv' installer not found. Installing uv..."
-    curl -LsSf https://astral.sh/uv/install.sh | sh
+    echo "[*] Python 'uv' installer not found. Installing uv via pip..."
+    python3 -m pip install --user uv
     export PATH="${HOME}/.local/bin:${PATH}"
 fi
 
@@ -55,7 +55,7 @@ fi
 # 5. Download Ansible Galaxy roles and collections
 if command -v ansible-galaxy &>/dev/null && [ -f "${REPO_ROOT}/requirements.yml" ]; then
     echo "[*] Installing Ansible Galaxy dependencies from requirements.yml..."
-    ansible-galaxy install -r "${REPO_ROOT}/requirements.yml" --ignore-errors
+    ansible-galaxy install -r "${REPO_ROOT}/requirements.yml"
 fi
 
 echo "========================================================================"
