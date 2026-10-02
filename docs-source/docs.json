@@ -28,6 +28,7 @@
             "pages": [
               "README",
               "SUMMARY",
+              "ansible_ee_gitea",
               "debian_hardening",
               "index",
               "knowledge_portal_testbed_openscap_va_report",
@@ -115,6 +116,7 @@
             "pages": [
               "skills/ai-agent-instructions",
               "skills/ansible-boolean-conditionals",
+              "skills/ansible-ee-gitea-quadlet",
               "skills/ansible-fqcn-idempotency",
               "skills/ansible-galaxy-roles",
               "skills/ansible-testing-linting",

@@ -1,0 +1,62 @@
+---
+# ==============================================================================
+# Verification Playbook for Ansible EE & Sovereign Gitea Documentation
+# ==============================================================================
+# Verifies that docs/ansible_ee_gitea.md is properly registered in index pages,
+# sitemaps, and that playbooks/gitea_podman_ee.yml exists with valid syntax.
+# ==============================================================================
+
+- name: Verify Ansible EE & Sovereign Gitea Documentation and Playbook
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    repo_root: "{{ playbook_dir }}/.."
+    docs_dir: "{{ repo_root }}/docs"
+
+  tasks:
+    - name: Stat docs/ansible_ee_gitea.md
+      ansible.builtin.stat:
+        path: "{{ docs_dir }}/ansible_ee_gitea.md"
+      register: doc_stat
+
+    - name: Assert documentation markdown file exists
+      ansible.builtin.assert:
+        that:
+          - doc_stat.stat.exists
+          - doc_stat.stat.isreg
+
+    - name: Load docs/index.md content
+      ansible.builtin.set_fact:
+        index_content: "{{ lookup('file', docs_dir + '/index.md') }}"
+
+    - name: Assert docs/index.md contains link to ansible_ee_gitea.html
+      ansible.builtin.assert:
+        that:
+          - "'[Ansible EE & Sovereign Gitea Guide](ansible_ee_gitea.html)' in index_content"
+
+    - name: Load root sitemap.txt content
+      ansible.builtin.set_fact:
+        sitemap_txt: "{{ lookup('file', repo_root + '/sitemap.txt') }}"
+
+    - name: Assert sitemap.txt contains ansible_ee_gitea.html
+      ansible.builtin.assert:
+        that:
+          - "'https://linuxmalaysia.github.io/ASIMP/ansible_ee_gitea.html' in sitemap_txt"
+
+    - name: Stat playbooks/gitea_podman_ee.yml
+      ansible.builtin.stat:
+        path: "{{ repo_root }}/playbooks/gitea_podman_ee.yml"
+      register: playbook_stat
+
+    - name: Assert playbooks/gitea_podman_ee.yml exists
+      ansible.builtin.assert:
+        that:
+          - playbook_stat.stat.exists
+          - playbook_stat.stat.isreg
+
+    - name: Perform syntax-check on playbooks/gitea_podman_ee.yml
+      ansible.builtin.command:
+        cmd: "{{ ansible_playbook_python | default('python3') }} -m ansible.cli.playbook --syntax-check {{ repo_root }}/playbooks/gitea_podman_ee.yml"
+      changed_when: false

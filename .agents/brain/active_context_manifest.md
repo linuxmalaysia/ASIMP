@@ -3,18 +3,22 @@ okf_version: "0.2"
 trust_level: "verified"
 type: "manifest"
 title: "Active Engineering Context Manifest"
-timestamp: "2026-09-20T08:00:00Z"
+timestamp: "2026-10-01T03:00:00Z"
 topics: ["asimp", "dsom", "brain", "manifest"]
 ---
 
 # Active Engineering Context Manifest
 
-- `docs/knowledge_portal_testbed_openscap_va_report.md` — AlmaLinux 10 OpenSCAP OVAL vs VA Scan Report & Technical Manual
-- `docs/assets/images/*.svg` — 20 Knowledge Sharing Portal topology diagrams
-- `scripts/add_okf_frontmatter.py` — OKF v0.2 Frontmatter Patcher
-- `tools/build_mintlify_mdx.py` — Mintlify MDX Compiler
-- `tests/test_add_okf_frontmatter.py` — Frontmatter Patcher Unit Tests
-- `tests/test_ansible_fqcn_doc.yml` — FQCN Documentation Regression Test
+- `execution-environment/execution-environment.yml` — Ansible Builder v3 Schema Definition
+- `execution-environment/requirements.yml` — Galaxy Collections and Roles Dependencies
+- `execution-environment/requirements.txt` — Python Builder Dependencies
+- `execution-environment/bindep.txt` — System RPM Dependencies
+- `scripts/build_ee.sh` — Execution Environment Build Utility
+- `playbooks/gitea_podman_ee.yml` — Sovereign Gitea Rootless Podman Quadlet Deployment Playbook
+- `docs/ansible_ee_gitea.md` — Technical Guide for Ansible EE & Sovereign Gitea Integration
+- `.agents/skills/ansible-ee-gitea-quadlet/SKILL.md` — AI Agent Skill for Ansible EE & Gitea Quadlet
+- `tests/test_ee_builder_config.py` — Python Unit Tests for Execution Environment
+- `tests/test_ansible_ee_gitea_doc.yml` — Playbook & Documentation Verification Test
 - `.agents/brain/*` — DSOM Spatial Memory Brain
 
 ---

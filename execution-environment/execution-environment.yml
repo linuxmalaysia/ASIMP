@@ -1,0 +1,31 @@
+---
+version: 3
+
+images:
+  base_image:
+    name: quay.io/ansible/ansible-runner@sha256:0d531a89c9d1df52341d087b7a6270d4f24301548e65738805f63901b0f5b9d3
+
+options:
+  package_manager_path: /usr/bin/dnf
+
+additional_build_steps:
+  prepend_base:
+    - RUN pip install --no-cache-dir uv
+  prepend_builder:
+    - RUN pip install --no-cache-dir uv
+  append_builder:
+    - RUN uv pip install --system --no-cache-dir ansible-runner jmespath cryptography netaddr pyyaml
+  append_final:
+    - ENV ANSIBLE_NAVIGATOR_EXECUTION_ENVIRONMENT_IMAGE=asimp-ee:latest
+    - LABEL org.opencontainers.image.title="ASIMP Ansible Execution Environment"
+    - LABEL org.opencontainers.image.description="Standardized Ansible Execution Environment powered by ansible-builder and Python uv for air-gapped carrier and enterprise bastions."
+    - LABEL org.opencontainers.image.vendor="ASIMP / DSOM Protocol"
+
+dependencies:
+  ansible_core:
+    package_pip: ansible-core>=2.15.0
+  ansible_runner:
+    package_pip: ansible-runner>=2.3.0
+  galaxy: requirements.yml
+  python: requirements.txt
+  system: bindep.txt
