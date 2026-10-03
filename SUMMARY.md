@@ -10,6 +10,7 @@ topics: ["asimp", "summary", "documentation", "index"]
 # Summary
 
 * [ASIMP Overview](README.md)
+* [Installation & Setup Guide](INSTALL.md)
 * [Project History & Evolution](HISTORY.md)
 * [Changelog](CHANGELOG.md)
 

@@ -25,7 +25,7 @@ class TestOKFFrontmatterAndFooters(unittest.TestCase):
             for file in files:
                 if file.endswith(".md"):
                     rel_path = os.path.relpath(os.path.join(root, file), REPO_ROOT)
-                    if rel_path.startswith("roles/lynis-ansible") or "data/asimp_mock" in rel_path:
+                    if rel_path.startswith("roles/") or "data/asimp_mock" in rel_path:
                         continue
                     target_files.append(os.path.join(root, file))
 

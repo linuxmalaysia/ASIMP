@@ -9,6 +9,12 @@ topics: ["asimp", "dsom", "brain", "task"]
 
 # ASIMP Active Task Brain — EOD Status
 
+- [x] Create comprehensive installation guide `INSTALL.md` covering all ASIMP modules using Python `uv`, Ansible playbooks, and bash scripting.
+- [x] Implement automated setup script `scripts/install_all.sh` providing virtual environment creation and dependency bootstrapping without unverified remote execution.
+- [x] Pin `influxdata.chrony` version in `requirements.yml` to commit SHA `fd59d597769661c8819d07a7db915ab835b952e1` for reproducible installs.
+- [x] Add unit test suite `tests/test_install_script_and_doc.py` validating `INSTALL.md` and `scripts/install_all.sh`.
+- [x] Update project documentation indexes (`README.md`, `SUMMARY.md`, `docs/SUMMARY.md`, `llms.txt`, `docs/index.md`) and compile Mintlify MDX documentation into `docs-source/`.
+- [x] Perform EOD DSOM Palace Sync and state update across `.agents/brain/`.
 - [x] Standardize Ansible Execution Environment (EE) configuration using `ansible-builder` v3 schema with Python `uv` acceleration (`execution-environment/execution-environment.yml`, `requirements.yml`, `requirements.txt`, `bindep.txt`).
 - [x] Create executable build utility `scripts/build_ee.sh` using Builder v3 CLI flags (`--file` and `--context`) with complete headers, usage instructions, and PEP-257/line-by-line comments.
 - [x] Create playbook `playbooks/gitea_podman_ee.yml` deploying Sovereign Gitea on Rootless Podman 5+ Quadlets (`gitea-stack.kube` & `gitea-stack.yaml`), resolving UID/home via `getent`, using `become_user: "{{ gitea_user }}"`, assigning `gitea.key` to container namespace `1000:1000` via `podman unshare chown`, managing service via user-scoped `ansible.builtin.systemd_service`, and pushing EE images to Gitea registry via `containers.podman.podman_image`.
