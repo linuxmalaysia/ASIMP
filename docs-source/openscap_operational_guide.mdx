@@ -369,18 +369,29 @@ Declarative playbook: `audit_oval_fleet.yml`.
           rhel-8.oval.xml
           {%- elif ansible_os_family == 'RedHat' and ansible_distribution_major_version == '9' -%}
           rhel-9.oval.xml
+          {%- elif ansible_os_family == 'RedHat' and ansible_distribution_major_version == '10' -%}
+          rhel-10.oval.xml
           {%- elif ansible_distribution | lower == 'ubuntu' -%}
           com.ubuntu.{{ ansible_distribution_release }}.usn.oval.xml
+          {%- elif ansible_distribution | lower == 'debian' and ansible_distribution_major_version == '11' -%}
+          oval-definitions-bullseye.xml
+          {%- elif ansible_distribution | lower == 'debian' and ansible_distribution_major_version == '12' -%}
+          oval-definitions-bookworm.xml
           {%- else -%}
-          rhel-8.oval.xml
+          unsupported
           {%- endif -%}
 
-    - name: "1.2 Set target OVAL stream path"
+    - name: "1.2 Fail if OVAL definition feed is unsupported for target host OS"
+      ansible.builtin.fail:
+        msg: "OVAL feed unavailable for {{ ansible_distribution }} {{ ansible_distribution_version }}"
+      when: host_oval_filename == 'unsupported'
+
+    - name: "1.3 Set target OVAL stream path"
       ansible.builtin.set_fact:
         controller_oval_stream: "/home/operator/openscap_oval/{{ host_oval_filename }}"
         target_oval_stream: "{{ target_staging_dir }}/{{ host_oval_filename }}"
 
-    - name: "1.3 Verify openscap-scanner is installed"
+    - name: "1.4 Verify openscap-scanner is installed"
       ansible.builtin.command:
         cmd: "which oscap"
       register: oscap_check
@@ -457,8 +468,8 @@ Declarative playbook: `audit_oval_fleet.yml`.
 <div class="warning-title">⚠️ WARNING: AIR-GAPPED ERRATA APPLICATION SAFEGUARDS</div>
 <p>When applying security errata in air-gapped production environments:</p>
 <ul>
-  <li><strong>Assert Zero Removals:</strong> Always specify <code>--setopt=clean_requirements_on_remove=0</code> for DNF or omit <code>--auto-remove</code> for APT. Strictly avoid <code>--allowerasing</code>.</li>
-  <li><strong>Mandatory Dry-Run:</strong> Always execute dry-runs (<code>dnf upgrade --setopt=tsflags=test ...</code> or <code>apt-get upgrade --dry-run</code>) first.</li>
+  <li><strong>Dependency Cleanup Control:</strong> Always specify <code>--setopt=clean_requirements_on_remove=0</code> for DNF to prevent automatic removal of unneeded dependencies during operations, or omit <code>--auto-remove</code> for APT. Strictly avoid <code>--allowerasing</code>. The explicit <code>Removing:</code> dry-run assertion in the playbook serves as the primary safeguard against accidental package removals.</li>
+  <li><strong>Mandatory Dry-Run:</strong> Always execute dry-runs (<code>dnf upgrade --setopt=tsflags=test ...</code> or <code>apt-get upgrade --dry-run</code>) first to verify transaction safety.</li>
   <li><strong>Rolling Serial Execution:</strong> Update nodes serially (<code>serial: 1</code> in Ansible) to preserve cluster high availability.</li>
 </ul>
 </div>
@@ -496,12 +507,16 @@ dnf download --resolve --destdir=/tmp/errata_harvest/packages $(cat /tmp/target_
 ```bash
 mkdir -p /tmp/errata_harvest_deb/packages && cd /tmp/errata_harvest_deb
 
-# Extract non-compliant package names from Debian/Ubuntu OVAL results
-grep -oP '(?<=<dpkg_test_name>)[^<]+' /var/tmp/openscap_oval/oval-results-*.xml | sort -u > /tmp/target_deb_pkgs.txt
+# Extract non-compliant package names from Debian/Ubuntu OVAL dpkginfo_test result data
+grep -oP '(?<=<dpkginfo_test_name>)[^<]+' /var/tmp/openscap_oval/oval-results-*.xml | sort -u > /tmp/target_deb_pkgs.txt
 
-# Download packages and dependencies matching exact findings
-apt-get update && apt-get install --download-only -y $(cat /tmp/target_deb_pkgs.txt)
-cp /var/cache/apt/archives/*.deb /tmp/errata_harvest_deb/packages/
+# Validate that the extracted package list is non-empty before downloading
+if [ -s /tmp/target_deb_pkgs.txt ]; then
+  apt-get update && apt-get install --download-only -y $(cat /tmp/target_deb_pkgs.txt)
+  cp /var/cache/apt/archives/*.deb /tmp/errata_harvest_deb/packages/
+else
+  echo "No OVAL non-compliant DEB packages detected for harvest."
+fi
 ```
 
 ---
@@ -722,14 +737,20 @@ Declarative playbook: `audit_xccdf_security_guide.yml`.
     - name: "1.0 Dynamically select SCAP DataStream and Profile per host OS"
       ansible.builtin.set_fact:
         scap_datastream: >-
-          {%- if ansible_distribution | lower in ['rocky', 'almalinux', 'centos', 'redhat'] -%}
+          {%- if ansible_distribution | lower in ['rocky', 'almalinux', 'centos', 'redhat', 'oraclelinux', 'ol'] -%}
           /usr/share/xml/scap/ssg/content/ssg-rhel{{ ansible_distribution_major_version }}-ds.xml
-          {%- elif ansible_distribution | lower == 'ubuntu' -%}
+          {%- elif ansible_distribution | lower in ['opensuse', 'sles', 'sled', 'suse'] -%}
+          /usr/share/xml/scap/ssg/content/ssg-sle15-ds.xml
+          {%- elif ansible_distribution | lower == 'ubuntu' and ansible_distribution_version in ['22.04', '24.04'] -%}
           /usr/share/xml/scap/ssg/content/ssg-ubuntu{{ ansible_distribution_version | replace('.', '') }}-ds.xml
-          {%- elif ansible_distribution | lower == 'debian' -%}
+          {%- elif ansible_distribution | lower == 'ubuntu' and ansible_distribution_version == '26.04' -%}
+          /usr/share/xml/scap/ssg/content/ssg-ubuntu2404-ds.xml
+          {%- elif ansible_distribution | lower == 'debian' and ansible_distribution_major_version in ['11', '12'] -%}
           /usr/share/xml/scap/ssg/content/ssg-debian{{ ansible_distribution_major_version }}-ds.xml
+          {%- elif ansible_distribution | lower == 'debian' and ansible_distribution_major_version == '13' -%}
+          /usr/share/xml/scap/ssg/content/ssg-debian12-ds.xml
           {%- else -%}
-          /usr/share/xml/scap/ssg/content/ssg-rhel8-ds.xml
+          unsupported
           {%- endif -%}
         scap_profile: >-
           {%- if ansible_distribution | lower == 'ubuntu' -%}
@@ -739,6 +760,11 @@ Declarative playbook: `audit_xccdf_security_guide.yml`.
           {%- else -%}
           xccdf_org.ssgproject.content_profile_cis
           {%- endif -%}
+
+    - name: "1.0b Fail if SCAP DataStream is unsupported for target host OS"
+      ansible.builtin.fail:
+        msg: "SCAP DataStream unsupported for {{ ansible_distribution }} {{ ansible_distribution_version }}"
+      when: scap_datastream == 'unsupported'
 
     - name: "1.1 Create target and controller directories"
       ansible.builtin.file:
@@ -901,12 +927,35 @@ Playbook: `remediate_safeguarded_security_guide.yml`.
   become: true
 
   vars:
-    scap_datastream: "/usr/share/xml/scap/ssg/content/ssg-rhel8-ds.xml"
     tailoring_file_src: "files/tailoring.xml"
     tailoring_file_dest: "/etc/security/scap-tailoring.xml"
     safe_profile: "xccdf_org.ssgproject.content_profile_cis_custom_safe"
 
   tasks:
+    - name: "1.0 Dynamically select SCAP DataStream per host OS"
+      ansible.builtin.set_fact:
+        scap_datastream: >-
+          {%- if ansible_distribution | lower in ['rocky', 'almalinux', 'centos', 'redhat', 'oraclelinux', 'ol'] -%}
+          /usr/share/xml/scap/ssg/content/ssg-rhel{{ ansible_distribution_major_version }}-ds.xml
+          {%- elif ansible_distribution | lower in ['opensuse', 'sles', 'sled', 'suse'] -%}
+          /usr/share/xml/scap/ssg/content/ssg-sle15-ds.xml
+          {%- elif ansible_distribution | lower == 'ubuntu' and ansible_distribution_version in ['22.04', '24.04'] -%}
+          /usr/share/xml/scap/ssg/content/ssg-ubuntu{{ ansible_distribution_version | replace('.', '') }}-ds.xml
+          {%- elif ansible_distribution | lower == 'ubuntu' and ansible_distribution_version == '26.04' -%}
+          /usr/share/xml/scap/ssg/content/ssg-ubuntu2404-ds.xml
+          {%- elif ansible_distribution | lower == 'debian' and ansible_distribution_major_version in ['11', '12'] -%}
+          /usr/share/xml/scap/ssg/content/ssg-debian{{ ansible_distribution_major_version }}-ds.xml
+          {%- elif ansible_distribution | lower == 'debian' and ansible_distribution_major_version == '13' -%}
+          /usr/share/xml/scap/ssg/content/ssg-debian12-ds.xml
+          {%- else -%}
+          unsupported
+          {%- endif -%}
+
+    - name: "1.0b Fail if SCAP DataStream is unsupported for target host OS"
+      ansible.builtin.fail:
+        msg: "SCAP DataStream unsupported for {{ ansible_distribution }} {{ ansible_distribution_version }}"
+      when: scap_datastream == 'unsupported'
+
     # -------------------------------------------------------------------------
     # 1. PRE-FLIGHT SUBSYSTEM HEALTH CHECK (ENFORCING ASSERTIONS)
     # -------------------------------------------------------------------------
