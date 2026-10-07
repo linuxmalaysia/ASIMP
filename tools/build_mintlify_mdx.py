@@ -134,7 +134,9 @@ def convert_md_to_mdx(fm: Dict[str, Any], body: str, fallback_title: str) -> str
         f"---"
     )
 
-    mdx_body = body
+    # Strip Liquid raw blocks ({% raw %} and {% endraw %}) for Mintlify MDX compatibility
+    mdx_body = re.sub(r"\{%\s*raw\s*%\}", "", body)
+    mdx_body = re.sub(r"\{%\s*endraw\s*%\}", "", mdx_body)
 
     return f"{mdx_frontmatter}\n\n{mdx_body}\n"
 

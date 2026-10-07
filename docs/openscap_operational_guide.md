@@ -125,8 +125,11 @@ OpenSCAP resolves Security Content Automation Protocol DataStreams from the `sca
 | **RHEL Family** | RHEL 9 / Alma 9 / Rocky 9 / OL 9 | `/usr/share/xml/scap/ssg/content/ssg-rhel9-ds.xml` | `xccdf_org.ssgproject.content_profile_cis` |
 | **RHEL Family** | RHEL 10 / Alma 10 / Rocky 10 / OL 10 | `/usr/share/xml/scap/ssg/content/ssg-rhel10-ds.xml` | `xccdf_org.ssgproject.content_profile_cis` |
 | **Ubuntu LTS** | Ubuntu 22.04 LTS | `ssg-ubuntu2204-ds.xml` (`ComplianceAsCode/content`) | `xccdf_org.ssgproject.content_profile_cis_level2_server` |
-| **Ubuntu LTS** | Ubuntu 24.04 LTS / 26.04 LTS | `ssg-ubuntu2404-ds.xml` (`ComplianceAsCode/content`) | `xccdf_org.ssgproject.content_profile_cis_level2_server` |
-| **Debian** | Debian 11 / 12 / 13 | `/usr/share/xml/scap/ssg/content/ssg-debian12-ds.xml` | `xccdf_org.ssgproject.content_profile_standard` |
+| **Ubuntu LTS** | Ubuntu 24.04 LTS | `ssg-ubuntu2404-ds.xml` (`ComplianceAsCode/content`) | `xccdf_org.ssgproject.content_profile_cis_level2_server` |
+| **Ubuntu LTS** | Ubuntu 26.04 LTS | *Coverage unavailable upstream in SSG* (Use 24.04 datastream fallback) | `xccdf_org.ssgproject.content_profile_cis_level2_server` |
+| **Debian** | Debian 11 (Bullseye) | `/usr/share/xml/scap/ssg/content/ssg-debian11-ds.xml` | `xccdf_org.ssgproject.content_profile_standard` |
+| **Debian** | Debian 12 (Bookworm) | `/usr/share/xml/scap/ssg/content/ssg-debian12-ds.xml` | `xccdf_org.ssgproject.content_profile_standard` |
+| **Debian** | Debian 13 (Trixie) | *Coverage unavailable upstream in SSG* (Use Debian 12 datastream fallback) | `xccdf_org.ssgproject.content_profile_standard` |
 | **SUSE** | openSUSE Leap 15 / SLES 15 | `/usr/share/xml/scap/ssg/content/ssg-sle15-ds.xml` | `xccdf_org.ssgproject.content_profile_cis` |
 
 ---
@@ -196,13 +199,17 @@ Once the tarball is transferred to the air-gapped target host:
 sudo mkdir -p /var/tmp/openscap_offline_tools
 sudo tar -xzvf openscap-tools-rhel-airgap.tar.gz -C /var/tmp/openscap_offline_tools/
 
-# Configure local repository
+# Import vendor/local trusted GPG keys before repository setup
+sudo rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
+
+# Configure local repository with signature verification enabled
 sudo tee /etc/yum.repos.d/openscap-local.repo << 'EOF'
 [openscap-local]
 name=Local OpenSCAP Tools Offline Repository
 baseurl=file:///var/tmp/openscap_offline_tools/packages
 enabled=1
-gpgcheck=0
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
 priority=1
 EOF
 
@@ -253,7 +260,8 @@ The following playbook (`install_openscap_airgap_fleet.yml`) distributes and ins
           name=Local OpenSCAP Tools Offline Repository
           baseurl=file://{{ target_tools_dir }}/packages
           enabled=1
-          gpgcheck=0
+          gpgcheck=1
+          gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
         mode: "0644"
       when: ansible_os_family == 'RedHat'
 
@@ -285,10 +293,12 @@ The following playbook (`install_openscap_airgap_fleet.yml`) distributes and ins
         cmd: "oscap --version"
       register: oscap_ver
       changed_when: false
+      when: ansible_os_family == 'RedHat'
 
     - name: "0.7 Display installed OpenSCAP version"
       ansible.builtin.debug:
         msg: "Host {{ inventory_hostname }}: {{ oscap_ver.stdout_lines[0] }}"
+      when: ansible_os_family == 'RedHat'
 ```
 {% endraw %}
 
@@ -339,10 +349,11 @@ sudo oscap oval eval \
   ~/openscap_oval/rhel-8.oval.xml
 ```
 
-#### Understanding OpenSCAP CLI Exit Codes
-- **Return Code `0` (`rc=0`):** All evaluated OVAL definitions passed (0 unpatched vulnerabilities).
-- **Return Code `2` (`rc=2`):** Evaluation finished successfully, but non-compliant / vulnerable definitions were found (expected audit state).
-- **Return Code `1` (`rc=1`):** A genuine runtime error occurred (e.g. malformed XML or missing permissions).
+#### Understanding OpenSCAP OVAL CLI Exit Codes
+- **Return Code `0` (`rc=0`):** Evaluation completed successfully. Note: `oscap oval eval` returns exit code `0` regardless of whether unpatched vulnerabilities or non-compliant OVAL definitions are found.
+- **Return Code `1` (`rc=1`):** A genuine runtime error occurred (e.g. malformed XML, missing file, or permission denied).
+
+> **Critical Audit Invariant:** Unlike XCCDF scans (which return `rc=2` on rule failures), `oscap oval eval` returns `0` upon successful evaluation completion even when unpatched vulnerabilities exist. Administrators must inspect the generated XML or HTML report results directly to extract vulnerability findings rather than relying on the process exit code.
 
 ---
 
@@ -359,22 +370,38 @@ Declarative playbook: `audit_oval_fleet.yml`.
   become: false
 
   vars:
-    controller_oval_stream: "/home/operator/openscap_oval/rhel-8.oval.xml"
     target_staging_dir: "/var/tmp/openscap_oval"
-    target_oval_stream: "/var/tmp/openscap_oval/rhel-8.oval.xml"
     target_report_html: "/var/tmp/openscap_oval/oval-report-{{ inventory_hostname }}.html"
     target_results_xml: "/var/tmp/openscap_oval/oval-results-{{ inventory_hostname }}.xml"
     controller_harvest_dir: "/home/operator/audit-reports/oval/{{ inventory_hostname }}"
 
   tasks:
-    - name: "1.1 Verify openscap-scanner is installed"
+    - name: "1.1 Determine host-specific OVAL definition feed"
+      ansible.builtin.set_fact:
+        host_oval_filename: >-
+          {%- if ansible_os_family == 'RedHat' and ansible_distribution_major_version == '8' -%}
+          rhel-8.oval.xml
+          {%- elif ansible_os_family == 'RedHat' and ansible_distribution_major_version == '9' -%}
+          rhel-9.oval.xml
+          {%- elif ansible_distribution | lower == 'ubuntu' -%}
+          com.ubuntu.{{ ansible_distribution_release }}.usn.oval.xml
+          {%- else -%}
+          rhel-8.oval.xml
+          {%- endif -%}
+
+    - name: "1.2 Set target OVAL stream path"
+      ansible.builtin.set_fact:
+        controller_oval_stream: "/home/operator/openscap_oval/{{ host_oval_filename }}"
+        target_oval_stream: "{{ target_staging_dir }}/{{ host_oval_filename }}"
+
+    - name: "1.3 Verify openscap-scanner is installed"
       ansible.builtin.command:
         cmd: "which oscap"
       register: oscap_check
       changed_when: false
       failed_when: oscap_check.rc != 0
 
-    - name: "1.2 Create staging and harvest directories"
+    - name: "1.4 Create staging and harvest directories"
       ansible.builtin.file:
         path: "{{ item }}"
         state: directory
@@ -382,14 +409,14 @@ Declarative playbook: `audit_oval_fleet.yml`.
       loop:
         - "{{ target_staging_dir }}"
 
-    - name: "1.3 Create local controller harvest directory"
+    - name: "1.5 Create local controller harvest directory"
       ansible.builtin.file:
         path: "{{ controller_harvest_dir }}"
         state: directory
         mode: "0755"
       delegate_to: localhost
 
-    - name: "2.1 Distribute OVAL stream to targets"
+    - name: "2.1 Distribute target OS-specific OVAL stream to target host"
       ansible.builtin.copy:
         src: "{{ controller_oval_stream }}"
         dest: "{{ target_oval_stream }}"
@@ -462,19 +489,32 @@ head -n 15 /tmp/flagged_errata.txt
 
 ---
 
-### Step 2: Harvesting RPM/DEB Errata Packages on an Online Staging Node
+### Step 2: Harvesting Finding-Driven RPM/DEB Errata Packages on an Online Staging Node
 
-On an internet-connected staging node:
+Rather than relying on static, hardcoded package lists, harvesting must resolve the exact package dependencies associated with the OVAL evaluation audit findings:
+
+#### Finding-Driven Harvest Procedure for RPM / Enterprise Linux:
 ```bash
-# RPM / Enterprise Linux
 mkdir -p /tmp/errata_harvest/packages && cd /tmp/errata_harvest
-dnf download --resolve --destdir=/tmp/errata_harvest/packages \
-  openssl openssl-libs glibc sudo kernel kernel-core kernel-modules kernel-modules-extra libxml2 curl
 
-# DEB / Ubuntu / Debian
+# 1. Option A: Download packages directly by flagged Red Hat Security Advisory (RHSA) IDs
+ADVISORY_LIST=$(tr '\n' ',' < /tmp/flagged_rhsa.txt | sed 's/,$//')
+dnf download --resolve --advisories="$ADVISORY_LIST" --destdir=/tmp/errata_harvest/packages
+
+# 2. Option B: Resolve affected package names directly from OVAL XML result tags
+grep -oP '(?<=<affected_pkg>)[^<]+' /var/tmp/openscap_oval/oval-results-*.xml | sort -u > /tmp/target_pkgs.txt
+dnf download --resolve --destdir=/tmp/errata_harvest/packages $(cat /tmp/target_pkgs.txt)
+```
+
+#### Finding-Driven Harvest Procedure for DEB / Ubuntu / Debian:
+```bash
 mkdir -p /tmp/errata_harvest_deb/packages && cd /tmp/errata_harvest_deb
-apt-get update && apt-get install --download-only -y \
-  openssl libssl3 glibc-source sudo linux-image-generic libxml2 curl
+
+# Extract non-compliant package names from Debian/Ubuntu OVAL results
+grep -oP '(?<=<dpkg_test_name>)[^<]+' /var/tmp/openscap_oval/oval-results-*.xml | sort -u > /tmp/target_deb_pkgs.txt
+
+# Download packages and dependencies matching exact findings
+apt-get update && apt-get install --download-only -y $(cat /tmp/target_deb_pkgs.txt)
 cp /var/cache/apt/archives/*.deb /tmp/errata_harvest_deb/packages/
 ```
 
@@ -502,12 +542,16 @@ tar -czvf /tmp/internal-security-errata-deb.tar.gz -C /tmp/errata_harvest_deb pa
 sudo mkdir -p /var/tmp/offline-repos
 sudo tar -xzvf /tmp/internal-security-errata-rhel.tar.gz -C /var/tmp/offline-repos/
 
+# Ensure trusted GPG keys are imported
+sudo rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
+
 sudo tee /etc/yum.repos.d/internal-security-errata.repo << 'EOF'
 [internal-security-errata]
 name=Internal Air-Gapped Security Errata
 baseurl=file:///var/tmp/offline-repos/packages
 enabled=1
-gpgcheck=0
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
 priority=1
 EOF
 ```
@@ -576,7 +620,8 @@ Declarative playbook: `remediate_oval_fleet.yml`.
           name=Internal Air-Gapped Security Errata
           baseurl=file://{{ target_repo_dir }}/packages
           enabled=1
-          gpgcheck=0
+          gpgcheck=1
+          gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
         mode: "0644"
       when: ansible_os_family == 'RedHat'
 
@@ -609,7 +654,6 @@ Declarative playbook: `remediate_oval_fleet.yml`.
         enablerepo: "internal-security-errata"
         disable_plugin: "subscription-manager"
         nobest: true
-        clean_requirements_on_remove: false
       when: ansible_os_family == 'RedHat'
 
     - name: "4.1 Post-remediation OpenSCAP OVAL evaluation"
@@ -684,13 +728,32 @@ Declarative playbook: `audit_xccdf_security_guide.yml`.
   become: false
 
   vars:
-    scap_datastream: "/usr/share/xml/scap/ssg/content/ssg-rhel8-ds.xml"
-    scap_profile: "xccdf_org.ssgproject.content_profile_cis"
     target_report_html: "/var/tmp/openscap_xccdf/xccdf-report-{{ inventory_hostname }}.html"
     target_results_xml: "/var/tmp/openscap_xccdf/xccdf-results-{{ inventory_hostname }}.xml"
     controller_harvest_dir: "/home/operator/audit-reports/xccdf/{{ inventory_hostname }}"
 
   tasks:
+    - name: "1.0 Dynamically select SCAP DataStream and Profile per host OS"
+      ansible.builtin.set_fact:
+        scap_datastream: >-
+          {%- if ansible_distribution | lower in ['rocky', 'almalinux', 'centos', 'redhat'] -%}
+          /usr/share/xml/scap/ssg/content/ssg-rhel{{ ansible_distribution_major_version }}-ds.xml
+          {%- elif ansible_distribution | lower == 'ubuntu' -%}
+          /usr/share/xml/scap/ssg/content/ssg-ubuntu{{ ansible_distribution_version | replace('.', '') }}-ds.xml
+          {%- elif ansible_distribution | lower == 'debian' -%}
+          /usr/share/xml/scap/ssg/content/ssg-debian{{ ansible_distribution_major_version }}-ds.xml
+          {%- else -%}
+          /usr/share/xml/scap/ssg/content/ssg-rhel8-ds.xml
+          {%- endif -%}
+        scap_profile: >-
+          {%- if ansible_distribution | lower == 'ubuntu' -%}
+          xccdf_org.ssgproject.content_profile_cis_level2_server
+          {%- elif ansible_distribution | lower == 'debian' -%}
+          xccdf_org.ssgproject.content_profile_standard
+          {%- else -%}
+          xccdf_org.ssgproject.content_profile_cis
+          {%- endif -%}
+
     - name: "1.1 Create target and controller directories"
       ansible.builtin.file:
         path: "/var/tmp/openscap_xccdf"
@@ -859,22 +922,22 @@ Playbook: `remediate_safeguarded_security_guide.yml`.
 
   tasks:
     # -------------------------------------------------------------------------
-    # 1. PRE-FLIGHT SUBSYSTEM HEALTH CHECK
+    # 1. PRE-FLIGHT SUBSYSTEM HEALTH CHECK (ENFORCING ASSERTIONS)
     # -------------------------------------------------------------------------
-    - name: "1.1 Check message engine daemons if running on core node"
+    - name: "1.1 Assert core message engine daemon is running prior to remediation"
       ansible.builtin.command:
         cmd: "pgrep -a dispatchd"
       register: msg_proc
       changed_when: false
-      failed_when: false
+      failed_when: msg_proc.rc != 0
       when: "'core-msg' in inventory_hostname"
 
-    - name: "1.2 Check containers if running on Microservices host"
+    - name: "1.2 Assert container manager is active prior to remediation"
       ansible.builtin.command:
         cmd: "podman ps -q"
       register: container_proc
       changed_when: false
-      failed_when: false
+      failed_when: container_proc.rc != 0
       when: "'svc-container' in inventory_hostname"
 
     # -------------------------------------------------------------------------
@@ -952,7 +1015,7 @@ Playbook: `remediate_safeguarded_security_guide.yml`.
 | :--- | :--- | :---: |
 | **Inspect SCAP DataStream** | `oscap info <datastream.xml>` | `0` = OK |
 | **Inspect OVAL Definitions** | `oscap info <oval.xml>` | `0` = OK |
-| **Run OVAL Scan (Part A1)** | `oscap oval eval --results res.xml --report rep.html <oval.xml>` | `0` = Clean, `2` = Vuln |
+| **Run OVAL Scan (Part A1)** | `oscap oval eval --results res.xml --report rep.html <oval.xml>` | `0` = Completed (Inspect XML/HTML), `1` = Error |
 | **Run XCCDF Scan (Part B1)** | `oscap xccdf eval --profile <prof> --results res.xml --report rep.html <ds.xml>` | `0` = Pass, `2` = Fail |
 | **Generate Fix Script (Bash)** | `oscap xccdf generate fix --profile <prof> --fix-type bash <ds.xml> > fix.sh` | `0` = OK |
 | **Generate Fix (Ansible)** | `oscap xccdf generate fix --profile <prof> --fix-type ansible <ds.xml> > fix.yml` | `0` = OK |
