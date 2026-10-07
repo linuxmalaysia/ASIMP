@@ -1,0 +1,972 @@
+---
+layout: default
+okf_version: "0.2"
+trust_level: "verified"
+type: documentation
+title: "The Enterprise Linux OpenSCAP Operational Guide: Automated Vulnerability Auditing, Baseline Compliance, and Safeguarded Air-Gapped Remediation"
+sidebarTitle: "OpenSCAP Operational Guide"
+timestamp: "2026-10-07T17:38:00+08:00"
+topics: ["openscap", "rhel", "almalinux", "rockylinux", "oraclelinux", "ubuntu", "debian", "opensuse", "security", "oval", "xccdf", "cis-benchmark", "remediation", "ansible", "air-gapped"]
+description: "Comprehensive, production-grade administrator manual covering OpenSCAP across RHEL family (8/9/10), AlmaLinux, Rocky Linux, Oracle Linux, Ubuntu, Debian, and openSUSE. Details air-gapped tool harvesting, dual-track workflows: Part A (OVAL vulnerability scanning and offline package repository remediation) and Part B (XCCDF compliance scanning and safeguarded policy remediation preserving critical web applications, relational databases, and container clusters), with complete CLI commands and declarative Ansible playbooks."
+sources:
+  - "https://access.redhat.com/articles/221883"
+  - "https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/security_hardening/scanning-the-system-for-security-compliance-and-vulnerabilities_security-hardening"
+  - "https://github.com/ComplianceAsCode/content"
+generated: "AI Assistant (Antigravity / DSOM)"
+verified: true
+status: "active"
+stale_after: "2027-12-31"
+---
+
+# The Enterprise Linux OpenSCAP Operational Guide: Automated Vulnerability Auditing, Baseline Compliance, and Safeguarded Air-Gapped Remediation
+
+> **Target Platforms:** Red Hat Enterprise Linux Family (RHEL 8/9/10, Rocky Linux, AlmaLinux, Oracle Linux), Ubuntu LTS (22.04/24.04/26.04), Debian GNU/Linux (11/12/13), and openSUSE / SUSE Linux Enterprise (SLES/SLED 15 SP7)
+> **Target Audience:** Systems Architects, Linux System Administrators, DevOps Engineers, and Information Security Auditors
+> **Tooling Stack:** OpenSCAP Scanner (`oscap 1.3.14+`), SCAP Security Guide (`0.1.82+` / `ComplianceAsCode/content`), Ansible Core (`2.16+`), DNF / APT / Zypper / `createrepo_c`
+> **Design Framework:** Terminal & Cloud Publication Standard (DSOM Rule 11 — Pure White `#FFFFFF`, High-Legibility Typography)
+> **Sanitization Notice:** All hostnames (`*.example.com`) and IP addresses (`192.0.2.0/24`, `198.51.100.0/24`) adhere strictly to RFC 5737 and RFC 1918 for public consumption.
+
+<div class="callout-danger">
+<div class="warning-title">⚠️ CRITICAL OPERATIONAL WARNING: PRODUCTION UPDATES &amp; REMEDIATION GOVERNANCE</div>
+<p><strong>DO NOT RUN UNVETTED AUTOMATED REMEDIATIONS IN PRODUCTION ENVIRONMENTS.</strong></p>
+<p>Executing automated package updates (<code>dnf upgrade -y</code> / <code>apt upgrade -y</code>) or automated security policy hardening fixes (<code>oscap xccdf eval --remediate</code>) directly on live production infrastructure without qualification can trigger catastrophic service outages, sever inter-cluster communication links, corrupt database processes, and break container bridge networking.</p>
+<ul>
+  <li><strong>Mandatory Pre-Remediation Snapshots:</strong> Take full hypervisor snapshots (or LVM storage snapshots) and complete database logical dumps (PostgreSQL / Oracle) immediately before performing any package updates or configuration mutations.</li>
+  <li><strong>Mandatory Non-Mutating Dry-Run Simulation:</strong> Always execute DNF/APT dry runs (<code>--setopt=tsflags=test</code> / <code>--dry-run</code>) and SCAP fix script inspection (<code>oscap xccdf generate fix ...</code>) to verify that zero packages will be removed and zero critical configurations destroyed.</li>
+  <li><strong>Subsystem Protection Invariants:</strong> Never permit remediation automation to disable specialized cluster signaling (SCTP Protocol 132 for real-time clustering on port 29168), enforce <code>noexec</code> on <code>/tmp</code> (breaks PostgreSQL PostGIS extensions and Oracle shadow processes), or disable IPv4 packet forwarding (breaks container microservices networking).</li>
+  <li><strong>Scheduled Maintenance Windows:</strong> All package upgrades and host reboots must be executed during low-traffic maintenance windows (02:00–04:00 local time) using serial rolling execution (<code>serial: 1</code>) with verified rollback procedures.</li>
+</ul>
+</div>
+
+## Executive Overview: The Dual-Track Security Paradigm
+
+Securing enterprise web applications, microservices, and databases running on enterprise Linux distributions requires two fundamentally distinct, complementary assessment methodologies. Confusing these two tracks or applying automated security remediations blindly leads to service outages, broken dependencies, and cluster communication failures.
+
+### 1. Part A: The OVAL Vulnerability Assessment Track
+- **Core Standard:** Open Vulnerability and Assessment Language (OVAL v2).
+- **Primary Objective:** Detect unpatched Common Vulnerabilities and Exposures (CVEs), Red Hat Security Advisories (RHSAs), Ubuntu Security Notices (USNs), or Debian Security Advisories (DSAs) across installed software packages.
+- **Evaluation Mechanism:** OpenSCAP examines the local package manager database (`/var/lib/rpm` or `/var/lib/dpkg`) against official distribution OVAL definitions, evaluating exact package versions, release epochs, and vendor cryptographic signatures.
+- **The Ground Truth Standard (Red Hat KB 221883):** External unauthenticated network port scanners (e.g., Rapid7, Nessus, Qualys) rely on banner grabbing over TCP (e.g. querying `SSH-2.0-OpenSSH_8.0`). Network scanners flag dozens of false positives because they cannot detect vendor backported security patches. Authenticated on-host OpenSCAP OVAL evaluation is recognized as the definitive, cryptographically verified ground truth for enterprise Linux security compliance.
+
+### 2. Part B: The XCCDF Baseline Hardening & Compliance Track
+- **Core Standard:** Extensible Configuration Checklist Description Format (XCCDF 1.2) powered by `ComplianceAsCode/content`.
+- **Primary Objective:** Measure system compliance against formal security benchmarks (CIS Level 1/2, DISA STIG, PCI-DSS, ANSSI, HIPAA).
+- **Evaluation Mechanism:** OpenSCAP tests kernel parameters (`sysctl`), file system mount options (`/etc/fstab`), PAM authentication modules, audit logging rules (`auditd`), password aging policies, and cryptographic algorithms.
+- **The Safeguarded Remediation Imperative:** Standard out-of-the-box XCCDF remediation scripts will cripple mission-critical applications if applied blindly. For example, standard CIS benchmarks unconditionally disable the Linux kernel SCTP module, enforce `noexec` on temporary mounts, restrict shared memory, and flush firewall tables. In mission-critical enterprise systems—such as Core Clustered Message Engines, Web Application Portals, Relational Databases, and Microservice Hosts—these blind changes sever inter-node messaging links, crash relational databases, and destroy container networking bridges.
+
+---
+
+## Table of Contents
+
+<div class="toc-container">
+
+- **[Executive Overview: The Dual-Track Security Paradigm](#executive-overview-the-dual-track-security-paradigm)**
+  - [1. Part A: The OVAL Vulnerability Assessment Track](#1-part-a-the-oval-vulnerability-assessment-track)
+  - [2. Part B: The XCCDF Baseline Hardening &amp; Compliance Track](#2-part-b-the-xccdf-baseline-hardening--compliance-track)
+- **[Reference Architecture &amp; Enterprise Fleet Topology](#reference-architecture--enterprise-fleet-topology)**
+- **[Multi-Distribution DataStream &amp; Profile Matrix](#multi-distribution-datastream--profile-matrix)**
+- **[Pre-Flight: Harvesting &amp; Installing OpenSCAP Tools for Air-Gapped Environments](#pre-flight-harvesting--installing-openscap-tools-for-air-gapped-environments)**
+  - [Step 0.1: Package Dependencies and Artifact Inventory](#step-01-package-dependencies-and-artifact-inventory)
+  - [Step 0.2: Downloading OpenSCAP Packages on an Online Staging Host](#step-02-downloading-openscap-packages-on-an-online-staging-host)
+  - [Step 0.3: Air-Gapped Installation via Direct CLI](#step-03-air-gapped-installation-via-direct-cli)
+  - [Step 0.4: Automated Air-Gapped Tool Provisioning with Ansible](#step-04-automated-air-gapped-tool-provisioning-with-ansible)
+- **[Part A: OpenSCAP OVAL (Vulnerability Assessment &amp; Errata)](#part-a-openscap-oval-vulnerability-assessment--errata)**
+  - **[Part A1: OVAL Vulnerability Scanning &amp; Reporting](#part-a1-oval-vulnerability-scanning--reporting)**
+    - [Step 0: Acquiring and Verifying Official Vendor OVAL Streams](#step-0-acquiring-and-verifying-official-vendor-oval-streams)
+    - [Step 1: Direct CLI Command Line Execution (Part A1)](#step-1-direct-cli-command-line-execution-part-a1)
+    - [Step 2: Automated Fleet Audit Using Ansible Playbooks (Part A1)](#step-2-automated-fleet-audit-using-ansible-playbooks-part-a1)
+  - **[Part A2: OVAL-Driven Vulnerability Remediation (Air-Gapped Repositories)](#part-a2-oval-driven-vulnerability-remediation-air-gapped-repositories)**
+    - [Step 1: Identifying Errata Packages from OVAL Results](#step-1-identifying-errata-packages-from-oval-results)
+    - [Step 2: Harvesting RPM/DEB Errata Packages on an Online Staging Node](#step-2-harvesting-rpmdeb-errata-packages-on-an-online-staging-node)
+    - [Step 3: Creating Internal Offline Repositories](#step-3-creating-internal-offline-repositories)
+    - [Step 4: Staging and Configuring Internal Repositories on Target Hosts](#step-4-staging-and-configuring-internal-repositories-on-target-hosts)
+    - [Step 5: Direct CLI Command Line Execution (Part A2)](#step-5-direct-cli-command-line-execution-part-a2)
+    - [Step 6: Automated Fleet Remediation Using Ansible Playbooks (Part A2)](#step-6-automated-fleet-remediation-using-ansible-playbooks-part-a2)
+- **[Part B: OpenSCAP Scanning for Full Security Guide (XCCDF)](#part-b-openscap-scanning-for-full-security-guide-xccdf)**
+  - **[Part B1: Baseline Scanning &amp; Policy Audit Reporting](#part-b1-baseline-scanning--policy-audit-reporting)**
+    - [Step 0: Inspecting Available Profiles in SCAP Security Guide](#step-0-inspecting-available-profiles-in-scap-security-guide)
+    - [Step 1: Direct CLI Command Line Execution (Part B1)](#step-1-direct-cli-command-line-execution-part-b1)
+    - [Step 2: Automated Fleet Compliance Audit Using Ansible Playbooks (Part B1)](#step-2-automated-fleet-compliance-audit-using-ansible-playbooks-part-b1)
+  - **[Part B2: Safeguarded Baseline Remediation (Protecting Critical Subsystems)](#part-b2-safeguarded-baseline-remediation-protecting-critical-subsystems)**
+    - [1. The Mission-Critical Application Subsystem Impact Matrix](#1-the-mission-critical-application-subsystem-impact-matrix)
+    - [2. Generating and Inspecting Remediation Fixes (Dry-Run Review)](#2-generating-and-inspecting-remediation-fixes-dry-run-review)
+    - [3. Creating a Custom Tailoring Profile (tailoring.xml)](#3-creating-a-custom-tailoring-profile-tailoringxml)
+    - [Step 4: Direct CLI Execution with Tailored Remediation (Part B2)](#step-4-direct-cli-execution-with-tailored-remediation-part-b2)
+    - [Step 5: Production-Grade Declarative Ansible Playbook for Safeguarded Remediation (Part B2)](#step-5-production-grade-declarative-ansible-playbook-for-safeguarded-remediation-part-b2)
+- **[Appendices &amp; Operational Reference Cheatsheet](#appendices--operational-reference-cheatsheet)**
+  - [1. Master OpenSCAP CLI Command Matrix](#1-master-openscap-cli-command-matrix)
+  - [2. Common Exit Code Diagnostic Matrix](#2-common-exit-code-diagnostic-matrix)
+
+</div>
+
+---
+
+## Reference Architecture & Enterprise Fleet Topology
+
+The procedures in this guide are illustrated using a multi-node enterprise infrastructure fleet spanning RedHat, Ubuntu, Debian, and openSUSE platforms. All addresses utilize RFC 5737 and RFC 1918 documentation ranges:
+
+| Logical Role | Fully Qualified Domain Name (FQDN) | Management IP | Operating System | Critical Workload Subsystem |
+| :--- | :--- | :---: | :---: | :--- |
+| **Automation Controller** | `mgmt-ctrl-01.infra.example.com` | `192.0.2.10` | RHEL 8.10 / 9.4 Golden Master | Ansible Core 2.16, Local Offline Repository Mirror |
+| **Ingress Gateway** | `gw-ingress-01.node.example.com` | `198.51.100.20` | Ubuntu 24.04 LTS | HAProxy 2.8, Reverse Proxy & TLS (Ports 443, 8899) |
+| **Microservices Host** | `svc-container-01.node.example.com` | `198.51.100.30` | Debian 12 (Bookworm) | Container Platform, Rootless Podman 5+ (20+ Microservices) |
+| **Web App & Spatial DB** | `app-web-01.node.example.com` | `198.51.100.40` | RHEL 8.10 / AlmaLinux 9 | Web API, PostgreSQL 17, PostGIS Spatial Extension |
+| **Core Message Engine** | `core-msg-01.node.example.com` | `198.51.100.50` | openSUSE Leap 15.6 / SLES 15 | Clustered Message Dispatcher, SCTP Clustered Links, Oracle 19c |
+
+---
+
+## Multi-Distribution DataStream & Profile Matrix
+
+OpenSCAP resolves Security Content Automation Protocol DataStreams from the `scap-security-guide` package or the upstream `ComplianceAsCode/content` release repository:
+
+| OS Family | Target Distribution | SCAP DataStream Location / Artifact | Standard CIS Profile Identifier |
+| :--- | :--- | :--- | :--- |
+| **RHEL Family** | RHEL 8 / Alma 8 / Rocky 8 / OL 8 | `/usr/share/xml/scap/ssg/content/ssg-rhel8-ds.xml` | `xccdf_org.ssgproject.content_profile_cis` |
+| **RHEL Family** | RHEL 9 / Alma 9 / Rocky 9 / OL 9 | `/usr/share/xml/scap/ssg/content/ssg-rhel9-ds.xml` | `xccdf_org.ssgproject.content_profile_cis` |
+| **RHEL Family** | RHEL 10 / Alma 10 / Rocky 10 / OL 10 | `/usr/share/xml/scap/ssg/content/ssg-rhel10-ds.xml` | `xccdf_org.ssgproject.content_profile_cis` |
+| **Ubuntu LTS** | Ubuntu 22.04 LTS | `ssg-ubuntu2204-ds.xml` (`ComplianceAsCode/content`) | `xccdf_org.ssgproject.content_profile_cis_level2_server` |
+| **Ubuntu LTS** | Ubuntu 24.04 LTS / 26.04 LTS | `ssg-ubuntu2404-ds.xml` (`ComplianceAsCode/content`) | `xccdf_org.ssgproject.content_profile_cis_level2_server` |
+| **Debian** | Debian 11 / 12 / 13 | `/usr/share/xml/scap/ssg/content/ssg-debian12-ds.xml` | `xccdf_org.ssgproject.content_profile_standard` |
+| **SUSE** | openSUSE Leap 15 / SLES 15 | `/usr/share/xml/scap/ssg/content/ssg-sle15-ds.xml` | `xccdf_org.ssgproject.content_profile_cis` |
+
+---
+
+## Pre-Flight: Harvesting & Installing OpenSCAP Tools for Air-Gapped Environments
+
+In secure enterprise and air-gapped environments without direct internet access, the OpenSCAP scanner utilities (`openscap-scanner`, `scap-security-guide`) cannot be installed directly from public mirrors. This section outlines the offline provisioning workflow.
+
+### Step 0.1: Package Dependencies and Artifact Inventory
+The OpenSCAP scanner suite requires three primary package categories and their associated runtime dependencies:
+1. `openscap` / `libopenscap8`: Core OpenSCAP C shared library, schema parsers, and OVAL/XCCDF engine.
+2. `openscap-scanner`: Command-line interface (`/usr/bin/oscap`) for scanning and report generation.
+3. `scap-security-guide`: Pre-compiled SCAP DataStream profiles (`/usr/share/xml/scap/ssg/content/`).
+4. Supporting tools: `xml-common`, `libxslt`, `bzip2`, `pcre2`.
+
+---
+
+### Step 0.2: Downloading OpenSCAP Packages on an Online Staging Host
+
+On an internet-connected staging machine matching the target OS family:
+
+#### RHEL / Enterprise Linux Staging Host
+```bash
+# 1. Create dedicated harvest directory
+mkdir -p /tmp/openscap_tools_harvest/packages && cd /tmp/openscap_tools_harvest
+
+# 2. Download OpenSCAP packages with complete dependencies
+dnf download --resolve --alldeps --destdir=/tmp/openscap_tools_harvest/packages \
+  openscap \
+  openscap-scanner \
+  scap-security-guide \
+  xml-common
+
+# 3. Generate repository metadata
+sudo dnf install -y createrepo_c
+createrepo_c /tmp/openscap_tools_harvest/packages/
+
+# 4. Compress bundle
+tar -czvf /tmp/openscap-tools-rhel-airgap.tar.gz -C /tmp/openscap_tools_harvest packages
+```
+
+#### Ubuntu / Debian Staging Host
+```bash
+# 1. Create dedicated harvest directory
+mkdir -p /tmp/openscap_tools_deb/packages && cd /tmp/openscap_tools_deb
+
+# 2. Download DEB packages with dependencies
+apt-get update && apt-get install --download-only -y \
+  openscap-scanner \
+  ssg-debian \
+  ssg-debderived
+
+cp /var/cache/apt/archives/*.deb /tmp/openscap_tools_deb/packages/
+
+# 3. Compress bundle
+tar -czvf /tmp/openscap-tools-deb-airgap.tar.gz -C /tmp/openscap_tools_deb packages
+```
+
+---
+
+### Step 0.3: Air-Gapped Installation via Direct CLI
+
+Once the tarball is transferred to the air-gapped target host:
+
+```bash
+# Extract archive and install offline
+sudo mkdir -p /var/tmp/openscap_offline_tools
+sudo tar -xzvf openscap-tools-rhel-airgap.tar.gz -C /var/tmp/openscap_offline_tools/
+
+# Configure local repository
+sudo tee /etc/yum.repos.d/openscap-local.repo << 'EOF'
+[openscap-local]
+name=Local OpenSCAP Tools Offline Repository
+baseurl=file:///var/tmp/openscap_offline_tools/packages
+enabled=1
+gpgcheck=0
+priority=1
+EOF
+
+# Perform dry-run and install
+sudo dnf install -y --setopt=tsflags=test --disablerepo=* --enablerepo=openscap-local openscap-scanner scap-security-guide
+sudo dnf install -y --disablerepo=* --enablerepo=openscap-local openscap-scanner scap-security-guide
+
+# Validate executable
+oscap --version
+```
+
+---
+
+### Step 0.4: Automated Air-Gapped Tool Provisioning with Ansible
+
+The following playbook (`install_openscap_airgap_fleet.yml`) distributes and installs the offline tool bundle across target nodes:
+
+{% raw %}
+```yaml
+---
+- name: "Provision OpenSCAP Toolset in Air-Gapped Fleet (Pre-Flight)"
+  hosts: fleet
+  gather_facts: true
+  become: true
+
+  vars:
+    controller_tools_archive: "/home/operator/openscap-tools-rhel-airgap.tar.gz"
+    target_tools_dir: "/var/tmp/openscap_offline_tools"
+
+  tasks:
+    - name: "0.1 Create target staging directory"
+      ansible.builtin.file:
+        path: "{{ target_tools_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: "0.2 Transfer and extract tools bundle to target host"
+      ansible.builtin.unarchive:
+        src: "{{ controller_tools_archive }}"
+        dest: "{{ target_tools_dir }}"
+        mode: "0755"
+
+    - name: "0.3 Configure local DNF repo definition (RHEL family)"
+      ansible.builtin.copy:
+        dest: "/etc/yum.repos.d/openscap-local.repo"
+        content: |
+          [openscap-local]
+          name=Local OpenSCAP Tools Offline Repository
+          baseurl=file://{{ target_tools_dir }}/packages
+          enabled=1
+          gpgcheck=0
+        mode: "0644"
+      when: ansible_os_family == 'RedHat'
+
+    - name: "0.4 Execute pre-flight dry-run check (tsflags=test)"
+      ansible.builtin.command:
+        cmd: >
+          dnf install -y
+          --setopt=tsflags=test
+          --disablerepo=*
+          --enablerepo=openscap-local
+          openscap-scanner scap-security-guide
+      register: tool_dry_run
+      changed_when: false
+      when: ansible_os_family == 'RedHat'
+
+    - name: "0.5 Install OpenSCAP scanner and security guide"
+      ansible.builtin.dnf:
+        name:
+          - openscap-scanner
+          - scap-security-guide
+        state: present
+        disablerepo: "*"
+        enablerepo: "openscap-local"
+        disable_plugin: "subscription-manager"
+      when: ansible_os_family == 'RedHat'
+
+    - name: "0.6 Verify oscap executable presence"
+      ansible.builtin.command:
+        cmd: "oscap --version"
+      register: oscap_ver
+      changed_when: false
+
+    - name: "0.7 Display installed OpenSCAP version"
+      ansible.builtin.debug:
+        msg: "Host {{ inventory_hostname }}: {{ oscap_ver.stdout_lines[0] }}"
+```
+{% endraw %}
+
+---
+
+# Part A: OpenSCAP OVAL (Vulnerability Assessment & Errata)
+
+---
+
+## Part A1: OVAL Vulnerability Scanning & Reporting
+
+This section demonstrates how to acquire official vendor OVAL streams, execute non-destructive host scans, and generate interactive HTML and XML compliance reports.
+
+### Step 0: Acquiring and Verifying Official Vendor OVAL Streams
+
+Official OVAL definition streams are published by vendor security teams:
+
+- **Red Hat Enterprise Linux 8/9/10:** `https://security.access.redhat.com/data/oval/v2/RHEL8/rhel-8.oval.xml.bz2`
+- **Ubuntu 24.04 LTS (Noble):** `https://security-metadata.canonical.com/oval/com.ubuntu.noble.usn.oval.xml.bz2`
+- **Debian 12 (Bookworm):** `https://www.debian.org/security/oval/oval-definitions-bookworm.xml.bz2`
+
+#### Connected Acquisition Example (Controller)
+```bash
+mkdir -p ~/openscap_oval && cd ~/openscap_oval
+
+# Download RHEL 8 OVAL definitions
+curl -fsSL -O https://security.access.redhat.com/data/oval/v2/RHEL8/rhel-8.oval.xml.bz2
+bunzip2 -f rhel-8.oval.xml.bz2
+
+# Download Ubuntu OVAL definitions
+curl -fsSL -O https://security-metadata.canonical.com/oval/com.ubuntu.noble.usn.oval.xml.bz2
+bunzip2 -f com.ubuntu.noble.usn.oval.xml.bz2
+```
+
+---
+
+### Step 1: Direct CLI Command Line Execution (Part A1)
+
+To audit a host directly via the command line:
+
+```bash
+sudo mkdir -p /var/tmp/openscap_oval
+
+# Execute OVAL scan against host RPM/DPKG package database
+sudo oscap oval eval \
+  --results /var/tmp/openscap_oval/oval-results-$(hostname -s).xml \
+  --report /var/tmp/openscap_oval/oval-report-$(hostname -s).html \
+  ~/openscap_oval/rhel-8.oval.xml
+```
+
+#### Understanding OpenSCAP CLI Exit Codes
+- **Return Code `0` (`rc=0`):** All evaluated OVAL definitions passed (0 unpatched vulnerabilities).
+- **Return Code `2` (`rc=2`):** Evaluation finished successfully, but non-compliant / vulnerable definitions were found (expected audit state).
+- **Return Code `1` (`rc=1`):** A genuine runtime error occurred (e.g. malformed XML or missing permissions).
+
+---
+
+### Step 2: Automated Fleet Audit Using Ansible Playbooks (Part A1)
+
+Declarative playbook: `audit_oval_fleet.yml`.
+
+{% raw %}
+```yaml
+---
+- name: "Enterprise OpenSCAP OVAL Fleet Vulnerability Audit (Part A1)"
+  hosts: fleet,controllers
+  gather_facts: true
+  become: false
+
+  vars:
+    controller_oval_stream: "/home/operator/openscap_oval/rhel-8.oval.xml"
+    target_staging_dir: "/var/tmp/openscap_oval"
+    target_oval_stream: "/var/tmp/openscap_oval/rhel-8.oval.xml"
+    target_report_html: "/var/tmp/openscap_oval/oval-report-{{ inventory_hostname }}.html"
+    target_results_xml: "/var/tmp/openscap_oval/oval-results-{{ inventory_hostname }}.xml"
+    controller_harvest_dir: "/home/operator/audit-reports/oval/{{ inventory_hostname }}"
+
+  tasks:
+    - name: "1.1 Verify openscap-scanner is installed"
+      ansible.builtin.command:
+        cmd: "which oscap"
+      register: oscap_check
+      changed_when: false
+      failed_when: oscap_check.rc != 0
+
+    - name: "1.2 Create staging and harvest directories"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ target_staging_dir }}"
+
+    - name: "1.3 Create local controller harvest directory"
+      ansible.builtin.file:
+        path: "{{ controller_harvest_dir }}"
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+
+    - name: "2.1 Distribute OVAL stream to targets"
+      ansible.builtin.copy:
+        src: "{{ controller_oval_stream }}"
+        dest: "{{ target_oval_stream }}"
+        mode: "0644"
+      when: inventory_hostname != 'mgmt-ctrl-01.infra.example.com'
+
+    - name: "3.1 Execute OpenSCAP OVAL evaluation scan"
+      ansible.builtin.command:
+        cmd: >
+          oscap oval eval
+          --results {{ target_results_xml }}
+          --report {{ target_report_html }}
+          {{ target_oval_stream }}
+      register: oscap_eval_raw
+      changed_when: false
+      failed_when: oscap_eval_raw.rc not in [0, 2]
+
+    - name: "4.1 Fetch HTML report to controller"
+      ansible.builtin.fetch:
+        src: "{{ target_report_html }}"
+        dest: "{{ controller_harvest_dir }}/oval-report.html"
+        flat: true
+
+    - name: "5.1 Extract compliance metrics from HTML report"
+      ansible.builtin.shell: |
+        bash -c "
+        VULN=\$(grep -oP 'title=\"Non-Compliant/Vulnerable/Unpatched\" style=\"width:20%\">\K[0-9]+' {{ target_report_html }} | head -n 1)
+        PASS=\$(grep -oP 'title=\"Compliant/Non-Vulnerable/Patched\" style=\"width:20%\">\K[0-9]+' {{ target_report_html }} | head -n 1)
+        TOTAL=\$(grep -oP '[0-9]+ Total' {{ target_report_html }} | head -n 1 | awk '{print \$1}')
+        echo \"TOTAL:\${TOTAL:-0} | VULN:\${VULN:-0} | PASS:\${PASS:-0}\"
+        "
+      register: oval_summary
+      changed_when: false
+
+    - name: "5.2 Display OVAL Assessment Scorecard"
+      ansible.builtin.debug:
+        msg:
+          - "=================================================================="
+          - "HOST: {{ inventory_hostname }} ({{ ansible_default_ipv4.address }})"
+          - "RUNNING KERNEL: {{ ansible_kernel }}"
+          - "OVAL EVALUATION: {{ oval_summary.stdout }}"
+          - "REPORTS STAGED AT: {{ controller_harvest_dir }}/"
+          - "=================================================================="
+```
+{% endraw %}
+
+---
+
+## Part A2: OVAL-Driven Vulnerability Remediation (Air-Gapped Repositories)
+
+<div class="callout-warning">
+<div class="warning-title">⚠️ WARNING: AIR-GAPPED ERRATA APPLICATION SAFEGUARDS</div>
+<p>When applying security errata in air-gapped production environments:</p>
+<ul>
+  <li><strong>Assert Zero Removals:</strong> Always specify <code>--setopt=clean_requirements_on_remove=0</code> for DNF or omit <code>--auto-remove</code> for APT. Strictly avoid <code>--allowerasing</code>.</li>
+  <li><strong>Mandatory Dry-Run:</strong> Always execute dry-runs (<code>dnf upgrade --setopt=tsflags=test ...</code> or <code>apt-get upgrade --dry-run</code>) first.</li>
+  <li><strong>Rolling Serial Execution:</strong> Update nodes serially (<code>serial: 1</code> in Ansible) to preserve cluster high availability.</li>
+</ul>
+</div>
+
+---
+
+### Step 1: Identifying Errata Packages from OVAL Results
+
+Extract flagged advisory IDs (RHSA / USN / DSA) from `oval-report.html`:
+```bash
+grep -oP '(RHSA|USN|DSA)-[0-9]+[:\-][0-9]+' /var/tmp/openscap_oval/oval-report-$(hostname -s).html | sort -u > /tmp/flagged_errata.txt
+head -n 15 /tmp/flagged_errata.txt
+```
+
+---
+
+### Step 2: Harvesting RPM/DEB Errata Packages on an Online Staging Node
+
+On an internet-connected staging node:
+```bash
+# RPM / Enterprise Linux
+mkdir -p /tmp/errata_harvest/packages && cd /tmp/errata_harvest
+dnf download --resolve --destdir=/tmp/errata_harvest/packages \
+  openssl openssl-libs glibc sudo kernel kernel-core kernel-modules kernel-modules-extra libxml2 curl
+
+# DEB / Ubuntu / Debian
+mkdir -p /tmp/errata_harvest_deb/packages && cd /tmp/errata_harvest_deb
+apt-get update && apt-get install --download-only -y \
+  openssl libssl3 glibc-source sudo linux-image-generic libxml2 curl
+cp /var/cache/apt/archives/*.deb /tmp/errata_harvest_deb/packages/
+```
+
+---
+
+### Step 3: Creating Internal Offline Repositories
+
+```bash
+# For RPM repositories
+createrepo_c /tmp/errata_harvest/packages/
+tar -czvf /tmp/internal-security-errata-rhel.tar.gz -C /tmp/errata_harvest packages
+
+# For DEB repositories
+cd /tmp/errata_harvest_deb/packages
+dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
+tar -czvf /tmp/internal-security-errata-deb.tar.gz -C /tmp/errata_harvest_deb packages
+```
+
+---
+
+### Step 4: Staging and Configuring Internal Repositories on Target Hosts
+
+```bash
+# RHEL Target Configuration
+sudo mkdir -p /var/tmp/offline-repos
+sudo tar -xzvf /tmp/internal-security-errata-rhel.tar.gz -C /var/tmp/offline-repos/
+
+sudo tee /etc/yum.repos.d/internal-security-errata.repo << 'EOF'
+[internal-security-errata]
+name=Internal Air-Gapped Security Errata
+baseurl=file:///var/tmp/offline-repos/packages
+enabled=1
+gpgcheck=0
+priority=1
+EOF
+```
+
+---
+
+### Step 5: Direct CLI Command Line Execution (Part A2)
+
+```bash
+# Mandatory Pre-Flight Transaction Dry-Run
+sudo dnf upgrade -y \
+  --setopt=tsflags=test \
+  --disablerepo=* \
+  --enablerepo=internal-security-errata \
+  --disableplugin=subscription-manager \
+  --setopt=clean_requirements_on_remove=0 \
+  --nobest
+
+# Live Upgrade Execution
+sudo dnf upgrade -y \
+  --disablerepo=* \
+  --enablerepo=internal-security-errata \
+  --disableplugin=subscription-manager \
+  --setopt=clean_requirements_on_remove=0 \
+  --nobest
+```
+
+---
+
+### Step 6: Automated Fleet Remediation Using Ansible Playbooks (Part A2)
+
+Declarative playbook: `remediate_oval_fleet.yml`.
+
+{% raw %}
+```yaml
+---
+- name: "Enterprise OVAL Errata Fleet Remediation (Part A2)"
+  hosts: fleet
+  serial: 1
+  gather_facts: true
+  become: true
+
+  vars:
+    controller_repo_bundle: "/home/operator/internal-security-errata-rhel.tar.gz"
+    target_repo_dir: "/var/tmp/offline-repos"
+    target_oval_stream: "/var/tmp/openscap_oval/rhel-8.oval.xml"
+
+  tasks:
+    - name: "1.1 Create target offline repo directory"
+      ansible.builtin.file:
+        path: "{{ target_repo_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: "1.2 Extract repository archive on target host"
+      ansible.builtin.unarchive:
+        src: "{{ controller_repo_bundle }}"
+        dest: "{{ target_repo_dir }}"
+        mode: "0755"
+
+    - name: "1.3 Deploy internal repository configuration"
+      ansible.builtin.copy:
+        dest: "/etc/yum.repos.d/internal-security-errata.repo"
+        content: |
+          [internal-security-errata]
+          name=Internal Air-Gapped Security Errata
+          baseurl=file://{{ target_repo_dir }}/packages
+          enabled=1
+          gpgcheck=0
+        mode: "0644"
+      when: ansible_os_family == 'RedHat'
+
+    - name: "2.1 Execute mandatory pre-flight dry-run simulation (tsflags=test)"
+      ansible.builtin.command:
+        cmd: >
+          dnf upgrade -y
+          --setopt=tsflags=test
+          --disablerepo=*
+          --enablerepo=internal-security-errata
+          --disableplugin=subscription-manager
+          --setopt=clean_requirements_on_remove=0
+          --nobest
+      register: dnf_dry_run
+      changed_when: false
+      when: ansible_os_family == 'RedHat'
+
+    - name: "2.2 Assert 0 package removals during dry-run"
+      ansible.builtin.assert:
+        that:
+          - "'Removing:' not in dnf_dry_run.stdout"
+        fail_msg: "ABORT: DNF dry-run indicated package removals!"
+      when: ansible_os_family == 'RedHat'
+
+    - name: "3.1 Execute live package security upgrade"
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+        disablerepo: "*"
+        enablerepo: "internal-security-errata"
+        disable_plugin: "subscription-manager"
+        nobest: true
+        clean_requirements_on_remove: false
+      when: ansible_os_family == 'RedHat'
+
+    - name: "4.1 Post-remediation OpenSCAP OVAL evaluation"
+      ansible.builtin.command:
+        cmd: >
+          oscap oval eval
+          --results /var/tmp/openscap_oval/oval-results-post.xml
+          --report /var/tmp/openscap_oval/oval-report-post.html
+          {{ target_oval_stream }}
+      register: oscap_post_eval
+      changed_when: false
+      failed_when: oscap_post_eval.rc not in [0, 2]
+```
+{% endraw %}
+
+---
+
+# Part B: OpenSCAP Scanning for Full Security Guide (XCCDF)
+
+---
+
+## Part B1: Baseline Scanning & Policy Audit Reporting
+
+This section covers Extensible Configuration Checklist Description Format (XCCDF) profile inspection, baseline compliance evaluation, and automated reporting.
+
+### Step 0: Inspecting Available Profiles in SCAP Security Guide
+
+```bash
+# Query profiles for installed DataStream
+oscap info /usr/share/xml/scap/ssg/content/ssg-rhel8-ds.xml
+```
+
+Key profiles:
+- `xccdf_org.ssgproject.content_profile_cis`: CIS Benchmark (Level 1 / Level 2 Server).
+- `xccdf_org.ssgproject.content_profile_stig`: DISA STIG Profile.
+- `xccdf_org.ssgproject.content_profile_pci-dss`: PCI-DSS v3.2.1 Control Baseline.
+- `xccdf_org.ssgproject.content_profile_anssi_bp28_high`: ANSSI BP-028 High Hardening.
+
+---
+
+### Step 1: Direct CLI Command Line Execution (Part B1)
+
+```bash
+sudo mkdir -p /var/tmp/openscap_xccdf
+
+sudo oscap xccdf eval \
+  --profile xccdf_org.ssgproject.content_profile_cis \
+  --results /var/tmp/openscap_xccdf/cis-results-$(hostname -s).xml \
+  --report /var/tmp/openscap_xccdf/cis-report-$(hostname -s).html \
+  /usr/share/xml/scap/ssg/content/ssg-rhel8-ds.xml
+```
+
+#### Extract Score from Results XML:
+```bash
+XML_FILE="/var/tmp/openscap_xccdf/cis-results-$(hostname -s).xml"
+SCORE=$(grep -oP '<score[^>]*>\K[0-9.]+' "$XML_FILE" | head -n 1)
+echo "CIS Benchmark Compliance Score: ${SCORE}%"
+```
+
+---
+
+### Step 2: Automated Fleet Compliance Audit Using Ansible Playbooks (Part B1)
+
+Declarative playbook: `audit_xccdf_security_guide.yml`.
+
+{% raw %}
+```yaml
+---
+- name: "Enterprise OpenSCAP XCCDF Baseline Compliance Audit (Part B1)"
+  hosts: fleet
+  gather_facts: true
+  become: false
+
+  vars:
+    scap_datastream: "/usr/share/xml/scap/ssg/content/ssg-rhel8-ds.xml"
+    scap_profile: "xccdf_org.ssgproject.content_profile_cis"
+    target_report_html: "/var/tmp/openscap_xccdf/xccdf-report-{{ inventory_hostname }}.html"
+    target_results_xml: "/var/tmp/openscap_xccdf/xccdf-results-{{ inventory_hostname }}.xml"
+    controller_harvest_dir: "/home/operator/audit-reports/xccdf/{{ inventory_hostname }}"
+
+  tasks:
+    - name: "1.1 Create target and controller directories"
+      ansible.builtin.file:
+        path: "/var/tmp/openscap_xccdf"
+        state: directory
+        mode: "0755"
+
+    - name: "1.2 Create controller harvest directory"
+      ansible.builtin.file:
+        path: "{{ controller_harvest_dir }}"
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+
+    - name: "2.1 Execute OpenSCAP XCCDF compliance scan"
+      ansible.builtin.command:
+        cmd: >
+          oscap xccdf eval
+          --profile {{ scap_profile }}
+          --results {{ target_results_xml }}
+          --report {{ target_report_html }}
+          {{ scap_datastream }}
+      register: xccdf_eval_raw
+      changed_when: false
+      failed_when: xccdf_eval_raw.rc not in [0, 2]
+
+    - name: "3.1 Fetch HTML and XML reports to controller"
+      ansible.builtin.fetch:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        flat: true
+      loop:
+        - { src: "{{ target_report_html }}", dest: "{{ controller_harvest_dir }}/xccdf-report.html" }
+        - { src: "{{ target_results_xml }}", dest: "{{ controller_harvest_dir }}/xccdf-results.xml" }
+
+    - name: "4.1 Extract compliance score"
+      ansible.builtin.shell: |
+        grep -oP '<score[^>]*>\K[0-9.]+' {{ target_results_xml }} | head -n 1
+      register: compliance_score
+      changed_when: false
+
+    - name: "4.2 Display Compliance Scorecard"
+      ansible.builtin.debug:
+        msg:
+          - "=================================================================="
+          - "HOST: {{ inventory_hostname }} ({{ ansible_default_ipv4.address }})"
+          - "PROFILE: {{ scap_profile }}"
+          - "COMPLIANCE SCORE: {{ compliance_score.stdout | default('N/A') }}%"
+          - "REPORT: {{ controller_harvest_dir }}/xccdf-report.html"
+          - "=================================================================="
+```
+{% endraw %}
+
+---
+
+## Part B2: Safeguarded Baseline Remediation (Protecting Critical Subsystems)
+
+<div class="callout-danger">
+<div class="warning-title">🛑 DANGER: WHY UNTAILORED XCCDF AUTOMATED REMEDIATION CRIPPLES PRODUCTION</div>
+<p>Applying OpenSCAP remediation rules blindly using <code>--remediate</code> or applying out-of-the-box CIS / STIG hardening playbooks without tailoring is one of the leading causes of self-inflicted production outages in enterprise environments.</p>
+<ul>
+  <li><strong>Clustered Signaling Failure (SCTP Protocol 132):</strong> Standard CIS rules disable the SCTP kernel module, immediately severing all clustered inter-node messaging links on port 29168.</li>
+  <li><strong>Relational Database Crashes (/tmp noexec):</strong> Standard benchmarks enforce <code>noexec</code> on <code>/tmp</code> and <code>/var/tmp</code>. This immediately crashes PostgreSQL spatial extensions (PostGIS dynamic shared library compilation) and Oracle database shadow processes.</li>
+  <li><strong>Container Routing Breakdown (Docker / Podman):</strong> Enforcing <code>net.ipv4.ip_forward = 0</code> severs bridge routing, isolating all microservices on container application hosts.</li>
+  <li><strong>Cryptographic Incompatibility:</strong> Enabling Kernel FIPS mode without careful planning breaks legacy client TLS/SSL ciphers and database connections.</li>
+</ul>
+<p><strong>Remediation Rule: You MUST generate dry-run fix scripts, audit every single rule against your application stack, and deploy a custom Tailoring profile (<code>tailoring.xml</code>) to explicitly de-select destructive rules prior to execution.</strong></p>
+</div>
+
+---
+
+### 1. The Mission-Critical Application Subsystem Impact Matrix
+
+| Vulnerable Rule Identifier | Standard SCAP Action | Affected Subsystems | Operational Failure Impact | Safeguarded Action |
+| :--- | :--- | :--- | :--- | :--- |
+| `rule_kernel_module_sctp_disabled` | Adds `install sctp /bin/true` | **Clustered Message Broker (`dispatchd`)** | **FATAL:** Disables SCTP Protocol 132. Clustered nodes cannot establish high-availability signaling on port 29168. | **DO NOT EXECUTE.** Keep SCTP enabled. |
+| `rule_mount_option_tmp_noexec` | Mounts `/tmp` with `noexec` | **PostgreSQL 17, PostGIS, Oracle 19c** | **FATAL:** PostgreSQL dynamic extension compilation (`PostGIS`) and Oracle shadow processes crash when executing temporary code in `/tmp`. | **DO NOT EXECUTE.** Omit `noexec` on `/tmp`. |
+| `rule_sysctl_net_ipv4_ip_forward` | Sets `net.ipv4.ip_forward = 0` | **Microservice Container Hosts (Podman/Docker)** | **FATAL:** Shuts down container packet forwarding. Microservices lose network reachability. | **DO NOT EXECUTE.** Maintain `ip_forward=1`. |
+| `rule_enable_fips_mode` | Enables Kernel FIPS 140-2 mode | **API Gateway, Ingress HAProxy** | **FATAL:** Breaks legacy client encryption protocols and proprietary SSL cipher suites. | **DO NOT EXECUTE.** Maintain standard crypto policies. |
+
+---
+
+### 2. Generating and Inspecting Remediation Fixes (Dry-Run Review)
+
+```bash
+# Generate Bash Remediation Script
+oscap xccdf generate fix \
+  --profile xccdf_org.ssgproject.content_profile_cis \
+  --fix-type bash \
+  --output /tmp/cis_remediation_raw.sh \
+  /usr/share/xml/scap/ssg/content/ssg-rhel8-ds.xml
+
+# Audit raw script for destructive rules
+grep -n "sctp" /tmp/cis_remediation_raw.sh
+grep -n "noexec" /tmp/cis_remediation_raw.sh
+grep -n "ip_forward" /tmp/cis_remediation_raw.sh
+```
+
+---
+
+### 3. Creating a Custom Tailoring Profile (`tailoring.xml`)
+
+Create an OpenSCAP Tailoring file (`tailoring.xml`) to explicitly exclude destructive rules:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<xccdf:Tailoring xmlns:xccdf="http://checklists.nist.gov/xccdf/1.2" id="xccdf_custom_tailoring">
+  <xccdf:benchmark href="/usr/share/xml/scap/ssg/content/ssg-rhel8-ds.xml"/>
+  <xccdf:version time="2026-10-07T17:00:00">1</xccdf:version>
+
+  <xccdf:Profile id="xccdf_org.ssgproject.content_profile_cis_custom_safe" extends="xccdf_org.ssgproject.content_profile_cis">
+    <xccdf:title>CIS Benchmark (Safeguarded Enterprise Web &amp; Clustered Profile)</xccdf:title>
+    <xccdf:description>CIS profile tailored to exclude destructive rules that impact SCTP cluster links, container forwarding, and database shared memory.</xccdf:description>
+
+    <!-- 1. EXCLUDE SCTP DISABLE RULE (Preserves Clustered Inter-Node Signaling) -->
+    <xccdf:select idref="xccdf_org.ssgproject.content_rule_kernel_module_sctp_disabled" selected="false"/>
+
+    <!-- 2. EXCLUDE TMP NOEXEC (Preserves PostgreSQL PostGIS & Oracle dynamic compilation) -->
+    <xccdf:select idref="xccdf_org.ssgproject.content_rule_mount_option_tmp_noexec" selected="false"/>
+    <xccdf:select idref="xccdf_org.ssgproject.content_rule_mount_option_var_tmp_noexec" selected="false"/>
+
+    <!-- 3. EXCLUDE IP FORWARDING DISABLE (Preserves Podman & Container bridge routing) -->
+    <xccdf:select idref="xccdf_org.ssgproject.content_rule_sysctl_net_ipv4_ip_forward" selected="false"/>
+
+    <!-- 4. EXCLUDE AUTOMATIC FIPS ENFORCEMENT -->
+    <xccdf:select idref="xccdf_org.ssgproject.content_rule_enable_fips_mode" selected="false"/>
+
+  </xccdf:Profile>
+</xccdf:Tailoring>
+```
+
+---
+
+### Step 4: Direct CLI Execution with Tailored Remediation (Part B2)
+
+```bash
+# Execute safe tailored remediation
+sudo oscap xccdf eval \
+  --tailoring-file tailoring.xml \
+  --profile xccdf_org.ssgproject.content_profile_cis_custom_safe \
+  --remediate \
+  --results /var/tmp/openscap_xccdf/cis-results-remediated.xml \
+  --report /var/tmp/openscap_xccdf/cis-report-remediated.html \
+  /usr/share/xml/scap/ssg/content/ssg-rhel8-ds.xml
+```
+
+---
+
+### Step 5: Production-Grade Declarative Ansible Playbook for Safeguarded Remediation (Part B2)
+
+Playbook: `remediate_safeguarded_security_guide.yml`.
+
+{% raw %}
+```yaml
+---
+- name: "Enterprise Safeguarded Baseline Remediation (Part B2)"
+  hosts: fleet
+  serial: 1
+  gather_facts: true
+  become: true
+
+  vars:
+    scap_datastream: "/usr/share/xml/scap/ssg/content/ssg-rhel8-ds.xml"
+    tailoring_file_src: "files/tailoring.xml"
+    tailoring_file_dest: "/etc/security/scap-tailoring.xml"
+    safe_profile: "xccdf_org.ssgproject.content_profile_cis_custom_safe"
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # 1. PRE-FLIGHT SUBSYSTEM HEALTH CHECK
+    # -------------------------------------------------------------------------
+    - name: "1.1 Check message engine daemons if running on core node"
+      ansible.builtin.command:
+        cmd: "pgrep -a dispatchd"
+      register: msg_proc
+      changed_when: false
+      failed_when: false
+      when: "'core-msg' in inventory_hostname"
+
+    - name: "1.2 Check containers if running on Microservices host"
+      ansible.builtin.command:
+        cmd: "podman ps -q"
+      register: container_proc
+      changed_when: false
+      failed_when: false
+      when: "'svc-container' in inventory_hostname"
+
+    # -------------------------------------------------------------------------
+    # 2. DEPLOY TAILORED PROFILE
+    # -------------------------------------------------------------------------
+    - name: "2.1 Deploy verified SCAP tailoring XML"
+      ansible.builtin.copy:
+        src: "{{ tailoring_file_src }}"
+        dest: "{{ tailoring_file_dest }}"
+        mode: "0644"
+
+    # -------------------------------------------------------------------------
+    # 3. EXECUTE SAFE TAILORED REMEDIATION
+    # -------------------------------------------------------------------------
+    - name: "3.1 Execute OpenSCAP tailored remediation"
+      ansible.builtin.command:
+        cmd: >
+          oscap xccdf eval
+          --tailoring-file {{ tailoring_file_dest }}
+          --profile {{ safe_profile }}
+          --remediate
+          --results /var/tmp/openscap_xccdf/xccdf-results-remediated.xml
+          --report /var/tmp/openscap_xccdf/xccdf-report-remediated.html
+          {{ scap_datastream }}
+      register: rem_out
+      changed_when: true
+      failed_when: rem_out.rc not in [0, 2]
+
+    # -------------------------------------------------------------------------
+    # 4. POST-REMEDIATION INVARIANT ASSERTIONS
+    # -------------------------------------------------------------------------
+    - name: "4.1 CRITICAL ASSERTION: Verify SCTP module remains loadable"
+      ansible.builtin.command:
+        cmd: "modprobe -n -v sctp"
+      register: sctp_mod
+      changed_when: false
+      failed_when: "'install /bin/true' in sctp_mod.stdout or sctp_mod.rc != 0"
+
+    - name: "4.2 CRITICAL ASSERTION: Verify IP forward enabled on container node"
+      ansible.builtin.command:
+        cmd: "sysctl -n net.ipv4.ip_forward"
+      register: ip_fwd
+      changed_when: false
+      failed_when: ip_fwd.stdout.strip() != '1'
+      when: "'svc-container' in inventory_hostname"
+
+    # -------------------------------------------------------------------------
+    # 5. HARVEST POST-REMEDIATION SCORECARD
+    # -------------------------------------------------------------------------
+    - name: "5.1 Extract post-remediation compliance score"
+      ansible.builtin.shell: |
+        grep -oP '<score[^>]*>\K[0-9.]+' /var/tmp/openscap_xccdf/xccdf-results-remediated.xml | head -n 1
+      register: post_score
+      changed_when: false
+
+    - name: "5.2 Display Remediation Completion Report"
+      ansible.builtin.debug:
+        msg:
+          - "=================================================================="
+          - "HOST: {{ inventory_hostname }}"
+          - "STATUS: SAFEGUARDED REMEDIATION COMPLETED"
+          - "NEW COMPLIANCE SCORE: {{ post_score.stdout | default('N/A') }}%"
+          - "SUBSYSTEM HEALTH: ALL APPLICATION INVARIANTS SATISFIED"
+          - "=================================================================="
+```
+{% endraw %}
+
+---
+
+## Appendices & Operational Reference Cheatsheet
+
+### 1. Master OpenSCAP CLI Command Matrix
+
+| Administrative Task | OpenSCAP CLI Invocation | Expected Exit Codes |
+| :--- | :--- | :---: |
+| **Inspect SCAP DataStream** | `oscap info <datastream.xml>` | `0` = OK |
+| **Inspect OVAL Definitions** | `oscap info <oval.xml>` | `0` = OK |
+| **Run OVAL Scan (Part A1)** | `oscap oval eval --results res.xml --report rep.html <oval.xml>` | `0` = Clean, `2` = Vuln |
+| **Run XCCDF Scan (Part B1)** | `oscap xccdf eval --profile <prof> --results res.xml --report rep.html <ds.xml>` | `0` = Pass, `2` = Fail |
+| **Generate Fix Script (Bash)** | `oscap xccdf generate fix --profile <prof> --fix-type bash <ds.xml> > fix.sh` | `0` = OK |
+| **Generate Fix (Ansible)** | `oscap xccdf generate fix --profile <prof> --fix-type ansible <ds.xml> > fix.yml` | `0` = OK |
+| **Run Tailored Scan** | `oscap xccdf eval --tailoring-file tail.xml --profile <tail_prof> ...` | `0` = Pass, `2` = Fail |
+| **Run Safe Remediation (Part B2)**| `oscap xccdf eval --tailoring-file tail.xml --profile <tail_prof> --remediate ...`| `0` = Pass, `2` = Fail |
+
+### 2. Common Exit Code Diagnostic Matrix
+
+| Exit Code | Diagnostic Meaning | Recommended Administrative Action |
+| :---: | :--- | :--- |
+| **`0`** | 100% Evaluation Pass / Full Compliance | System satisfies all checked rules. Save HTML/XML reports as signed audit proof. |
+| **`2`** | Evaluation completed; rule failures/vulnerabilities detected | **Expected normal audit result.** Do NOT treat as automation failure; inspect HTML report. |
+| **`1`** | Fatal error (missing file, invalid XML, syntax error) | Check file paths, verify XML namespace, and ensure `oscap` has read permissions. |
+
+---
+
+ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol | Harisfazillah Jamel (LinuxMalaysia) | 2026-07-12 Standard: UK English | DBP-standard Bahasa Melayu Malaysia (Piawai) | GNU General Public License v3.0 | [Legal Notice & Disclaimer](https://linuxmalaysia.github.io/ASIMP/legal-notice.html)

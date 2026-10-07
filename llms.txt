@@ -61,4 +61,5 @@ ASIMP performs dynamic auditing before and after configurations are modified. It
 - [Getting Started Onboarding](docs/tutorials/01-getting-started.md): Beginner step-by-step onboarding walkthrough.
 - [Operational Recipes](docs/how-to/index.md): Task-oriented execution recipes.
 - [Execute Tool Workflows](docs/how-to/run-tool.md): Operational recipes for scripts and utilities.
+- [OpenSCAP Operational Guide](docs/openscap_operational_guide.md): Enterprise OpenSCAP operational manual for OVAL vulnerability auditing, XCCDF baseline compliance, and air-gapped remediation.
 - [Ansible EE & Sovereign Gitea Guide](docs/ansible_ee_gitea.md): Ansible Execution Environments (EE) built with `ansible-builder` + `uv` integrated with Sovereign Gitea on Podman Quadlets.
