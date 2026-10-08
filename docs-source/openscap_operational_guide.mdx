@@ -507,13 +507,37 @@ dnf download --resolve --destdir=/tmp/errata_harvest/packages $(cat /tmp/target_
 ```bash
 mkdir -p /tmp/errata_harvest_deb/packages && cd /tmp/errata_harvest_deb
 
-# Extract non-compliant package names from Debian/Ubuntu OVAL dpkginfo_test result data
-grep -oP '(?<=<dpkginfo_test_name>)[^<]+' /var/tmp/openscap_oval/oval-results-*.xml | sort -u > /tmp/target_deb_pkgs.txt
+# Parse OVAL XML results to extract package names from vulnerable/non-compliant definitions
+python3 -c "
+import xml.etree.ElementTree as ET, glob
+pkgs = set()
+for f in glob.glob('/var/tmp/openscap_oval/oval-results-*.xml'):
+    try:
+        tree = ET.parse(f)
+        root = tree.getroot()
+        for elem in root.iter():
+            if elem.tag.endswith('definition') and elem.attrib.get('result') in ['true', 'vulnerable']:
+                for item in elem.iter():
+                    if 'name' in item.attrib:
+                        pkgs.add(item.attrib['name'])
+                    elif item.text and item.tag.endswith('name'):
+                        pkgs.add(item.text.strip())
+    except Exception:
+        pass
+for p in sorted(pkgs):
+    print(p)
+" > /tmp/target_deb_pkgs.txt
 
-# Validate that the extracted package list is non-empty before downloading
+# Validate that candidate DEB package findings are present before explicit download
 if [ -s /tmp/target_deb_pkgs.txt ]; then
-  apt-get update && apt-get install --download-only -y $(cat /tmp/target_deb_pkgs.txt)
-  cp /var/cache/apt/archives/*.deb /tmp/errata_harvest_deb/packages/
+  apt-get update && apt-get download $(cat /tmp/target_deb_pkgs.txt)
+
+  # Verify offline bundle integrity
+  for pkg in *.deb; do
+    dpkg-deb -I "$pkg" > /dev/null || echo "Corrupt DEB package: $pkg"
+  done
+
+  dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
 else
   echo "No OVAL non-compliant DEB packages detected for harvest."
 fi
@@ -875,23 +899,32 @@ Create an OpenSCAP Tailoring file (`tailoring.xml`) to explicitly exclude destru
   <xccdf:benchmark href="/usr/share/xml/scap/ssg/content/ssg-rhel8-ds.xml"/>
   <xccdf:version time="2026-10-07T17:00:00">1</xccdf:version>
 
+  <!-- 1. Safeguarded Profile for RHEL, Ubuntu, and SUSE (Derived from CIS Profile) -->
   <xccdf:Profile id="xccdf_org.ssgproject.content_profile_cis_custom_safe" extends="xccdf_org.ssgproject.content_profile_cis">
     <xccdf:title>CIS Benchmark (Safeguarded Enterprise Web &amp; Clustered Profile)</xccdf:title>
     <xccdf:description>CIS profile tailored to exclude destructive rules that impact SCTP cluster links, container forwarding, and database shared memory.</xccdf:description>
 
-    <!-- 1. EXCLUDE SCTP DISABLE RULE (Preserves Clustered Inter-Node Signaling) -->
+    <!-- EXCLUDE SCTP DISABLE RULE (Preserves Clustered Inter-Node Signaling) -->
     <xccdf:select idref="xccdf_org.ssgproject.content_rule_kernel_module_sctp_disabled" selected="false"/>
 
-    <!-- 2. EXCLUDE TMP NOEXEC (Preserves PostgreSQL PostGIS & Oracle dynamic compilation) -->
+    <!-- EXCLUDE TMP NOEXEC (Preserves PostgreSQL PostGIS & Oracle dynamic compilation) -->
     <xccdf:select idref="xccdf_org.ssgproject.content_rule_mount_option_tmp_noexec" selected="false"/>
     <xccdf:select idref="xccdf_org.ssgproject.content_rule_mount_option_var_tmp_noexec" selected="false"/>
 
-    <!-- 3. EXCLUDE IP FORWARDING DISABLE (Preserves Podman & Container bridge routing) -->
+    <!-- EXCLUDE IP FORWARDING DISABLE (Preserves Podman & Container bridge routing) -->
     <xccdf:select idref="xccdf_org.ssgproject.content_rule_sysctl_net_ipv4_ip_forward" selected="false"/>
 
-    <!-- 4. EXCLUDE AUTOMATIC FIPS ENFORCEMENT -->
+    <!-- EXCLUDE AUTOMATIC FIPS ENFORCEMENT -->
     <xccdf:select idref="xccdf_org.ssgproject.content_rule_enable_fips_mode" selected="false"/>
+  </xccdf:Profile>
 
+  <!-- 2. Safeguarded Profile for Debian GNU/Linux (Derived from Standard Profile bound to ssg-debian12-ds.xml) -->
+  <xccdf:Profile id="xccdf_org.ssgproject.content_profile_standard_custom_safe" extends="xccdf_org.ssgproject.content_profile_standard">
+    <xccdf:title>Debian Standard Baseline (Safeguarded Enterprise Profile)</xccdf:title>
+    <xccdf:description>Debian standard profile tailored to exclude destructive network and filesystem mount restrictions.</xccdf:description>
+
+    <xccdf:select idref="xccdf_org.ssgproject.content_rule_sysctl_net_ipv4_ip_forward" selected="false"/>
+    <xccdf:select idref="xccdf_org.ssgproject.content_rule_mount_option_tmp_noexec" selected="false"/>
   </xccdf:Profile>
 </xccdf:Tailoring>
 ```
@@ -929,10 +962,9 @@ Playbook: `remediate_safeguarded_security_guide.yml`.
   vars:
     tailoring_file_src: "files/tailoring.xml"
     tailoring_file_dest: "/etc/security/scap-tailoring.xml"
-    safe_profile: "xccdf_org.ssgproject.content_profile_cis_custom_safe"
 
   tasks:
-    - name: "1.0 Dynamically select SCAP DataStream per host OS"
+    - name: "1.0 Dynamically select SCAP DataStream and Safe Profile per host OS"
       ansible.builtin.set_fact:
         scap_datastream: >-
           {%- if ansible_distribution | lower in ['rocky', 'almalinux', 'centos', 'redhat', 'oraclelinux', 'ol'] -%}
@@ -949,6 +981,12 @@ Playbook: `remediate_safeguarded_security_guide.yml`.
           /usr/share/xml/scap/ssg/content/ssg-debian12-ds.xml
           {%- else -%}
           unsupported
+          {%- endif -%}
+        safe_profile: >-
+          {%- if ansible_distribution | lower == 'debian' -%}
+          xccdf_org.ssgproject.content_profile_standard_custom_safe
+          {%- else -%}
+          xccdf_org.ssgproject.content_profile_cis_custom_safe
           {%- endif -%}
 
     - name: "1.0b Fail if SCAP DataStream is unsupported for target host OS"
@@ -976,13 +1014,19 @@ Playbook: `remediate_safeguarded_security_guide.yml`.
       when: "'svc-container' in inventory_hostname"
 
     # -------------------------------------------------------------------------
-    # 2. DEPLOY TAILORED PROFILE
+    # 2. DEPLOY AND VALIDATE TAILORED PROFILE
     # -------------------------------------------------------------------------
     - name: "2.1 Deploy verified SCAP tailoring XML"
       ansible.builtin.copy:
         src: "{{ tailoring_file_src }}"
         dest: "{{ tailoring_file_dest }}"
         mode: "0644"
+
+    - name: "2.2 Validate profile, benchmark, and rule identifiers prior to remediation"
+      ansible.builtin.command:
+        cmd: "oscap info --profile {{ safe_profile }} --tailoring-file {{ tailoring_file_dest }} {{ scap_datastream }}"
+      register: profile_val
+      changed_when: false
 
     # -------------------------------------------------------------------------
     # 3. EXECUTE SAFE TAILORED REMEDIATION
