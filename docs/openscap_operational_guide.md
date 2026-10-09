@@ -513,7 +513,7 @@ ADVISORY_LIST=$(tr '\n' ',' < /tmp/flagged_rhsa.txt | sed 's/,$//')
 dnf download --resolve --advisories="$ADVISORY_LIST" --destdir=/tmp/errata_harvest/packages
 
 # 2. Option B: Resolve affected package names directly from OVAL XML result tags
-grep -oP '(?<=<affected_pkg>)[^<]+' /var/tmp/openscap_oval/oval-results-*.xml | sort -u > /tmp/target_pkgs.txt
+grep -oP '(?<=<affected_pkg>)[^<]+' /var/tmp/openscap_oval/oval-results-$(hostname -s).xml | sort -u > /tmp/target_pkgs.txt
 dnf download --resolve --destdir=/tmp/errata_harvest/packages $(cat /tmp/target_pkgs.txt)
 ```
 
@@ -521,31 +521,32 @@ dnf download --resolve --destdir=/tmp/errata_harvest/packages $(cat /tmp/target_
 ```bash
 mkdir -p /tmp/errata_harvest_deb/packages && cd /tmp/errata_harvest_deb
 
-# Parse OVAL XML results to extract package names from vulnerable/non-compliant definitions
+OVAL_RESULTS_FILE="/var/tmp/openscap_oval/oval-results-$(hostname -s).xml"
+
+# Parse specific host OVAL XML results file to extract package names from vulnerable definitions
 python3 -c "
-import xml.etree.ElementTree as ET, glob, sys
-pkgs = set()
-files = glob.glob('/var/tmp/openscap_oval/oval-results-*.xml')
-if not files:
-    sys.stderr.write('Error: No OVAL results XML files found in /var/tmp/openscap_oval/\n')
+import xml.etree.ElementTree as ET, sys, os
+target_file = sys.argv[1]
+if not os.path.isfile(target_file):
+    sys.stderr.write(f'Error: Specified OVAL results file {target_file} not found.\n')
     sys.exit(1)
-for f in files:
-    try:
-        tree = ET.parse(f)
-        root = tree.getroot()
-        for elem in root.iter():
-            if elem.tag.endswith('definition') and elem.attrib.get('result') in ['true', 'vulnerable']:
-                for item in elem.iter():
-                    if 'name' in item.attrib:
-                        pkgs.add(item.attrib['name'])
-                    elif item.text and item.tag.endswith('name'):
-                        pkgs.add(item.text.strip())
-    except Exception as e:
-        sys.stderr.write(f'Error parsing OVAL results file {f}: {e}\n')
-        sys.exit(1)
+pkgs = set()
+try:
+    tree = ET.parse(target_file)
+    root = tree.getroot()
+    for elem in root.iter():
+        if elem.tag.endswith('definition') and elem.attrib.get('result') in ['true', 'vulnerable']:
+            for item in elem.iter():
+                if 'name' in item.attrib:
+                    pkgs.add(item.attrib['name'])
+                elif item.text and item.tag.endswith('name'):
+                    pkgs.add(item.text.strip())
+except Exception as e:
+    sys.stderr.write(f'Error parsing OVAL results file {target_file}: {e}\n')
+    sys.exit(1)
 for p in sorted(pkgs):
     print(p)
-" > /tmp/target_deb_pkgs.txt
+" "$OVAL_RESULTS_FILE" > /tmp/target_deb_pkgs.txt
 
 # Validate that candidate DEB package findings are present before explicit download
 if [ -s /tmp/target_deb_pkgs.txt ]; then
