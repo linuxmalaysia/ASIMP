@@ -20,6 +20,7 @@ topics: ["asimp", "summary", "documentation", "index"]
 * [Architecture & Design](docs/architecture.md)
 * [AI Agents & DSOM Integration](docs/ai_agents.html)
 * [OpenSCAP Integration & Playbooks](docs/openscap.md)
+* [OpenSCAP Operational Guide](docs/openscap_operational_guide.md)
 * [Lynis Auditing & Playbooks](docs/lynis.md)
 * [Enterprise Linux CIS Level 2 Guide](docs/rhel_family_cis.md)
 * [Ubuntu 24.04/26.04 LTS Guide](docs/ubuntu_lts_hardening.md)

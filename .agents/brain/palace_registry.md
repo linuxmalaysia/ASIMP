@@ -24,6 +24,8 @@ topics: ["asimp", "dsom", "brain", "palace"]
   - Room 301: `docs/knowledge_portal_testbed_openscap_va_report.md` — AlmaLinux 10 OpenSCAP OVAL vs. VA Report & How-To Manual
   - Room 302: `docs/output_openscap.md` — Output of OpenSCAP Audit
   - Room 303: `docs/output_lynis.md` — Output of Lynis Audit
+  - Room 304: `docs/openscap_operational_guide.md` — Multi-Distribution OpenSCAP Operational Guide
+  - Room 305: `.agents/skills/openscap-operational-auditor/SKILL.md` — Multi-Distro OpenSCAP Operational Auditor Skill
 
 ---
 

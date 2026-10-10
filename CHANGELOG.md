@@ -13,6 +13,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-10-08
+
+### Added
+- **Enterprise Linux OpenSCAP Operational Guide (`docs/openscap_operational_guide.md`)**: Comprehensive multi-distribution operational manual covering OVAL vulnerability auditing, result-driven air-gapped package harvesting, XCCDF baseline compliance, and tailored policy remediation across RHEL 8/9/10, AlmaLinux, Rocky Linux, Oracle Linux, Ubuntu, Debian, and openSUSE.
+- **Agent Skill (`openscap-operational-auditor`)**: Dedicated agent skill at `.agents/skills/openscap-operational-auditor/SKILL.md` encapsulating OVAL feed resolution, result-aware DEB/RPM package harvesting, tailoring profile generation, and preflight profile/datastream validations.
+- **Mintlify MDX Compiler Updates (`tools/build_mintlify_mdx.py`)**: Enhanced MDX compiler to strip Liquid raw blocks automatically for Mintlify MDX compatibility and regenerated `docs-source/` (63 MDX files) and `docs-source/docs.json`.
+
+---
+
 ## [1.1.2] - 2026-08-05
 
 ### Added

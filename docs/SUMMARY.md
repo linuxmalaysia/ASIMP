@@ -23,6 +23,7 @@ topics: ["summary", "gitbook", "dsom", "diataxis"]
 ## How-To Guides
 * [Operational Recipes Index](how-to/index.md)
 * [Execute Tool Workflows](how-to/run-tool.md)
+* [OpenSCAP Operational Guide](openscap_operational_guide.md)
 * [Enterprise Linux CIS Level 2 Guide](rhel_family_cis.md)
 * [Ubuntu 24.04/26.04 LTS Guide](ubuntu_lts_hardening.md)
 * [Debian Hardening Guide](debian_hardening.md)
