@@ -24,7 +24,10 @@ topics: ["asimp", "dsom", "brain", "task"]
 - [x] Register new guide across all indices: `docs/index.md`, `docs/SUMMARY.md`, `SUMMARY.md`, `llms.txt`, `llms-full.txt`, `sitemap.txt`, and `sitemap.xml`.
 - [x] Add Python unit tests (`tests/test_ee_builder_config.py`) and Ansible playbook tests (`tests/test_ansible_ee_gitea_doc.yml`).
 - [x] Execute complete test suite (225 unit tests + playbook syntax check + sitemap verification) with 100% pass rate.
-- [x] Complete End of Day (EOD) DSOM Palace Sync and PR comment resolution.
+- [x] Adopt multi-distribution OpenSCAP Operational Guide (`docs/openscap_operational_guide.md`) covering RHEL 8/9/10, AlmaLinux, Rocky Linux, Oracle Linux, Ubuntu, Debian, and openSUSE for OVAL vulnerability auditing, air-gapped package harvesting, XCCDF baseline compliance, and tailored remediation playbooks.
+- [x] Create Agent Skill `.agents/skills/openscap-operational-auditor/SKILL.md` for OpenSCAP operational auditing, OVAL feed resolution, and tailoring XML generation.
+- [x] Recompile Mintlify MDX documentation into `docs-source/` (63 files) and regenerate `docs-source/docs.json`.
+- [x] Complete End of Day (EOD) DSOM Palace Sync and PR comment resolution across all review threads.
 
 ---
 
