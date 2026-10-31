@@ -40,7 +40,7 @@ All exported files reside directly within `.agents/brain/jules_history/`:
 Google Antigravity accesses agent memory through standardized markdown files and Agent Skills. Files in `.agents/brain/` are readable on request by the agent or user but are not loaded automatically into the agent's context window. By committing Jules session history directly into `.agents/brain/`:
 1. Historical project context becomes available during Start-of-Day (SOD) routines once the agent is directed to open the relevant archive files.
 2. The agent can read historical decisions, patches, and plan trajectories on demand without requiring closed API access to legacy Jules endpoints.
-3. Continuous cognitive synchronization across the ASIMP platform lifecycle is maintained upon opening these memory anchors.
+3. The archive serves as a point-in-time snapshot, meaning decisions and modifications made after the export was completed are not recorded here.
 
 ---
 

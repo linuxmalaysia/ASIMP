@@ -46,8 +46,19 @@ class TestJulesHistoryExport(unittest.TestCase):
         """Verify session artifacts: session.json, activities.json, summary.md, patch."""
         sess_dir = os.path.join(JULES_DIR, "sessions", "13663164952111193775")
         self.assertTrue(os.path.isdir(sess_dir), f"Session directory {sess_dir} must exist")
-        self.assertTrue(os.path.isfile(os.path.join(sess_dir, "session.json")))
-        self.assertTrue(os.path.isfile(os.path.join(sess_dir, "activities.json")))
+
+        session_file = os.path.join(sess_dir, "session.json")
+        self.assertTrue(os.path.isfile(session_file))
+        with open(session_file, "r", encoding="utf-8") as f:
+            session_data = json.load(f)
+            self.assertIsInstance(session_data, dict)
+
+        activities_file = os.path.join(sess_dir, "activities.json")
+        self.assertTrue(os.path.isfile(activities_file))
+        with open(activities_file, "r", encoding="utf-8") as f:
+            activities_data = json.load(f)
+            self.assertIsInstance(activities_data, list)
+
         self.assertTrue(os.path.isfile(os.path.join(sess_dir, "summary.md")))
         self.assertTrue(os.path.isfile(os.path.join(sess_dir, "patch-1.diff")))
 
@@ -64,9 +75,17 @@ class TestJulesHistoryExport(unittest.TestCase):
         meta = yaml.safe_load(parts[1])
         self.assertEqual(meta.get("okf_version"), "0.2")
         self.assertEqual(meta.get("type"), "archive")
+        self.assertIn("trust_level", meta)
         self.assertIn("jules", meta.get("topics", []))
         self.assertIn("antigravity", meta.get("topics", []))
-        self.assertIn("ASIMP (Ansible System Integrity Management Platform)", content)
+
+        non_empty_lines = [line.strip() for line in content.splitlines() if line.strip()]
+        self.assertTrue(non_empty_lines, "Archive must have non-empty content")
+        expected_footer_prefix = "ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol"
+        self.assertTrue(
+            non_empty_lines[-1].startswith(expected_footer_prefix),
+            f"Final non-empty line must start with ASIMP footer, got: {non_empty_lines[-1]}"
+        )
 
 
 if __name__ == "__main__":
