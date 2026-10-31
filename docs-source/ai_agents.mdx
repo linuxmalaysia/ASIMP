@@ -100,12 +100,12 @@ Local AI agents read the generated `./openwiki/.last-update.json` and `./openwik
 
 ---
 
-## 🛠️ Multi-Agent Swarm Orchestration
+## 🛠️ Multi-Agent Swarm Orchestration & Migration Bridge
 
 When scaling ASIMP development or multi-OS hardening pipelines with autonomous agents, the platform enforces strict **Multi-Agent Swarm Protocols**:
 1. **The Lead Agent**: Handles the execution flow, coordinates changes, and validates the integrity of YAML/Jinja2 files.
 2. **The Verification Agent**: Run in parallel, auditing the proposed code changes against the pre-commit checks and regression tests.
-3. **The Collaboration Sync**: Synchronizes facts natively. For example, Google Jules and Antigravity collaborate by maintaining the unified temporal audit logs.
+3. **The Collaboration Sync**: Synchronizes facts natively across agent generations. For example, Google Jules session outputs, configurations, and memory facts are exported and bridged directly to **Google Antigravity** via `.agents/brain/jules_history/` and `.agents/brain/jules_history_archive.md`, ensuring total cognitive continuity without closed endpoint dependency.
 
 ---
 

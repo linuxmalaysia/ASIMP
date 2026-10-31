@@ -3,7 +3,7 @@ okf_version: "0.2"
 trust_level: "verified"
 type: "registry"
 title: "Sovereign Markdown Palace Registry Index"
-timestamp: "2026-09-20T08:00:00Z"
+timestamp: "2026-10-31T17:15:00Z"
 topics: ["asimp", "dsom", "brain", "palace"]
 ---
 
@@ -13,6 +13,7 @@ topics: ["asimp", "dsom", "brain", "palace"]
   - Room 101: `docs/architecture.md` — Dual-Engine Security Pipeline
   - Room 102: `docs/ai_agents.md` — AI Agents & DSOM Protocol Integration
   - Room 103: `AGENTS.md` — Root AI Agent Instruction Set
+  - Room 104: `.agents/brain/jules_history_archive.md` — Google Jules History & Google Antigravity Migration Archive
 
 - **Hall 2: Operating System Guides & Hardening**
   - Room 201: `docs/rhel_family_cis.md` — Enterprise Linux CIS Level 2 Guide
