@@ -6,12 +6,27 @@ Verifies structure, JSON validity, OKF frontmatter, and DSOM compliance.
 
 import json
 import os
+import sys
 import unittest
 import yaml
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BRAIN_DIR = os.path.join(REPO_ROOT, ".agents", "brain")
 JULES_DIR = os.path.join(BRAIN_DIR, "jules_history")
+
+sys.path.insert(0, os.path.join(REPO_ROOT, "scripts"))
+try:
+    from add_asimp_footer import FOOTER_TEXT  # type: ignore
+except ImportError:
+    FOOTER_TEXT = (
+        "ASIMP (Ansible System Integrity Management Platform) | "
+        "Deep State of Mind (DSOM) For My AI Protocol | "
+        "Harisfazillah Jamel (LinuxMalaysia) | "
+        "2026-07-12 Standard: UK English | "
+        "DBP-standard Bahasa Melayu Malaysia (Piawai) | "
+        "GNU General Public License v3.0 | "
+        "[Legal Notice & Disclaimer](https://linuxmalaysia.github.io/ASIMP/legal-notice.html)"
+    )
 
 
 class TestJulesHistoryExport(unittest.TestCase):
@@ -52,12 +67,15 @@ class TestJulesHistoryExport(unittest.TestCase):
         with open(session_file, "r", encoding="utf-8") as f:
             session_data = json.load(f)
             self.assertIsInstance(session_data, dict)
+            self.assertEqual(session_data.get("id"), "13663164952111193775")
+            self.assertIn("taskStatus", session_data)
 
         activities_file = os.path.join(sess_dir, "activities.json")
         self.assertTrue(os.path.isfile(activities_file))
         with open(activities_file, "r", encoding="utf-8") as f:
             activities_data = json.load(f)
             self.assertIsInstance(activities_data, list)
+            self.assertTrue(len(activities_data) > 0, "activities.json must be non-empty")
 
         self.assertTrue(os.path.isfile(os.path.join(sess_dir, "summary.md")))
         self.assertTrue(os.path.isfile(os.path.join(sess_dir, "patch-1.diff")))
@@ -76,15 +94,16 @@ class TestJulesHistoryExport(unittest.TestCase):
         self.assertEqual(meta.get("okf_version"), "0.2")
         self.assertEqual(meta.get("type"), "archive")
         self.assertIn("trust_level", meta)
+        self.assertTrue(bool(meta["trust_level"]), "trust_level in frontmatter must be truthy")
         self.assertIn("jules", meta.get("topics", []))
         self.assertIn("antigravity", meta.get("topics", []))
 
         non_empty_lines = [line.strip() for line in content.splitlines() if line.strip()]
         self.assertTrue(non_empty_lines, "Archive must have non-empty content")
-        expected_footer_prefix = "ASIMP (Ansible System Integrity Management Platform) | Deep State of Mind (DSOM) For My AI Protocol"
-        self.assertTrue(
-            non_empty_lines[-1].startswith(expected_footer_prefix),
-            f"Final non-empty line must start with ASIMP footer, got: {non_empty_lines[-1]}"
+        self.assertEqual(
+            non_empty_lines[-1],
+            FOOTER_TEXT.strip(),
+            f"Final non-empty line must match the complete ASIMP footer, got: {non_empty_lines[-1]}"
         )
 
 
