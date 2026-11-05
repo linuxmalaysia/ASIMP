@@ -69,6 +69,7 @@ class TestJulesHistoryExport(unittest.TestCase):
             self.assertIsInstance(session_data, dict)
             self.assertEqual(session_data.get("id"), "13663164952111193775")
             self.assertIn("taskStatus", session_data)
+            self.assertTrue(bool(session_data.get("taskStatus")), "taskStatus must be truthy")
 
         activities_file = os.path.join(sess_dir, "activities.json")
         self.assertTrue(os.path.isfile(activities_file))
@@ -76,6 +77,8 @@ class TestJulesHistoryExport(unittest.TestCase):
             activities_data = json.load(f)
             self.assertIsInstance(activities_data, list)
             self.assertTrue(len(activities_data) > 0, "activities.json must be non-empty")
+            for act in activities_data:
+                self.assertIsInstance(act, dict, "Every activity entry must be a dictionary")
 
         self.assertTrue(os.path.isfile(os.path.join(sess_dir, "summary.md")))
         self.assertTrue(os.path.isfile(os.path.join(sess_dir, "patch-1.diff")))
