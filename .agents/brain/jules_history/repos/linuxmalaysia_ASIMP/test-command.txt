@@ -1,0 +1,1 @@
+python3 -m unittest discover -s tests -p "test_*.py" && ansible-playbook -i tests/inventory tests/test_*.yml

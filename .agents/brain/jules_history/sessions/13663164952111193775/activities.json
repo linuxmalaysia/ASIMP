@@ -1,0 +1,20 @@
+[
+  {
+    "toolCall": {
+      "name": "install_cli",
+      "args": {"package": "@google/jules"}
+    }
+  },
+  {
+    "toolCall": {
+      "name": "export_sessions",
+      "args": {"destination": ".agents/brain/jules_history"}
+    }
+  },
+  {
+    "toolCall": {
+      "name": "bridge_antigravity",
+      "args": {"protocol": "DSOM"}
+    }
+  }
+]

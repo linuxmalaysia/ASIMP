@@ -1,0 +1,18 @@
+[
+  {
+    "fact": "ASIMP adopts Deep State of Mind (DSOM) For My AI Protocol under .agents/brain/ and .agents/skills/.",
+    "archived": false
+  },
+  {
+    "fact": "Ansible Execution Environment built via ansible-builder v3 schema with uv acceleration.",
+    "archived": false
+  },
+  {
+    "fact": "All markdown files require OKF v0.2 frontmatter and standard ASIMP/DSOM footer.",
+    "archived": false
+  },
+  {
+    "fact": "Multi-distro OpenSCAP Operational Guide supports RHEL 8/9/10, Ubuntu, Debian, and openSUSE.",
+    "archived": false
+  }
+]
