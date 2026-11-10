@@ -1,0 +1,8 @@
+[
+  {
+    "id": "asimp-nightly-audit",
+    "name": "ASIMP Nightly Auditing & Hardening Verification",
+    "schedule": "0 2 * * *",
+    "command": "ansible-playbook -i tests/inventory tests/test_*.yml"
+  }
+]

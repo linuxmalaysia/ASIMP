@@ -1,0 +1,9 @@
+[
+  {
+    "id": "linuxmalaysia/ASIMP",
+    "sourceId": "linuxmalaysia/ASIMP",
+    "name": "sources/linuxmalaysia/ASIMP",
+    "url": "https://github.com/linuxmalaysia/ASIMP",
+    "defaultBranch": "master"
+  }
+]

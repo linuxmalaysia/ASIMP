@@ -3,7 +3,7 @@ okf_version: "0.2"
 trust_level: "verified"
 type: "manifest"
 title: "Active Engineering Context Manifest"
-timestamp: "2026-10-01T03:00:00Z"
+timestamp: "2026-10-31T17:15:00Z"
 topics: ["asimp", "dsom", "brain", "manifest"]
 ---
 
@@ -17,6 +17,8 @@ topics: ["asimp", "dsom", "brain", "manifest"]
 - `playbooks/gitea_podman_ee.yml` — Sovereign Gitea Rootless Podman Quadlet Deployment Playbook
 - `docs/ansible_ee_gitea.md` — Technical Guide for Ansible EE & Sovereign Gitea Integration
 - `.agents/skills/ansible-ee-gitea-quadlet/SKILL.md` — AI Agent Skill for Ansible EE & Gitea Quadlet
+- `.agents/brain/jules_history_archive.md` — Google Jules Session History & Google Antigravity Migration Archive
+- `.agents/brain/jules_history/` — Exported Settings, Variables, Repos, and Sessions Data
 - `tests/test_ee_builder_config.py` — Python Unit Tests for Execution Environment
 - `tests/test_ansible_ee_gitea_doc.yml` — Playbook & Documentation Verification Test
 - `.agents/brain/*` — DSOM Spatial Memory Brain

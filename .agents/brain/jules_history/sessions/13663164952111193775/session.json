@@ -1,0 +1,9 @@
+{
+  "id": "13663164952111193775",
+  "sourceId": "linuxmalaysia/ASIMP",
+  "title": "Jules Turndown & Google Antigravity Data Migration",
+  "taskStatus": "COMPLETED",
+  "createdAt": "2026-10-31T16:50:00Z",
+  "completedAt": "2026-10-31T17:15:00Z",
+  "description": "Export all Jules data (settings, environment variables, scheduled tasks, connected repos, memories, setup scripts, sessions, activity logs, diffs) and migrate into .agents/brain for Google Antigravity readiness."
+}
